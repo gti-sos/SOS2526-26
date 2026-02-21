@@ -1,0 +1,20 @@
+{
+  "name": "sos2526-26",
+  "version": "1.0.0",
+  "description": "Paquete del grupo de proyecto SOS 26",
+  "homepage": "https://github.com/gti-sos/SOS2526-26#readme",
+  "bugs": {
+    "url": "https://github.com/gti-sos/SOS2526-26/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gti-sos/SOS2526-26.git"
+  },
+  "license": "ISC",
+  "author": "Ricardo",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
