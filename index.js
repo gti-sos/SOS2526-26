@@ -3,7 +3,7 @@ let cool = require("cool-ascii-faces");
 let express = require('express');
 
 const app = express();
-app.
+
 app.use("/",express.static("./static"));
 
 
