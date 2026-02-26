@@ -26,3 +26,5 @@ const average = dataClean
 console.log(`--- SOS2526-26 Analysis (SDV) ---`);
 console.log(`Country analyzed: ${targetCountry}`);
 console.log(`Calculated Average Score: ${average.toFixed(2)}`);
+
+module.exports = { average, targetCountry };
