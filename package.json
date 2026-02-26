@@ -10,6 +10,9 @@
     "type": "git",
     "url": "git+https://github.com/gti-sos/SOS2526-26.git"
   },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
   "license": "ISC",
   "author": "Ricardo",
   "type": "commonjs",
