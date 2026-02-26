@@ -1,4 +1,6 @@
-let datos = new Array();
+
+function cargaCalculaMediaRFR() {
+    let datos = new Array();
 datos[0] = [2026,"England",25,1300,56.90]
 datos[1] = [2026,"France",25,1290,55.90]
 datos[2] = [2026,"Brazil",26,932,46.30]
@@ -16,3 +18,6 @@ let filtrado = datos.filter(dato => dato[1] === "England").map(dato => dato[3]);
 let total = filtrado.reduce((a,n) => a + n);
 let cont = filtrado.length;
 console.log("La media del valor total de las plantillas de la selección inglesa es", total/cont);
+return total/cont;
+}
+module.exports = { cargaCalculaMediaRFR };
