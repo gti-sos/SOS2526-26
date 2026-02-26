@@ -19,4 +19,12 @@ data.forEach(fila => {
         cont++;
     }
 })
-console.log("La media de IDH en España es de " + sumaTotal / cont)
+
+// Al final de index-SDV.js
+function miLogicaSDV() {
+    // Aquí va el código que calcula la media de IDH, etc.
+    const resultado = "La media de IDH en España es de " + sumaTotal / cont; 
+    return resultado;
+}
+
+module.exports = { miLogicaSDV };

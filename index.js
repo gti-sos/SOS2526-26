@@ -8,11 +8,19 @@ const app = express();
 app.use(express.json()); 
 app.use("/", express.static("./static"));
 const BASE_API_URL = "/api/v1";
+const sdvLogic = require('./index-SDV.js');
 
 
 app.get('/cool', (req, res) => {
     // cool() devuelve una cadena de texto con una cara aleatoria
     res.send(`<html><body><h1>${cool()}</h1></body></html>`);
+});
+
+app.get('/samples/SDV', (req, res) => {
+    // Ejecutamos la función que importamos
+    const resultado = sdvLogic.miLogicaSDV(); 
+
+    res.send(`<html><body><h1>${resultado}</h1></body></html>`);
 });
 
 app.get('/samples/RFR', (req, res) => {
