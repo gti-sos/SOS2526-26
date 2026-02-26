@@ -2,6 +2,7 @@ const { cargaCalculaMediaRFR } = require('./index-RFR.js');
 const { average } = require('./index-MGN.js');
 const { targetCountry } = require('./index-MGN.js');
 const { dataClean } = require("./index-MGN.js");
+const sdvLogic = require('./index-SDV.js');
 let cool = require("cool-ascii-faces");
 let express = require('express');
 const app = express();
@@ -24,6 +25,13 @@ app.get('/samples/MGN', (req, res) => {
     const result = average.toFixed(2);  
     const country = targetCountry;
     res.send(`<html><body><h2> Algoritmo de MGN: </h2><p> Target Country = ${country}</p><p> Average Score = ${result}</p></body></html>`);
+});
+
+app.get('/samples/SDV', (req, res) => {
+    // Ejecutamos la función que importamos
+    const resultado = sdvLogic.miLogicaSDV(); 
+
+    res.send(`<html><body><h1>${resultado}</h1></body></html>`);
 });
 
 app.get(BASE_API_URL + "/national-team-rankings-per-years", (req, res) => {
