@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>About - SOS2526-26</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; color: #333; }
+        h2 { color: #2c3e50; border-bottom: 1px solid #ccc; }
+        ul { list-style: none; padding: 0; }
+        li { margin-bottom: 10px; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>SOS2526-26</h1>
+
+    <h2>Team</h2>
+    <ul>
+        <li>Ricardo Fernández Rodríguez-Navas (<a href="https://github.com/RicardoFernandez2004">GitHub</a>)</li>
+        <li>Moisés Guillermo Godoy Nava (<a href="https://github.com/Moisguille">GitHub</a>)</li>
+        <li>Sergio Díaz Vázquez (<a href="https://github.com/SergioDiazVazquez">GitHub</a>)</li>
+    </ul>
+
+    <h2>Project Description</h2>
+    <p>"Our project analyzes the correlation between the competitive performance of men's senior national football teams and the quality of life as measured by the Human Development Index (HDI). We study the geographical distribution of football success, its temporal evolution, and its relationship with socioeconomic indicators. The goal is to understand how sporting excellence has expanded or concentrated across different regions and how it is associated with each development tier."</p>
+
+    <h2>Repository</h2>
+    <p><a href="https://github.com/gti-sos/SOS2526-26">gti-sos/SOS2526-26</a></p>
+
+    <h2>Live URL</h2>
+    <p><a href="https://sos2526-26.onrender.com">https://sos2526-26.onrender.com</a></p>
+</body>
+</html>
