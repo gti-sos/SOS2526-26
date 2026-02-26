@@ -1,8 +1,8 @@
 const { cargaCalculaMediaRFR } = require('./index-RFR.js');
 const { average } = require('./index-MGN.js');
 const { targetCountry } = require('./index-MGN.js');
-const { dataClean } = require("./index-MGN.js");
-const {calcula_IDH} = require('./index-SDV.js');
+const { dataClean, initial_rankings } = require("./index-MGN.js");
+const { calcula_IDH } = require('./index-SDV.js');
 let cool = require("cool-ascii-faces");
 let express = require('express');
 const app = express();
@@ -36,6 +36,23 @@ app.get('/samples/SDV', (req, res) => {
 app.get(BASE_API_URL + "/national-team-rankings-per-years", (req, res) => {
     console.log("New GET request to /national-team-rankings-per-years");
     res.json(dataClean); 
+});
+
+app.get(BASE_API_URL + "/national-team-rankings-per-years/loadInitialData", (req, res) => {
+    
+    if (dataClean.length === 0) {
+        // Si el array está vacío, usamos .push() para meter los datos uno a uno
+        initial_rankings.forEach(data => {
+            dataClean.push(data);
+        });
+        
+        console.log(`Loaded ${initial_rankings.length} initial rankings.`);
+        // Devolvemos un código 201 (Created) y los datos cargados
+        res.status(201).json(dataClean);
+    } else {
+        // Si ya tenía datos, avisamos al usuario (error 400 - Bad Request)
+        res.status(400).send("Array is not empty. Load aborted to avoid duplicates.");
+    }
 });
 
 
