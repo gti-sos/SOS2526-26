@@ -2,7 +2,7 @@ const { cargaCalculaMediaRFR } = require('./index-RFR.js');
 const { average } = require('./index-MGN.js');
 const { targetCountry } = require('./index-MGN.js');
 const { dataClean } = require("./index-MGN.js");
-const sdvLogic = require('./index-SDV.js');
+const {calcula_IDH} = require('./index-SDV.js');
 let cool = require("cool-ascii-faces");
 let express = require('express');
 const app = express();
@@ -29,9 +29,8 @@ app.get('/samples/MGN', (req, res) => {
 
 app.get('/samples/SDV', (req, res) => {
     // Ejecutamos la función que importamos
-    const resultado = sdvLogic.miLogicaSDV(); 
-
-    res.send(`<html><body><h1>${resultado}</h1></body></html>`);
+    const resultado = calcula_IDH(); 
+    res.send(`<h1>La media de IDH en España es: ${resultado}</h1>`);
 });
 
 app.get(BASE_API_URL + "/national-team-rankings-per-years", (req, res) => {
