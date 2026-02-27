@@ -20,4 +20,21 @@ let cont = filtrado.length;
 console.log("La media del valor total de las plantillas de la selección inglesa es", total/cont);
 return total/cont;
 }
-module.exports = { cargaCalculaMediaRFR };
+
+function cargarDatosRFR() {
+let teams = [
+  { "year": 2026, "country": "England", "age": 25, "value": 1300, "percentage": 56.9 },
+  { "year": 2026, "country": "France", "age": 25, "value": 1290, "percentage": 55.9 },
+  { "year": 2026, "country": "Brazil", "age": 26, "value": 932, "percentage": 46.3 },
+  { "year": 2026, "country": "Portugal", "age": 23, "value": 841, "percentage": 47.9 },
+  { "year": 2026, "country": "Spain", "age": 27, "value": 1150, "percentage": 41.5 },
+  { "year": 2026, "country": "Argentina", "age": 23, "value": 575, "percentage": 39.8 },
+  { "year": 2026, "country": "Germany", "age": 23, "value": 828, "percentage": 40.9 },
+  { "year": 2026, "country": "Netherlands", "age": 22, "value": 808, "percentage": 33.9 },
+  { "year": 2026, "country": "Italy", "age": 26, "value": 827, "percentage": 33.8 },
+  { "year": 2026, "country": "Belgium", "age": 24, "value": 442, "percentage": 34.4 },
+  { "year": 2025, "country": "England", "age": 25, "value": 1220, "percentage": 48.8 }
+]
+return teams;
+}
+module.exports = { cargarDatosRFR, cargaCalculaMediaRFR };
