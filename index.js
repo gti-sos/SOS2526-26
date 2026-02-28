@@ -10,7 +10,6 @@ app.use(express.json());
 app.use("/", express.static("./static"));
 const BASE_API_URL = "/api/v1";
 
-
 app.get('/cool', (req, res) => {
     // cool() devuelve una cadena de texto con una cara aleatoria
     res.send(`<html><body><h1>${cool()}</h1></body></html>`);
@@ -55,6 +54,19 @@ app.get(BASE_API_URL + "/national-team-rankings-per-years/loadInitialData", (req
     }
 });
 
+app.get("/api/v1/countries-idh-per-years", (req, res) => {
+    res.json(data);
+});
+
+app.get("/api/v1/countries-idh-per-years/loadInitialData", (req, res) => {
+    if (data.length === 0) {
+        data = [...initialData];
+        res.status(201).send("Data loaded successfully.");
+    } else {
+        res.status(400).send("Data array is not empty.");
+    }
+});
+
 
 
 
@@ -67,16 +79,7 @@ app.get('/about', (req, res) => {
 
 app.listen(process.env.PORT || 3000, () => {
     console.log('Server is running on http://localhost:3000');
-});
-
-
-
-
-
-
-
-
-// IMPORTANTE: Para que tu API pueda recibir datos en el futuro (POST/PUT)
+}); 
 
 
 

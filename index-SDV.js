@@ -21,5 +21,20 @@ function calcula_IDH() {
     })
     console.log("La media de IDH en España es de " + sumaTotal / cont)
 }
+const initialData = [
+    { year: 2022, country: "españa", hdi_value: 0.911, hdi_rank: 27, hdi_change: 1 },
+    { year: 2022, country: "alemania", hdi_value: 0.95, hdi_rank: 7, hdi_change: 0 },
+    { year: 2022, country: "reino-unido", hdi_value: 0.94, hdi_rank: 15, hdi_change: 2 },
+    { year: 2022, country: "francia", hdi_value: 0.91, hdi_rank: 28, hdi_change: -1 },
+    { year: 2022, country: "italia", hdi_value: 0.906, hdi_rank: 30, hdi_change: 0 },
+    { year: 2022, country: "portugal", hdi_value: 0.874, hdi_rank: 42, hdi_change: -3 },
+    { year: 2022, country: "estados-unidos", hdi_value: 0.927, hdi_rank: 20, hdi_change: 1 },
+    { year: 2022, country: "japón", hdi_value: 0.92, hdi_rank: 24, hdi_change: -2 },
+    { year: 2022, country: "china", hdi_value: 0.788, hdi_rank: 75, hdi_change: -1 },
+    { year: 2021, country: "españa", hdi_value: 0.904, hdi_rank: 28, hdi_change: 1 }
+];
 module.exports = { calcula_IDH };
+module.exports = { initialData };
+
+
 
