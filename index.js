@@ -1,4 +1,4 @@
-const { cargaCalculaMediaRFR } = require('./index-RFR.js');
+const { cargaCalculaMediaRFR, router } = require('./index-RFR.js');
 const { average } = require('./index-MGN.js');
 const { targetCountry } = require('./index-MGN.js');
 const { dataClean, initial_rankings } = require("./index-MGN.js");
@@ -10,6 +10,9 @@ const app = express();
 app.use(express.json()); 
 app.use("/", express.static("./static"));
 const BASE_API_URL = "/api/v1";
+
+app.use('/api/v1/fifa-squad-value-per-years', router);
+
 
 app.get('/cool', (req, res) => {
     // cool() devuelve una cadena de texto con una cara aleatoria
@@ -36,6 +39,12 @@ app.get('/samples/SDV', (req, res) => {
 app.get(BASE_API_URL + "/national-team-rankings-per-years", (req, res) => {
     console.log("New GET request to /national-team-rankings-per-years");
     res.json(dataClean); 
+});
+
+app.get(BASE_API_URL + "/fifa-squad-value-per-years", (req, res) => {
+    console.log("New GET request to /fifa-squad-value-per-years");
+    datos = cargaCalculaMediaRFR();
+    res.json(datos); 
 });
 
 app.get(BASE_API_URL + "/national-team-rankings-per-years/loadInitialData", (req, res) => {
@@ -81,6 +90,7 @@ app.get('/about', (req, res) => {
 app.listen(process.env.PORT || 3000, () => {
     console.log('Server is running on http://localhost:3000');
 }); 
+
 
 
 
