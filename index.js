@@ -2,7 +2,8 @@ const { cargaCalculaMediaRFR, router } = require('./index-RFR.js');
 const { average } = require('./index-MGN.js');
 const { targetCountry } = require('./index-MGN.js');
 const { dataClean, initial_rankings } = require("./index-MGN.js");
-const { calcula_IDH } = require('./index-SDV.js');
+const { calcula_IDH, initialData } = require('./index-SDV.js');
+let data = []
 let cool = require("cool-ascii-faces");
 let express = require('express');
 const app = express();
@@ -63,6 +64,19 @@ app.get(BASE_API_URL + "/national-team-rankings-per-years/loadInitialData", (req
     }
 });
 
+app.get("/api/v1/countries-idh-per-years", (req, res) => {
+    res.json(data);
+});
+
+app.get("/api/v1/countries-idh-per-years/loadInitialData", (req, res) => {
+    if (data.length === 0) {
+        data = [...initialData];
+        res.status(201).send("Data loaded successfully.");
+    } else {
+        res.status(400).send("Data array is not empty.");
+    }
+});
+
 
 
 
@@ -75,16 +89,7 @@ app.get('/about', (req, res) => {
 
 app.listen(process.env.PORT || 3000, () => {
     console.log('Server is running on http://localhost:3000');
-});
-
-
-
-
-
-
-
-
-// IMPORTANTE: Para que tu API pueda recibir datos en el futuro (POST/PUT)
+}); 
 
 
 
