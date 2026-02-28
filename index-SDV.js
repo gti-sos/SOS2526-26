@@ -33,8 +33,7 @@ const initialData = [
     { year: 2022, country: "china", hdi_value: 0.788, hdi_rank: 75, hdi_change: -1 },
     { year: 2021, country: "españa", hdi_value: 0.904, hdi_rank: 28, hdi_change: 1 }
 ];
-module.exports = { calcula_IDH };
-module.exports = { initialData };
+module.exports = { calcula_IDH, initialData };
 
 
 
