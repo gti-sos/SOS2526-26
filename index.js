@@ -68,15 +68,18 @@ app.get("/api/v1/countries-idh-per-years", (req, res) => {
     res.json(data);
 });
 
-app.get("/api/v1/countries-idh-per-years/loadInitialData", (req, res) => {
+app.get(BASE_API_URL + "/countries-idh-per-years/loadInitialData", (req, res) => {
     if (data.length === 0) {
-        data = [...initialData];
-        res.status(201).send("Data loaded successfully.");
+        // Usamos push para asegurar que modificamos el array original 'data'
+        initialData.forEach(item => {
+            data.push(item);
+        });
+        console.log("Datos cargados:", data.length);
+        res.status(201).json(data); // Ahora verás los datos en pantalla al cargar
     } else {
-        res.status(400).send("Data array is not empty.");
+        res.status(400).send("El array no está vacío.");
     }
 });
-
 
 
 
