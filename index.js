@@ -1,4 +1,4 @@
-const { cargaCalculaMediaRFR, cargarDatosRFR } = require('./index-RFR.js');
+const { cargaCalculaMediaRFR, router } = require('./index-RFR.js');
 const { average } = require('./index-MGN.js');
 const { targetCountry } = require('./index-MGN.js');
 const { dataClean, initial_rankings } = require("./index-MGN.js");
@@ -9,6 +9,8 @@ const app = express();
 app.use(express.json()); 
 app.use("/", express.static("./static"));
 const BASE_API_URL = "/api/v1";
+
+app.use('/api/v1/fifa-squad-value-per-years', router);
 
 
 app.get('/cool', (req, res) => {
@@ -61,31 +63,6 @@ app.get(BASE_API_URL + "/national-team-rankings-per-years/loadInitialData", (req
     }
 });
 
-let datos = cargarDatosRFR();
-
-app.get(BASE_API_URL + '/fifa-squad-value-per-years/loadInitialData', (req, res) => {
-    try {
-
-        // 1. Verificamos si hay datos (404 si el array está vacío o no existe)
-        if (!datos || datos.length === 0) {
-            return res.status(404).json({
-                status: 404,
-                message: "No se encontraron datos en el sistema."
-            });
-        }
-
-        // 200 → Éxito (OK)
-        res.status(200).json(datos);
-
-    } catch (error) {
-        // 500 o 400 → Error interno o petición mal formulada
-        res.status(400).json({
-            status: 400,
-            message: "Bad Request: Error al procesar la solicitud de datos."
-        });
-    }
-});
-
 
 
 
@@ -109,65 +86,6 @@ app.listen(process.env.PORT || 3000, () => {
 
 // IMPORTANTE: Para que tu API pueda recibir datos en el futuro (POST/PUT)
 
-app.post(BASE_API_URL + '/fifa-squad-value-per-years', (req, res) => {
-    const nuevoDato = req.body; // Aquí recibimos lo que el usuario envía
-
-    // 1. Validación básica (Error 400 - Bad Request)
-    if (!nuevoDato.country || !nuevoDato.year || !nuevoDato.value) {
-        return res.status(400).json({
-            status: 400,
-            message: "Faltan campos obligatorios (country, year, value)."
-        });
-    }
-
-    // 2. Simular un conflicto (Error 409 - Conflict)
-    // Supongamos que ya existe un registro para ese país y año
-    const existe = datos.find(d => d[1] === nuevoDato.country && d[0] === nuevoDato.year);
-    
-    if (existe) {
-        return res.status(409).json({
-            status: 409,
-            message: "El registro para este país y año ya existe."
-        });
-    }
-
-    // 3. Éxito (201 - Created)
-    // Aquí iría la lógica para hacer un .push() a tu array o guardar en DB
-    console.log("Guardando:", nuevoDato);
-
-    // Transformamos el objeto JSON que recibimos en el formato de tu Array
-    const formatoArray = [nuevoDato.year, nuevoDato.country, nuevoDato.age, nuevoDato.value, nuevoDato.percentage];
-    
-    // ¡AQUÍ es donde se añade, no se sustituye!
-    datos.push(formatoArray);
-    
-    res.status(201).json({
-        status: 201,
-        message: "Registro creado con éxito",
-        data: nuevoDato
-    });
-});
-
-app.delete(BASE_API_URL + '/fifa-squad-value-per-years', (req, res) => {
-    // 1. Verificamos si ya está vacío (para evitar borrar lo que ya no existe)
-    if (datos.length === 0) {
-        return res.status(404).json({
-            status: 404,
-            message: "No hay datos para borrar. La lista ya está vacía."
-        });
-    }
-
-    // 2. Borramos el contenido del array
-    // Usar datos.length = 0 es la forma más rápida y limpia de vaciarlo
-    datos.length = 0; 
-
-    // 3. Éxito → 200 OK
-    res.status(200).json({
-        status: 200,
-        message: "Todos los registros han sido eliminados con éxito.",
-        currentSize: datos.length
-    });
-});
 
 
 
