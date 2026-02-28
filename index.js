@@ -64,8 +64,85 @@ app.get(BASE_API_URL + "/national-team-rankings-per-years/loadInitialData", (req
     }
 });
 
-app.get("/api/v1/countries-idh-per-years", (req, res) => {
-    res.json(data);
+// --- RECURSO: countries-idh-per-years ---
+
+// 1. GET a la colección (Ya lo tenías, corregido para no enviar texto plano)
+app.get(BASE_API_URL + "/countries-idh-per-years", (req, res) => {
+    res.status(200).json(data); 
+});
+
+// 2. POST a la colección (Crear un nuevo recurso)
+app.post(BASE_API_URL + "/countries-idh-per-years", (req, res) => {
+    const newData = req.body;
+    // Validar que el cuerpo contenga todos los campos necesarios
+    if (!newData.country || !newData.year || !newData.hdi_value || !newData.hdi_rank || !newData.hdi_change) {
+        return res.sendStatus(400); // Bad Request (Faltan campos)
+    }
+    // Comprobar si ya existe (Conflicto)
+    const exists = data.some(d => d.country === newData.country && d.year === newData.year);
+    if (exists) {
+        return res.sendStatus(409); // Conflict
+    }
+    data.push(newData);
+    res.sendStatus(201); // Created
+});
+
+// 3. GET a un recurso específico (por país y año)
+app.get(BASE_API_URL + "/countries-idh-per-years/:country/:year", (req, res) => {
+    const { country, year } = req.params;
+    const resource = data.find(d => d.country === country && d.year == year);
+    if (resource) {
+        res.status(200).json(resource);
+    } else {
+        res.sendStatus(404); // Not Found
+    }
+});
+
+// 4. DELETE a la colección completa
+app.delete(BASE_API_URL + "/countries-idh-per-years", (req, res) => {
+    data = [];
+    res.sendStatus(200); // OK
+});
+
+// 5. DELETE a un recurso específico
+app.delete(BASE_API_URL + "/countries-idh-per-years/:country/:year", (req, res) => {
+    const { country, year } = req.params;
+    const initialLength = data.length;
+    data = data.filter(d => !(d.country === country && d.year == year));
+    if (data.length < initialLength) {
+        res.sendStatus(200);
+    } else {
+        res.sendStatus(404);
+    }
+});
+
+// 6. PUT a un recurso específico (Actualizar)
+app.put(BASE_API_URL + "/countries-idh-per-years/:country/:year", (req, res) => {
+    const { country, year } = req.params;
+    const updatedData = req.body;
+
+    // El ID (país/año) del cuerpo debe coincidir con el de la URL
+    if (country !== updatedData.country || year != updatedData.year) {
+        return res.sendStatus(400); // Bad Request
+    }
+
+    const index = data.findIndex(d => d.country === country && d.year == year);
+    if (index !== -1) {
+        data[index] = updatedData;
+        res.sendStatus(200);
+    } else {
+        res.sendStatus(404);
+    }
+});
+
+// --- MÉTODOS NO PERMITIDOS (Regla de la Tabla Azul) ---
+
+app.post(BASE_API_URL + "/countries-idh-per-years/:country/:year", (req, res) => {
+    res.sendStatus(405); // Method Not Allowed
+});
+
+app.put(BASE_API_URL + "/countries-idh-per-years", (req, res) => {
+    res.sendStatus(405); // Method Not Allowed
 });
 
 app.get(BASE_API_URL + "/countries-idh-per-years/loadInitialData", (req, res) => {
@@ -81,7 +158,7 @@ app.get(BASE_API_URL + "/countries-idh-per-years/loadInitialData", (req, res) =>
     }
 });
 
-
+// -----------------------------------------
 
 
 app.get('/about', (req, res) => {
