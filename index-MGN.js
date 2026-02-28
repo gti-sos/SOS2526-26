@@ -1,7 +1,7 @@
 const dataPart1 = require('./Data/csvjson.json'); 
 const dataPart2 = require('./Data/csvjson2.json');
 allDataRaw = [...dataPart1, ...dataPart2];
-const dataClean = new Array();//getCleanData(allDataRaw);
+const dataClean = getCleanData(allDataRaw); //new Array();
 const targetCountry = "Argentina";
 
 const average = dataClean
