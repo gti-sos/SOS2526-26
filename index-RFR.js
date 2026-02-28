@@ -79,7 +79,8 @@ router.get('/', (req, res) => {
         // 1. Verificamos si hay datos (404 si el array está vacío o no existe)
         if (!filtrado || filtrado.length === 0) {
             return res.status(404).json({
-                filtrado
+                status: 404,
+                message: "No se encontraron datos en el sistema."
             });
         }
 
@@ -102,7 +103,8 @@ router.get('/:country', (req, res) => {
         // 1. Verificamos si hay datos (404 si el array está vacío o no existe)
         if (!filtrado || filtrado.length === 0) {
             return res.status(404).json({
-              filtrado
+                status: 404,
+                message: "No se encontraron datos en el sistema."
             });
         }
 
@@ -122,10 +124,10 @@ router.post('/', (req, res) => {
     const nuevoDato = req.body; // Aquí recibimos lo que el usuario envía
 
     // 1. Validación básica (Error 400 - Bad Request)
-    if (!nuevoDato.country || !nuevoDato.year) {
+    if (!nuevoDato.country || !nuevoDato.year || !nuevoDato.value) {
         return res.status(400).json({
             status: 400,
-            message: "Faltan campos obligatorios (country, year)."
+            message: "Faltan campos obligatorios (country, year, value)."
         });
     }
 
@@ -152,7 +154,7 @@ router.post('/', (req, res) => {
     
     res.status(201).json({
         status: 201,
-        message: "CREATED",
+        message: "Registro creado con éxito",
         data: nuevoDato
     });
 });
@@ -184,6 +186,7 @@ router.put('/:country/:year', (req, res) => {
     teams[index] = updateData;
     res.status(200).json({
         status: 200,
+        message: "Registro actualizado con éxito.",
         data: teams[index]
     });
 });
