@@ -106,7 +106,7 @@ router.post('/', (req, res) => {
 });
 
 // No se permite POST a un recurso concreto
-app.post("/:country/:year", (req, res) => {
+router.post("/:country/:year", (req, res) => {
     res.sendStatus(405); 
 });
 
