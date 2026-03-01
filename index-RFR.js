@@ -41,94 +41,47 @@ return teams;
 
 let datos = cargarDatosRFR();
 
+// GET -> Cargar datos
 router.get('/loadInitialData', (req, res) => {
     try {
 
-        // 1. Verificamos si hay datos (404 si el array está vacío o no existe)
+        // 1. Verificamos si hay datos 
         if (!datos || datos.length === 0) {
-            return res.status(404).json({
-                status: 404,
-                message: "No se encontraron datos en el sistema."
-            });
+            return res.sendStatus(201).json(datos);
         }
-
-        // 200 → Éxito (OK)
-        res.status(200).json(datos);
 
     } catch (error) {
         // 500 o 400 → Error interno o petición mal formulada
-        res.status(400).json({
-            status: 400,
-            message: "Bad Request: Error al procesar la solicitud de datos."
-        });
+        res.sendStatus(400);
     }
 });
 
-// Si intentan hacer POST, PUT o DELETE a /loadInitialData
-router.all('/loadInitialData', (req, res) => {
-    res.status(405).json({
-        status: 405,
-        message: `Metodo ${req.method} no permitido en esta ruta.`
-    });
-});
-
+// GET a la colección
 router.get('/', (req, res) => {
-    const { country } = req.params;
-    try {
-        let filtrado = datos.filter(dato => dato.country === country);
-        // 1. Verificamos si hay datos (404 si el array está vacío o no existe)
-        if (!filtrado || filtrado.length === 0) {
-            return res.status(404).json({
-                status: 404,
-                message: "No se encontraron datos en el sistema."
-            });
-        }
-
         // 200 → Éxito (OK)
-        res.status(200).json(filtrado);
+        res.sendStatus(200).json(datos);
 
-    } catch (error) {
-        // 500 o 400 → Error interno o petición mal formulada
-        res.status(400).json({
-            status: 400,
-            message: "Bad Request: Error al procesar la solicitud de datos."
-        });
-    }
 });
 
+// GET a un recurso concreto
 router.get('/:country', (req, res) => {
     const { country } = req.params;
-    try {
         let filtrado = datos.filter(dato => dato.country === country);
         // 1. Verificamos si hay datos (404 si el array está vacío o no existe)
         if (!filtrado || filtrado.length === 0) {
-            return res.status(404).json({
-                status: 404,
-                message: "No se encontraron datos en el sistema."
-            });
+            return res.sendStatus(404);
         }
-
         // 200 → Éxito (OK)
-        res.status(200).json(filtrado);
-
-    } catch (error) {
-        // 500 o 400 → Error interno o petición mal formulada
-        res.status(400).json({
-            status: 400,
-            message: "Bad Request: Error al procesar la solicitud de datos."
-        });
-    }
+        res.sendStatus(200).json(filtrado);
 });
 
+// POST a la colección
 router.post('/', (req, res) => {
     const nuevoDato = req.body; // Aquí recibimos lo que el usuario envía
 
     // 1. Validación básica (Error 400 - Bad Request)
-    if (!nuevoDato.country || !nuevoDato.year || !nuevoDato.value) {
-        return res.status(400).json({
-            status: 400,
-            message: "Faltan campos obligatorios (country, year, value)."
-        });
+    if (!nuevoDato.country || !nuevoDato.year) {
+        return res.sendStatus(400);
     }
 
     // 2. Simular un conflicto (Error 409 - Conflict)
@@ -136,10 +89,7 @@ router.post('/', (req, res) => {
     const existe = datos.find(d => d[1] === nuevoDato.country && d[0] === nuevoDato.year);
     
     if (existe) {
-        return res.status(409).json({
-            status: 409,
-            message: "El registro para este país y año ya existe."
-        });
+        return res.sendStatus(409);
     }
 
     // 3. Éxito (201 - Created)
@@ -152,23 +102,22 @@ router.post('/', (req, res) => {
     // ¡AQUÍ es donde se añade, no se sustituye!
     datos.push(formatoArray);
     
-    res.status(201).json({
-        status: 201,
-        message: "Registro creado con éxito",
-        data: nuevoDato
-    });
+    res.sendStatus(201);
 });
 
+// No se permite POST a un recurso concreto
+app.post("/:country/:year", (req, res) => {
+    res.sendStatus(405); 
+});
+
+// PUT a un recurso concreto
 router.put('/:country/:year', (req, res) => {
     const { country, year } = req.params;
     const updateData = req.body;
     // 1. [400] Bad Request: El ID de la URL no coincide con el del cuerpo
     // Es una regla de oro: si la URL dice 'Spain' pero el JSON dice 'Italy', está mal.
     if (country !== updateData.country || parseInt(year) !== updateData.year) {
-        return res.status(400).json({
-            status: 400,
-            message: "Bad Request: El país o año de la URL no coinciden con los datos del cuerpo."
-        });
+        return res.sendStatus(400);
     }
 
     // Buscamos el registro original
@@ -176,38 +125,26 @@ router.put('/:country/:year', (req, res) => {
 
     // 3. [404] Not Found: Si intentas actualizar algo que no existe
     if (index === -1) {
-        return res.status(404).json({
-            status: 404,
-            message: `Not Found: No existe ningún registro para ${country} en ${year}.`
-        });
+        return res.sendStatus(404);
     }
 
     // 5. [200] OK: Todo correcto, actualizamos
     teams[index] = updateData;
-    res.status(200).json({
-        status: 200,
-        message: "Registro actualizado con éxito.",
-        data: teams[index]
-    });
+    res.sendStatus(200);
 });
 
 // 6. [405] Method Not Allowed: 
 // Si alguien intenta hacer PUT a la lista completa (sin país/año)
 router.put('/', (req, res) => {
     res.set('Allow', 'GET, POST, DELETE');
-    res.status(405).json({
-        status: 405,
-        message: "Method Not Allowed: No se permite actualizar la colección entera (PUT)."
-    });
+    res.sendStatus(405);
 });
 
+// DELETE a la colección
 router.delete('/', (req, res) => {
     // 1. Verificamos si ya está vacío (para evitar borrar lo que ya no existe)
     if (datos.length === 0) {
-        return res.status(404).json({
-            status: 404,
-            message: "No hay datos para borrar. La lista ya está vacía."
-        });
+        return res.sendStatus(404);
     }
 
     // 2. Borramos el contenido del array
@@ -215,22 +152,16 @@ router.delete('/', (req, res) => {
     datos.length = 0; 
 
     // 3. Éxito → 200 OK
-    res.status(200).json({
-        status: 200,
-        message: "Todos los registros han sido eliminados con éxito.",
-        currentSize: datos.length
-    });
+    res.sendStatus(200);
 });
 
+// DELETE a un recurso concreto
 router.delete('/:year', (req, res) => {
     const { year } = req.params;
     let filtrado = datos.filter(dato => dato.year === year);
     // 1. Verificamos si ya está vacío (para evitar borrar lo que ya no existe)
     if (filtrado.length === 0) {
-        return res.status(404).json({
-            status: 404,
-            message: "No hay datos para borrar. La lista ya está vacía."
-        });
+        return res.sendStatus(404);
     }
 
     // 2. Borramos el contenido del array
@@ -238,12 +169,10 @@ router.delete('/:year', (req, res) => {
     filtrado.length = 0; 
 
     // 3. Éxito → 200 OK
-    res.status(200).json({
-        status: 200,
-        message: "Todos los registros han sido eliminados con éxito.",
-        currentSize: datos.length
-    });
+    res.sendStatus(200);
 });
+
+
 
 // ¡IMPORTANTE! Exporta el router al final
 module.exports = { cargaCalculaMediaRFR, router };
