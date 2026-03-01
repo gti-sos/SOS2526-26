@@ -45,19 +45,19 @@ let datos = cargarDatosRFR();
 router.get('/loadInitialData', (req, res) => {
         // 1. Verificamos si hay datos 
         if (!datos || datos.length === 0) {
-            return res.sendStatus(201).json(datos);
+            return res.status(201).json(datos);
         }
 
         else 
         // 500 o 400 → Error interno o petición mal formulada
-        res.sendStatus(400);
+        res.status(400);
     }
 );
 
 // GET a la colección
 router.get('/', (req, res) => {
         // 200 → Éxito (OK)
-        res.sendStatus(200).json(datos);
+        res.status(200).json(datos);
 
 });
 
@@ -67,10 +67,10 @@ router.get('/:country', (req, res) => {
         let filtrado = datos.filter(dato => dato.country === country);
         // 1. Verificamos si hay datos (404 si el array está vacío o no existe)
         if (!filtrado || filtrado.length === 0) {
-            return res.sendStatus(404);
+            return res.status(404);
         }
         // 200 → Éxito (OK)
-        res.sendStatus(200).json(filtrado);
+        res.status(200).json(filtrado);
 });
 
 // POST a la colección
