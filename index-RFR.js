@@ -44,13 +44,8 @@ let datos = cargarDatosRFR();
 // GET -> Cargar datos
 router.get('/loadInitialData', (req, res) => {
         // 1. Verificamos si hay datos 
-        if (!datos || datos.length === 0) {
+       
             return res.status(201).json(datos);
-        }
-
-        else 
-        // 500 o 400 → Error interno o petición mal formulada
-        res.status(400);
     }
 );
 
