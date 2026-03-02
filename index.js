@@ -1,7 +1,5 @@
 const { cargaCalculaMediaRFR, router } = require('./index-RFR.js');
-const { average } = require('./index-MGN.js');
-const { targetCountry } = require('./index-MGN.js');
-const { dataClean, initial_rankings } = require("./index-MGN.js");
+const { average, targetCountry, dataClean, initial_rankings } = require('./index-MGN.js');
 const { calcula_IDH, initialData } = require('./index-SDV.js');
 let data = []
 let cool = require("cool-ascii-faces");
@@ -25,7 +23,7 @@ app.get('/samples/RFR', (req, res) => {
 });
 
 app.get('/samples/MGN', (req, res) => { 
-    const result = average.toFixed(2);  
+    const result = average;  
     const country = targetCountry;
     res.send(`<html><body><h2> Algoritmo de MGN: </h2><p> Target Country = ${country}</p><p> Average Score = ${result}</p></body></html>`);
 });

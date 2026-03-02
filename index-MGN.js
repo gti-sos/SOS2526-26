@@ -129,5 +129,5 @@ const initial_rankings = [{
     "best_year": "FALSE"
   },]
 
-module.exports = { average, targetCountry };
-module.exports = { dataClean, initial_rankings };
+
+module.exports = { average, targetCountry, dataClean, initial_rankings };
