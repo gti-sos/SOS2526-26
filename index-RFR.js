@@ -147,7 +147,7 @@ router.post('/', (req, res) => {
     console.log("Guardando:", nuevoDato);
 
     // Transformamos el objeto JSON que recibimos en el formato de tu Array
-    const formatoArray = [nuevoDato.year, nuevoDato.country, nuevoDato.age, nuevoDato.value, nuevoDato.percentage];
+    const formatoArray = [nuevoDato.year, nuevoDato.country, nuevoDato.squad_size, nuevoDato.total_market_value, nuevoDato.average_market_value];
     
     // ¡AQUÍ es donde se añade, no se sustituye!
     datos.push(formatoArray);
