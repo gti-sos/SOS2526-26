@@ -124,10 +124,10 @@ router.post('/', (req, res) => {
     const nuevoDato = req.body; // Aquí recibimos lo que el usuario envía
 
     // 1. Validación básica (Error 400 - Bad Request)
-    if (!nuevoDato.country || !nuevoDato.year || !nuevoDato.value) {
+    if (!nuevoDato.country || !nuevoDato.year) {
         return res.status(400).json({
             status: 400,
-            message: "Faltan campos obligatorios (country, year, value)."
+            message: "Faltan campos obligatorios (country, year)."
         });
     }
 
