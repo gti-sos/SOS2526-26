@@ -111,8 +111,8 @@ router.post("/:country/:year", (req, res) => {
 
 // PUT a un recurso concreto
 router.put('/:country/:year', (req, res) => {
-    const { country } = req.params;
-    const yearParam = parseInt(req.params.year); // Convertimos el parámetro de URL
+    const { country, year } = req.params;
+    const yearParam = parseInt(year); // Convertimos el parámetro de URL
     const updateData = req.body;
 
     // Validación de campos obligatorios en el BODY
