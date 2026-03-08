@@ -192,6 +192,16 @@ router.put('/:country/:year', (req, res) => {
 });
 
 // 6. [405] Method Not Allowed: 
+// Si alguien intenta hacer POST a un elemento concreto (con país/año)
+router.post('/:country/:year', (req, res) => {
+    res.set('Allow', 'GET, POST, DELETE');
+    res.status(405).json({
+        status: 405,
+        message: "Method Not Allowed: No se permite actualizar la colección entera (PUT)."
+    });
+});
+
+// 6. [405] Method Not Allowed: 
 // Si alguien intenta hacer PUT a la lista completa (sin país/año)
 router.put('/', (req, res) => {
     res.set('Allow', 'GET, POST, DELETE');
