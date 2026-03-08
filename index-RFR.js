@@ -40,7 +40,34 @@ return teams;
 }
 
 let datos = cargarDatosRFR();
+let DIRECCION_NO_VALIDA;
+router.get('/' + DIRECCION_NO_VALIDA, (req, res) => {
+        // 1. Verificamos si hay datos 
+       
+            return res.status(404);
+    }
+);
 
+router.post('/' + DIRECCION_NO_VALIDA, (req, res) => {
+        // 1. Verificamos si hay datos 
+       
+            return res.status(404);
+    }
+);
+
+router.put('/' + DIRECCION_NO_VALIDA, (req, res) => {
+        // 1. Verificamos si hay datos 
+       
+            return res.status(404);
+    }
+);
+
+router.delete('/' + DIRECCION_NO_VALIDA, (req, res) => {
+        // 1. Verificamos si hay datos 
+       
+            return res.status(404);
+    }
+);
 // GET -> Cargar datos
 router.get('/loadInitialData', (req, res) => {
         // 1. Verificamos si hay datos 
@@ -53,6 +80,9 @@ router.get('/loadInitialData', (req, res) => {
 router.get('/', (req, res) => {
         // 200 → Éxito (OK)
         res.status(200).json(datos);
+        if (!datos || datos.length === 0) {
+            return res.status(404);
+        }
 
 });
 
@@ -110,6 +140,13 @@ router.post("/:country/:year", (req, res) => {
 router.put('/:country/:year', (req, res) => {
     const { country, year } = req.params;
     const updateData = req.body;
+
+    if (!updateData.country || !updateData.year) {
+        return res.status(400).json({
+            status: 400,
+            message: "Faltan campos obligatorios (country, year)."
+        });
+    }
     // 1. [400] Bad Request: El ID de la URL no coincide con el del cuerpo
     // Es una regla de oro: si la URL dice 'Spain' pero el JSON dice 'Italy', está mal.
     if (country !== updateData.country || parseInt(year) !== updateData.year) {
@@ -135,7 +172,7 @@ router.post('/:country/:year', (req, res) => {
     res.set('Allow', 'GET, POST, DELETE');
     res.status(405).json({
         status: 405,
-        message: "Method Not Allowed: No se permite actualizar la colección entera (PUT)."
+        message: "Method Not Allowed: No se permite actualizar la colección entera (POST)."
     });
 });
 
