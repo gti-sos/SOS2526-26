@@ -80,6 +80,9 @@ router.get('/loadInitialData', (req, res) => {
 router.get('/', (req, res) => {
         // 200 → Éxito (OK)
         res.status(200).json(datos);
+        if (!datos || datos.length === 0) {
+            return res.status(404);
+        }
 
 });
 
