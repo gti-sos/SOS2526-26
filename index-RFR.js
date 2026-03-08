@@ -110,13 +110,12 @@ router.post("/:country/:year", (req, res) => {
 });
 
 // PUT a un recurso concreto
-router.put('/:country/:year', (req, res) => {
-    const { country, year } = req.params;
-    const yearParam = parseInt(year); // Convertimos el parámetro de URL
+router.put('/:country', (req, res) => {
+    const { country } = req.params;
     const updateData = req.body;
 
     // Validación de campos obligatorios en el BODY
-    if (!updateData.country || updateData.year === undefined) {
+    if (!updateData.country) {
         return res.status(400).json({
             status: 400,
             message: "Faltan campos obligatorios en el cuerpo (country, year)."
@@ -125,14 +124,14 @@ router.put('/:country/:year', (req, res) => {
 
     // 1. Validación de coincidencia (URL vs BODY)
     // Usamos el year ya convertido a entero
-    if (country !== updateData.country || yearParam !== updateData.year) {
+    if (country !== updateData.country) {
         return res.status(400).json({
             message: "Los datos de la URL no coinciden con los del cuerpo (JSON)."
         });
     }
 
     // 2. Búsqueda en el array
-    const index = teams.findIndex(t => t.country === country && t.year === yearParam);
+    const index = teams.findIndex(t => t.country === country);
 
     if (index === -1) {
         return res.status(404).json({ message: "Registro no encontrado." });
