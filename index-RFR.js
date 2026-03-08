@@ -111,32 +111,36 @@ router.post("/:country/:year", (req, res) => {
 
 // PUT a un recurso concreto
 router.put('/:country/:year', (req, res) => {
-    const { country, year } = req.params;
+    const { country } = req.params;
+    const yearParam = parseInt(req.params.year); // Convertimos el parámetro de URL
     const updateData = req.body;
 
-    if (!updateData.country || !updateData.year) {
+    // Validación de campos obligatorios en el BODY
+    if (!updateData.country || updateData.year === undefined) {
         return res.status(400).json({
             status: 400,
-            message: "Faltan campos obligatorios (country, year)."
+            message: "Faltan campos obligatorios en el cuerpo (country, year)."
         });
     }
-    // 1. [400] Bad Request: El ID de la URL no coincide con el del cuerpo
-    // Es una regla de oro: si la URL dice 'Spain' pero el JSON dice 'Italy', está mal.
-    if (country !== updateData.country || parseInt(year) !== updateData.year) {
-        return res.sendStatus(400);
+
+    // 1. Validación de coincidencia (URL vs BODY)
+    // Usamos el year ya convertido a entero
+    if (country !== updateData.country || yearParam !== updateData.year) {
+        return res.status(400).json({
+            message: "Los datos de la URL no coinciden con los del cuerpo (JSON)."
+        });
     }
 
-    // Buscamos el registro original
-    const index = teams.findIndex(t => t.country === country && t.year === parseInt(year));
+    // 2. Búsqueda en el array
+    const index = teams.findIndex(t => t.country === country && t.year === yearParam);
 
-    // 3. [404] Not Found: Si intentas actualizar algo que no existe
     if (index === -1) {
-        return res.sendStatus(404);
+        return res.status(404).json({ message: "Registro no encontrado." });
     }
 
-    // 5. [200] OK: Todo correcto, actualizamos
+    // 3. Actualización exitosa
     teams[index] = updateData;
-    res.sendStatus(200);
+    res.status(200).json({ message: "Actualizado correctamente", data: teams[index] });
 });
 
 // 6. [405] Method Not Allowed: 
@@ -172,9 +176,9 @@ router.delete('/', (req, res) => {
 });
 
 // DELETE a un recurso concreto
-router.delete('/:year', (req, res) => {
-    const { year } = req.params;
-    let filtrado = datos.filter(dato => dato.year === year);
+router.delete('/:country', (req, res) => {
+    const { country } = req.params;
+    let filtrado = datos.filter(dato => dato.country === country);
     // 1. Verificamos si ya está vacío (para evitar borrar lo que ya no existe)
     if (filtrado.length === 0) {
         return res.sendStatus(404);
