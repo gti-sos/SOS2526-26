@@ -137,7 +137,7 @@ router.put('/:country/:year', (req, res) => {
 
     // 3. Búsqueda en el array
     // Importante: Usamos yearParam (ya es número)
-    const index = teams.findIndex(t => t.country === country && t.year === yearParam);
+    const index = datos.findIndex(t => t.country === country && t.year === yearParam);
 
     // 4. [404] Not Found
     if (index === -1) {
@@ -149,10 +149,10 @@ router.put('/:country/:year', (req, res) => {
 
     // 5. [200] Actualización exitosa
     // Reemplazamos el objeto en el array
-    teams[index] = updateData;
+    datos[index] = updateData;
     
     // Devolvemos el objeto actualizado para confirmar
-    res.status(200).json(teams[index]);
+    res.status(200).json(datos[index]);
 });
 
 // 6. [405] Method Not Allowed: 
