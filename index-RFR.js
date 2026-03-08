@@ -74,7 +74,10 @@ router.post('/', (req, res) => {
 
     // 1. Validación básica (Error 400 - Bad Request)
     if (!nuevoDato.country || !nuevoDato.year) {
-        return res.sendStatus(400);
+        return res.status(400).json({
+            status: 400,
+            message: "Faltan campos obligatorios (country, year)."
+        });
     }
 
     // 2. Simular un conflicto (Error 409 - Conflict)
@@ -90,7 +93,7 @@ router.post('/', (req, res) => {
     console.log("Guardando:", nuevoDato);
 
     // Transformamos el objeto JSON que recibimos en el formato de tu Array
-    const formatoArray = [nuevoDato.year, nuevoDato.country, nuevoDato.age, nuevoDato.value, nuevoDato.percentage];
+    const formatoArray = [nuevoDato.year, nuevoDato.country, nuevoDato.squad_size, nuevoDato.total_market_value, nuevoDato.average_market_value];
     
     // ¡AQUÍ es donde se añade, no se sustituye!
     datos.push(formatoArray);
@@ -124,6 +127,16 @@ router.put('/:country/:year', (req, res) => {
     // 5. [200] OK: Todo correcto, actualizamos
     teams[index] = updateData;
     res.sendStatus(200);
+});
+
+// 6. [405] Method Not Allowed: 
+// Si alguien intenta hacer POST a un elemento concreto (con país/año)
+router.post('/:country/:year', (req, res) => {
+    res.set('Allow', 'GET, POST, DELETE');
+    res.status(405).json({
+        status: 405,
+        message: "Method Not Allowed: No se permite actualizar la colección entera (PUT)."
+    });
 });
 
 // 6. [405] Method Not Allowed: 
