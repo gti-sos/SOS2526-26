@@ -40,34 +40,7 @@ return teams;
 }
 
 let datos = cargarDatosRFR();
-let DIRECCION_NO_VALIDA;
-router.get('/' + DIRECCION_NO_VALIDA, (req, res) => {
-        // 1. Verificamos si hay datos 
-       
-            return res.status(404);
-    }
-);
 
-router.post('/' + DIRECCION_NO_VALIDA, (req, res) => {
-        // 1. Verificamos si hay datos 
-       
-            return res.status(404);
-    }
-);
-
-router.put('/' + DIRECCION_NO_VALIDA, (req, res) => {
-        // 1. Verificamos si hay datos 
-       
-            return res.status(404);
-    }
-);
-
-router.delete('/' + DIRECCION_NO_VALIDA, (req, res) => {
-        // 1. Verificamos si hay datos 
-       
-            return res.status(404);
-    }
-);
 // GET -> Cargar datos
 router.get('/loadInitialData', (req, res) => {
         // 1. Verificamos si hay datos 
