@@ -110,36 +110,49 @@ router.post("/:country/:year", (req, res) => {
 });
 
 // PUT a un recurso concreto
-router.put('/:country', (req, res) => {
-    const { country } = req.params;
+router.put('/:country/:year', (req, res) => {
+    const { country, year } = req.params;
     const updateData = req.body;
+    
+    // Convertimos el año de la URL a número
+    const yearParam = parseInt(year);
 
-    // Validación de campos obligatorios en el BODY
-    if (!updateData.country) {
+    // 1. [400] Validación de campos obligatorios en el BODY
+    // Usamos !== undefined para permitir que el año sea 0 si fuera necesario
+    if (!updateData.country || updateData.year === undefined) {
         return res.status(400).json({
             status: 400,
-            message: "Faltan campos obligatorios en el cuerpo (country, year)."
+            message: "Faltan campos obligatorios (country, year)."
         });
     }
 
-    // 1. Validación de coincidencia (URL vs BODY)
-    // Usamos el year ya convertido a entero
-    if (country !== updateData.country) {
+    // 2. [400] Validación de coincidencia URL vs BODY
+    // FORZAMOS a que ambos años sean comparados como números con Number()
+    if (country !== updateData.country || yearParam !== Number(updateData.year)) {
         return res.status(400).json({
-            message: "Los datos de la URL no coinciden con los del cuerpo (JSON)."
+            status: 400,
+            message: "El país o el año de la URL no coinciden con los del cuerpo del JSON."
         });
     }
 
-    // 2. Búsqueda en el array
-    const index = teams.findIndex(t => t.country === country);
+    // 3. Búsqueda en el array
+    // Importante: Usamos yearParam (ya es número)
+    const index = teams.findIndex(t => t.country === country && t.year === yearParam);
 
+    // 4. [404] Not Found
     if (index === -1) {
-        return res.status(404).json({ message: "Registro no encontrado." });
+        return res.status(404).json({
+            status: 404,
+            message: `No se encontró el equipo ${country} para el año ${yearParam}.`
+        });
     }
 
-    // 3. Actualización exitosa
+    // 5. [200] Actualización exitosa
+    // Reemplazamos el objeto en el array
     teams[index] = updateData;
-    res.status(200).json({ message: "Actualizado correctamente", data: teams[index] });
+    
+    // Devolvemos el objeto actualizado para confirmar
+    res.status(200).json(teams[index]);
 });
 
 // 6. [405] Method Not Allowed: 
