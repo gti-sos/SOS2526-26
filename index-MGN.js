@@ -1,7 +1,7 @@
 const dataPart1 = require('./Data/csvjson.json'); 
 const dataPart2 = require('./Data/csvjson2.json');
 allDataRaw = [...dataPart1, ...dataPart2];
-const dataClean = new Array();//getCleanData(allDataRaw);
+const dataClean = getCleanData(allDataRaw); //new Array();
 const targetCountry = "Argentina";
 
 const average = dataClean
@@ -129,5 +129,5 @@ const initial_rankings = [{
     "best_year": "FALSE"
   },]
 
-module.exports = { average, targetCountry };
-module.exports = { dataClean, initial_rankings };
+
+module.exports = { average, targetCountry, dataClean, initial_rankings };
