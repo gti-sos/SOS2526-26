@@ -1,5 +1,5 @@
 const { cargaCalculaMediaRFR, router } = require('./index-RFR.js');
-const { average, targetCountry, dataClean, initial_rankings } = require('./index-MGN.js');
+const { average, targetCountry, dataClean, initial_ranks } = require('./index-MGN.js');
 const { calcula_IDH, initialData } = require('./index-SDV.js');
 let data = []
 let cool = require("cool-ascii-faces");
@@ -240,21 +240,53 @@ app.get(MGN_URL + "/loadInitialData", (req, res) => {
         res.sendStatus(400); 
     }
 });
-
 // 3. POST a la colección (Crear un nuevo recurso)
 app.post(MGN_URL, (req, res) => {
     const newData = req.body;
-    // Validar campos obligatorios
-    if (!newData.country || !newData.year || !newData.ranking || !newData.points) {
-        return res.sendStatus(400); // Bad Request
+
+    console.log("Intentando añadir nuevo recurso:", newData);
+
+    // 1. Validar que el cuerpo de la petición no esté vacío
+    if (Object.keys(newData).length === 0) {
+        return res.status(400).send("Error: El cuerpo de la petición está vacío.");
     }
-    // Comprobar si ya existe (Conflicto por país y año)
-    const exists = dataClean.some(d => d.country === newData.country && d.year == newData.year);
+
+    // 2. Validar que los campos existan y tengan el nombre correcto
+    // Nota: He unificado el nombre a 'rank' (antes tenías una mezcla de 'ranking' y 'rank')
+    if (!newData.country || 
+        newData.year === undefined || 
+        newData.rank === undefined || 
+        newData.score === undefined) {
+        
+        console.warn("POST fallido: Faltan campos obligatorios.");
+        return res.status(400).send("Faltan campos obligatorios: country, year, rank, score.");
+    }
+
+    // 3. Comprobar si el recurso ya existe (Conflicto 409)
+    // Usamos Number() para asegurar que la comparación de años sea numérica
+    const exists = dataClean.some(d => 
+        d.country.toLowerCase() === newData.country.toLowerCase() && 
+        Number(d.year) === Number(newData.year)
+    );
+
     if (exists) {
-        return res.sendStatus(409); // Conflict
+        console.warn(`POST fallido: El recurso para ${newData.country} en ${newData.year} ya existe.`);
+        return res.status(409).send(`Conflicto: El recurso para ${newData.country} en el año ${newData.year} ya existe.`);
     }
-    dataClean.push(newData);
-    res.sendStatus(201); // Created
+
+    // 4. Limpieza y tipado de datos antes de insertar
+    const recordToInsert = {
+        country: String(newData.country),
+        year: Number(newData.year),
+        rank: Number(newData.rank),
+        score: Number(newData.score)
+    };
+
+    // 5. Guardar y responder con 201 Created
+    dataClean.push(recordToInsert);
+    console.log("Recurso añadido con éxito.");
+    
+    res.status(201).json(recordToInsert); 
 });
 
 // 4. GET a un recurso específico (por país y año)
