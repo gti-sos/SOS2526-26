@@ -11,7 +11,6 @@ const BASE_API_URL = "/api/v1";
 
 app.use('/api/v1/fifa-squad-value-per-years', router);
 
-
 app.get('/cool', (req, res) => {
     // cool() devuelve una cadena de texto con una cara aleatoria
     res.send(`<html><body><h1>${cool()}</h1></body></html>`);
@@ -62,7 +61,7 @@ app.get(BASE_API_URL + "/national-team-rankings-per-years/loadInitialData", (req
     }
 });
 
-// --- RECURSO: countries-idh-per-years ---
+// --- RECURSO: countries-idh-per-years --- SERGIO
 
 // 1. GET a la colección (Ya lo tenías, corregido para no enviar texto plano)
 app.get(BASE_API_URL + "/countries-idh-per-years", (req, res) => {

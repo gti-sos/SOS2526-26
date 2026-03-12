@@ -36,5 +36,6 @@ const initialData = [
     { year: 2021, country: "españa", hdi_value: 0.904, hdi_rank: 28, hdi_change: 1 }
 ];
 module.exports = { calcula_IDH, initialData };
+calcula_IDH();
 
 
