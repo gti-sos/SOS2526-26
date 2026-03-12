@@ -25,9 +25,37 @@ module.exports = function(app) {
     });
 
     // --- 1. GET a la colección ---
-    app.get(SDV_URL, (req, res) => {
-        db.find({}, (err, docs) => {
-            res.status(200).json(cleanResource(docs));
+    // GET de la colección (con Búsquedas, Paginación y Limpieza de _id)
+    app.get("/api/v1/countries-idh-per-years", (req, res) => {
+        // 1. Extraemos parámetros de paginación
+        let offset = parseInt(req.query.offset) || 0;
+        let limit = parseInt(req.query.limit) || 0;
+
+        // 2. Construimos el objeto de búsqueda dinámico (Query)
+        let query = {};
+
+        // Filtros de texto
+        if (req.query.country) query.country = req.query.country;
+        
+        // Filtros numéricos (convertimos a número para que NeDB los encuentre)
+        if (req.query.year) query.year = parseInt(req.query.year);
+        if (req.query.hdi_value) query.hdi_value = parseFloat(req.query.hdi_value);
+        if (req.query.hdi_rank) query.hdi_rank = parseInt(req.query.hdi_rank);
+        if (req.query.hdi_change) query.hdi_change = parseInt(req.query.hdi_change);
+
+        // 3. Ejecutamos la consulta en NeDB
+        db.find(query).skip(offset).limit(limit).exec((err, countries) => {
+            if (err) {
+                console.error("Error accediendo a la DB: " + err);
+                res.sendStatus(500);
+            } else {
+                // 4. Limpieza: Quitamos el campo _id de cada objeto antes de enviarlo
+                const countriesClean = countries.map((c) => {
+                    delete c._id;
+                    return c;
+                });
+                res.status(200).send(countriesClean);
+            }
         });
     });
 
