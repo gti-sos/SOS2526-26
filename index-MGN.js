@@ -134,4 +134,4 @@ module.exports = function(app) {
     // --- MÉTODOS NO PERMITIDOS (405) ---
     app.post(MGN_URL + "/:country/:year", (req, res) => res.sendStatus(405));
     app.put(MGN_URL, (req, res) => res.sendStatus(405));
-};x
+};
