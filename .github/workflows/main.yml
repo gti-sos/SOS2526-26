@@ -1,0 +1,17 @@
+name: SOS2526-26 CI/CD
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Instalando Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Instalando dependencias
+        run: npm install
+      - name: Ejecutando servidor y tests
+        run: npm start & sleep 5 && npm test
