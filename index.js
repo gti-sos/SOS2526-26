@@ -14,7 +14,7 @@ mgn_api(app);
 sdv_api(app);
 rfr_api(app);
 
-// Ruta /about (Asegúrate de tener static/about.html)
+// Ruta /about 
 app.get('/about', (req, res) => {
     res.sendFile(__dirname + "/static/about.html");
 });
