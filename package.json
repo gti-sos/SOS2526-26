@@ -21,6 +21,11 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test-sdv-local": "newman run ./tests/SDV.json -e ./tests/env-local.json",
+    "test-sdv-online": "newman run ./tests/SDV.json -e ./tests/env-online.json",
+    "test": "npm run test-sdv-local"
+},
+  "devDependencies": {
+    "newman": "^6.2.2"
   }
 }

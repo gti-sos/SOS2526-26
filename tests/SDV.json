@@ -1,0 +1,603 @@
+{
+  "info": {
+    "_postman_id": "50e345fb-7fda-4ac8-9e92-5567b0dadc8d",
+    "name": "F06",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52429610",
+    "_collection_link": "https://go.postman.co/collection/52429610-50e345fb-7fda-4ac8-9e92-5567b0dadc8d?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Response is an array\", function () {\r",
+              "    pm.expect(pm.response.json()).to.be.an('array');\r",
+              "});\r",
+              "\r",
+              "pm.test(\"No field _id present\", function () {\r",
+              "    var data = pm.response.json();\r",
+              "    if(data.length > 0) {\r",
+              "        pm.expect(data[0]).to.not.have.property('_id');\r",
+              "    }\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {\r",
+              "    pm.response.to.have.status(201);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Response is an array\", function () {\r",
+              "    pm.expect(pm.response.json()).to.be.an('array');\r",
+              "});\r",
+              "\r",
+              "pm.test(\"No field _id present\", function () {\r",
+              "    var data = pm.response.json();\r",
+              "    if(data.length > 0) {\r",
+              "        pm.expect(data[0]).to.not.have.property('_id');\r",
+              "    }\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years/loadInitialData",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years",
+            "loadInitialData"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 or 201\", function () {\r",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Response is an object\", function () {\r",
+              "    pm.expect(pm.response.json()).to.be.an('object');\r",
+              "});\r",
+              "\r",
+              "pm.test(\"No field _id present\", function () {\r",
+              "    var data = pm.response.json();\r",
+              "    pm.expect(data).to.not.have.property('_id');\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n        \"year\": 2022,\r\n        \"country\": \"suiza\",\r\n        \"hdi_value\": 0.911,\r\n        \"hdi_rank\": 4,\r\n        \"hdi_change\": 1\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 409\", function () {\r",
+              "    pm.response.to.have.status(409);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n        \"year\": 2022,\r\n        \"country\": \"suiza\",\r\n        \"hdi_value\": 0.911,\r\n        \"hdi_rank\": 4,\r\n        \"hdi_change\": 1\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "6",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n        \"year\": 2022,\r\n        \"country\": \"españa\",\r\n        \"hdi_value\": 0.911,\r\n        \"hdi_rank\": 27\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 or 201\", function () {\r",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Response is an object\", function () {\r",
+              "    pm.expect(pm.response.json()).to.be.an('object');\r",
+              "});\r",
+              "\r",
+              "pm.test(\"No field _id present\", function () {\r",
+              "    var data = pm.response.json();\r",
+              "    pm.expect(data).to.not.have.property('_id');\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years/suiza/2022",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years",
+            "suiza",
+            "2022"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "8",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404\", function () {\r",
+              "    pm.response.to.have.status(404);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years/noExiste/2022",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years",
+            "noExiste",
+            "2022"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "9",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n        \"year\": 2022,\r\n        \"country\": \"suiza\",\r\n        \"hdi_value\": 0.911,\r\n        \"hdi_rank\": 3,\r\n        \"hdi_change\": 1\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years/suiza/2022",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years",
+            "suiza",
+            "2022"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "10",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {\r",
+              "    pm.response.to.have.status(400);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n        \"year\": 2022,\r\n        \"country\": \"suizo\",\r\n        \"hdi_value\": 0.911,\r\n        \"hdi_rank\": 3,\r\n        \"hdi_change\": 1\r\n}"
+        },
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years/suiza/2022",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years",
+            "suiza",
+            "2022"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 405\", function () {\r",
+              "    pm.response.to.have.status(405);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n        \"year\": 2022,\r\n        \"country\": \"suizo\",\r\n        \"hdi_value\": 0.911,\r\n        \"hdi_rank\": 3,\r\n        \"hdi_change\": 1\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years/",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "12",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 405\", function () {\r",
+              "    pm.response.to.have.status(405);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n        \"year\": 2022,\r\n        \"country\": \"suizo\",\r\n        \"hdi_value\": 0.911,\r\n        \"hdi_rank\": 3,\r\n        \"hdi_change\": 1\r\n}"
+        },
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years/suiza/2022",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years",
+            "suiza",
+            "2022"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "13",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n        \"year\": 2022,\r\n        \"country\": \"suizo\",\r\n        \"hdi_value\": 0.911,\r\n        \"hdi_rank\": 3,\r\n        \"hdi_change\": 1\r\n}"
+        },
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years/suiza/2022",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years",
+            "suiza",
+            "2022"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "14",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n        \"year\": 2022,\r\n        \"country\": \"suizo\",\r\n        \"hdi_value\": 0.911,\r\n        \"hdi_rank\": 3,\r\n        \"hdi_change\": 1\r\n}"
+        },
+        "url": {
+          "raw": "{{url}}/api/v1/countries-idh-per-years/",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "countries-idh-per-years",
+            ""
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
