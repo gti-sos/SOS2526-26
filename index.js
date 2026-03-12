@@ -1,26 +1,14 @@
-const { cargaCalculaMediaRFR } = require('./index-RFR.js');
-const { average } = require('./index-MGN.js');
-const { targetCountry } = require('./index-MGN.js');
-const { dataClean } = require("./index-MGN.js");
-let cool = require("cool-ascii-faces");
-let express = require('express');
+const express = require('express');
 const app = express();
-app.use(express.json()); 
+
+app.use(express.json());
 app.use("/", express.static("./static"));
 const BASE_API_URL = "/api/v1";
-const sdvLogic = require('./index-SDV.js');
 
 
 app.get('/cool', (req, res) => {
     // cool() devuelve una cadena de texto con una cara aleatoria
     res.send(`<html><body><h1>${cool()}</h1></body></html>`);
-});
-
-app.get('/samples/SDV', (req, res) => {
-    // Ejecutamos la función que importamos
-    const resultado = sdvLogic.miLogicaSDV(); 
-
-    res.send(`<html><body><h1>${resultado}</h1></body></html>`);
 });
 
 app.get('/samples/RFR', (req, res) => {
@@ -44,24 +32,10 @@ app.get(BASE_API_URL + "/national-team-rankings-per-years", (req, res) => {
 
 
 app.get('/about', (req, res) => {
-    // cool() devuelve una cadena de texto con una cara aleatoria
-    res.send(`<html><body><h1>${cool()}</h1></body></html>`);
-});
-// -----------------------------
-
-app.listen(process.env.PORT || 3000, () => {
-    console.log('Server is running on http://localhost:3000');
+    res.sendFile(__dirname + "/static/about.html");
 });
 
-
-
-
-
-
-
-
-// IMPORTANTE: Para que tu API pueda recibir datos en el futuro (POST/PUT)
-
-
-
-
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Servidor listo en puerto ${port}`);
+});

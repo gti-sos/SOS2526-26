@@ -1,30 +1,135 @@
-let data = new Array();
+const Datastore = require('nedb');
 
-data[0] = [2022, "España", 0.911, 27, 1];
-data[1] = [2022, "Alemania", 0.95, 7, 0];
-data[2] = [2022, "Reino Unido", 0.94, 15, 2];
-data[3] = [2022, "Francia", 0.91, 28, -1];
-data[4] = [2022, "Italia", 0.906, 30, 0];
-data[5] = [2022, "Portugal", 0.874, 42, -3];
-data[6] = [2022, "Estados Unidos", 0.927, 20, 1];
-data[7] = [2022, "Japón", 0.92, 24, -2];
-data[8] = [2022, "China", 0.788, 75, -1];
-data[9] = [2021, "España", 0.904, 28, 1];
-// Calcular la media de IDH en España
-let sumaTotal = 0;
-let cont = 0;
-data.forEach(fila => {
-    if(fila[1] === "España") {
-        sumaTotal += fila[2];
-        cont++;
+// 1. Inicialización de la base de datos para Sergio
+const db = new Datastore({ filename: './data/idh.db', autoload: true });
+
+// Función auxiliar para eliminar el _id de NeDB (Requisito F06)
+function cleanResource(resource) {
+    if (Array.isArray(resource)) {
+        return resource.map(r => {
+            delete r._id;
+            return r;
+        });
+    } else if (resource) {
+        delete resource._id;
     }
-})
-
-// Al final de index-SDV.js
-function miLogicaSDV() {
-    // Aquí va el código que calcula la media de IDH, etc.
-    const resultado = "La media de IDH en España es de " + sumaTotal / cont; 
-    return resultado;
+    return resource;
 }
 
-module.exports = { miLogicaSDV };
+module.exports = function(app) {
+    const SDV_URL = "/api/v1/countries-idh-per-years";
+
+    // --- RUTA DOCUMENTACIÓN ---
+    app.get(SDV_URL + "/docs", (req, res) => {
+        res.redirect("https://documenter.getpostman.com/view/TU_URL_POSTMAN_SERGIO");
+    });
+
+    // --- 1. GET a la colección ---
+    app.get(SDV_URL, (req, res) => {
+        db.find({}, (err, docs) => {
+            res.status(200).json(cleanResource(docs));
+        });
+    });
+
+    // --- 2. GET para cargar datos iniciales ---
+    app.get(SDV_URL + "/loadInitialData", (req, res) => {
+        const initialData = [
+            {"year":2022,"country":"españa","hdi_value":0.911,"hdi_rank":27,"hdi_change":1},
+            {"year":2022,"country":"alemania","hdi_value":0.95,"hdi_rank":7,"hdi_change":0},
+            {"year":2022,"country":"reino-unido","hdi_value":0.94,"hdi_rank":15,"hdi_change":2},
+            {"year":2022,"country":"francia","hdi_value":0.91,"hdi_rank":28,"hdi_change":-1},
+            {"year":2022,"country":"italia","hdi_value":0.906,"hdi_rank":30,"hdi_change":0},
+            {"year":2022,"country":"portugal","hdi_value":0.874,"hdi_rank":42,"hdi_change":-3},
+            {"year":2022,"country":"estados-unidos","hdi_value":0.927,"hdi_rank":20,"hdi_change":1},
+            {"year":2022,"country":"japón","hdi_value":0.92,"hdi_rank":24,"hdi_change":-2},
+            {"year":2022,"country":"china","hdi_value":0.788,"hdi_rank":75,"hdi_change":-1},
+            {"year":2021,"country":"españa","hdi_value":0.904,"hdi_rank":28,"hdi_change":1}
+        ];
+
+        db.count({}, (err, count) => {
+            if (count > 0) {
+                res.status(400).send("Database already has data.");
+            } else {
+                db.insert(initialData, (err, newDocs) => {
+                    res.status(201).json(cleanResource(newDocs));
+                });
+            }
+        });
+    });
+
+    // --- 3. POST a la colección ---
+    app.post(SDV_URL, (req, res) => {
+        const newData = req.body;
+
+        // Validación 400: ¿Están todos los campos?
+        if (!newData.country || !newData.year || newData.hdi_value === undefined || 
+            newData.hdi_rank === undefined || newData.hdi_change === undefined) {
+            return res.sendStatus(400);
+        }
+
+        // Validación 409: ¿Ya existe?
+        db.find({ country: newData.country, year: Number(newData.year) }, (err, docs) => {
+            if (docs.length > 0) {
+                res.sendStatus(409);
+            } else {
+                db.insert(newData, (err, newDoc) => {
+                    res.status(201).json(cleanResource(newDoc));
+                });
+            }
+        });
+    });
+
+    // --- 4. GET a un recurso específico ---
+    app.get(SDV_URL + "/:country/:year", (req, res) => {
+        const { country, year } = req.params;
+        db.findOne({ country: country, year: Number(year) }, (err, doc) => {
+            if (doc) {
+                res.status(200).json(cleanResource(doc));
+            } else {
+                res.sendStatus(404);
+            }
+        });
+    });
+
+    // --- 5. DELETE a la colección completa ---
+    app.delete(SDV_URL, (req, res) => {
+        db.remove({}, { multi: true }, (err, numRemoved) => {
+            res.sendStatus(200);
+        });
+    });
+
+    // --- 6. DELETE a un recurso específico ---
+    app.delete(SDV_URL + "/:country/:year", (req, res) => {
+        const { country, year } = req.params;
+        db.remove({ country: country, year: Number(year) }, {}, (err, numRemoved) => {
+            if (numRemoved > 0) {
+                res.sendStatus(200);
+            } else {
+                res.sendStatus(404);
+            }
+        });
+    });
+
+    // --- 7. PUT a un recurso específico ---
+    app.put(SDV_URL + "/:country/:year", (req, res) => {
+        const { country, year } = req.params;
+        const updatedData = req.body;
+
+        // Validación 400: El ID de la URL y el cuerpo deben coincidir
+        if (country !== updatedData.country || year != updatedData.year) {
+            return res.sendStatus(400);
+        }
+
+        db.update({ country: country, year: Number(year) }, updatedData, {}, (err, numReplaced) => {
+            if (numReplaced > 0) {
+                res.sendStatus(200);
+            } else {
+                res.sendStatus(404);
+            }
+        });
+    });
+
+    // --- MÉTODOS NO PERMITIDOS ---
+    app.post(SDV_URL + "/:country/:year", (req, res) => res.sendStatus(405));
+    app.put(SDV_URL, (req, res) => res.sendStatus(405));
+};
