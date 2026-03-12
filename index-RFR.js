@@ -1,3 +1,11 @@
+const util = require('util');
+if (!util.isDate) {
+    util.isDate = (obj) => Object.prototype.toString.call(obj) === '[object Date]';
+}
+if (!util.isRegExp) {
+    util.isRegExp = (obj) => Object.prototype.toString.call(obj) === '[object RegExp]';
+}
+
 const Datastore = require('nedb');
 
 // 1. Inicialización de la base de datos para RFR
@@ -21,7 +29,7 @@ module.exports = function(app) {
 
     // --- RUTA DOCUMENTACIÓN (Requisito T5) ---
     app.get(RFR_URL + "/docs", (req, res) => {
-        res.redirect("https://documenter.getpostman.com/view/TU_URL_POSTMAN_RFR");
+        res.redirect("https://documenter.getpostman.com/view/52260149/2sBXigKYBt");
     });
 
     // --- 1. GET a la colección (Listar todos) ---
@@ -30,7 +38,6 @@ module.exports = function(app) {
             res.status(200).json(cleanResource(docs));
         });
     });
-
     // --- 2. GET para cargar datos iniciales ---
     app.get(RFR_URL + "/loadInitialData", (req, res) => {
         const initialTeams = [
@@ -81,16 +88,119 @@ module.exports = function(app) {
     });
 
     // --- 4. GET a un recurso específico (País y Año) ---
-    app.get(RFR_URL + "/:country/:year", (req, res) => {
-        const { country, year } = req.params;
-        db.findOne({ country: country, year: Number(year) }, (err, doc) => {
-            if (doc) {
-                res.status(200).json(cleanResource(doc));
+ app.get(RFR_URL + "/:country/:year", (req, res) => {
+    const { country, year } = req.params;
+    db.findOne({ country: country, year: Number(year) }, (err, doc) => {
+        if (err) return res.sendStatus(500);
+        if (doc) {
+            res.status(200).json(cleanResource(doc));
+        } else {
+            res.sendStatus(404);
+        }
+    });
+});
+
+
+// --- 4.1 GET por país ---
+// Se queda debajo de la de país/año
+app.get(RFR_URL + "/:country", (req, res) => {
+    const { country } = req.params;
+    
+    // Si por error entra un año aquí (porque no encontró la ruta de arriba)
+    // este check ayuda a filtrar
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = parseInt(req.query.offset) || 0;
+
+    db.find({ country: country }).skip(offset).limit(limit).exec((err, docs) => {
+        if (err) {
+            console.error("Error accediendo a DB:", err);
+            return res.sendStatus(500);
+        }
+        
+        if (docs && docs.length > 0) {
+            res.status(200).json(docs.map(d => cleanResource(d)));
+        } else {
+            res.sendStatus(404);
+        }
+    });
+});
+    
+    // --- 4.2 GET por año
+    app.get(RFR_URL + "/:year", (req, res) => {
+        const { year } = req.params;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = parseInt(req.query.offset) || 0;
+        db.find({ year: Number(year) }).skip(offset).limit(limit).exec((err, docs) => {
+            if (err) {
+              console.error("Error accediendo a DB:", err);
+              res.sendStatus(500);
+              return; // Detiene la ejecución para que no llegue al docs.length
+    }
+            if (docs.length > 0) {
+                res.status(200).json(docs.map(d => cleanResource(d)));
             } else {
                 res.sendStatus(404);
             }
         });
-    });
+    }); 
+
+    // --- 4.3 GET por tamaño de plantilla
+    app.get(RFR_URL + "/:squad_size", (req, res) => {
+        const { squad_size } = req.params;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = parseInt(req.query.offset) || 0;
+        db.find({ squad_size: Number(squad_size) }).skip(offset).limit(limit).exec((err, docs) => {
+            if (err) {
+                console.error("Error accediendo a DB:", err);
+                res.sendStatus(500);
+                return; // Detiene la ejecución para que no llegue al docs.length
+    }
+            if (docs.length > 0) {
+                res.status(200).json(docs.map(d => cleanResource(d)));
+            } else {
+                res.sendStatus(404);
+            }
+        });
+    }); 
+   
+    // --- 4.4 GET por valor de plantilla
+    app.get(RFR_URL + "/:total_market_value", (req, res) => {
+        const { total_market_value } = req.params;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = parseInt(req.query.offset) || 0;
+        db.find({ total_market_value: Number(total_market_value) }).skip(offset).limit(limit).exec((err, docs) => {
+            if (err) {
+               console.error("Error accediendo a DB:", err);
+               res.sendStatus(500);
+               return; // Detiene la ejecución para que no llegue al docs.length
+    }
+            if (docs.length > 0) {
+                res.status(200).json(docs.map(d => cleanResource(d)));
+            } else {
+                res.sendStatus(404);
+            }
+        });
+    }); 
+
+    // --- 4.5 GET por valor medio de plantilla
+    app.get(RFR_URL + "/:average_market_value", (req, res) => {
+        const { average_market_value } = req.params;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = parseInt(req.query.offset) || 0;
+        db.find({ average_market_value: Number(average_market_value) }).skip(offset).limit(limit).exec((err, docs) => {
+           if (err) {
+              console.error("Error accediendo a DB:", err);
+              res.sendStatus(500);
+              return; // Detiene la ejecución para que no llegue al docs.length
+    }           
+            if (docs.length > 0) {
+                res.status(200).json(docs.map(d => cleanResource(d)));
+            } else {
+                res.sendStatus(404);
+            }
+        });
+    }); 
+
 
     // --- 5. DELETE a la colección completa ---
     app.delete(RFR_URL, (req, res) => {
