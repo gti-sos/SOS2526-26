@@ -3,34 +3,18 @@ const app = express();
 
 app.use(express.json());
 app.use("/", express.static("./static"));
-const BASE_API_URL = "/api/v1";
 
+// Importar los 3 módulos
+const mgn_api = require('./index-MGN.js');
+const sdv_api = require('./index-SDV.js');
+const rfr_api = require('./index-RFR.js');
 
-app.get('/cool', (req, res) => {
-    // cool() devuelve una cadena de texto con una cara aleatoria
-    res.send(`<html><body><h1>${cool()}</h1></body></html>`);
-});
+// Inicializar los 3 módulos pasándoles 'app'
+mgn_api(app);
+sdv_api(app);
+rfr_api(app);
 
-app.get('/samples/RFR', (req, res) => {
-    const resultado = cargaCalculaMediaRFR();
-    res.send(`<h1>Media del valor de la selección inglesa en los últimos años: ${resultado}</h1>`);
-});
-
-app.get('/samples/MGN', (req, res) => { 
-    const result = average.toFixed(2);  
-    const country = targetCountry;
-    res.send(`<html><body><h2> Algoritmo de MGN: </h2><p> Target Country = ${country}</p><p> Average Score = ${result}</p></body></html>`);
-});
-
-app.get(BASE_API_URL + "/national-team-rankings-per-years", (req, res) => {
-    console.log("New GET request to /national-team-rankings-per-years");
-    res.json(dataClean); 
-});
-
-
-
-
-
+// Ruta /about (Asegúrate de tener static/about.html)
 app.get('/about', (req, res) => {
     res.sendFile(__dirname + "/static/about.html");
 });
