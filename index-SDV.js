@@ -20,8 +20,8 @@ module.exports = function(app) {
     const SDV_URL = "/api/v1/countries-idh-per-years";
 
     // --- RUTA DOCUMENTACIÓN ---
-    app.get(SDV_URL + "/docs", (req, res) => {
-        res.redirect("https://documenter.getpostman.com/view/TU_URL_POSTMAN_SERGIO");
+    app.get("/api/v1/countries-idh-per-years/docs", (req, res) => {
+    res.redirect("https://documenter.getpostman.com/view/52429610/2sBXietaKH");
     });
 
     // --- 1. GET a la colección ---
