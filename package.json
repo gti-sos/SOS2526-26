@@ -23,9 +23,13 @@
     "start": "node index.js",
     "test-sdv-local": "newman run ./tests/SDV.json -e ./tests/env-local.json",
     "test-sdv-online": "newman run ./tests/SDV.json -e ./tests/env-online.json",
+    "test-rfr-local": "newman run ./tests/RFR.json -e ./tests/env-local.json",
+    "test-rfr-online": "newman run ./tests/RFR.json -e ./tests/env-online.json",
+    "test-rfr-local-on": "start-server-and-test start http://localhost:3000 test-rfr-local",
     "test": "npm run test-sdv-local"
-},
+  },
   "devDependencies": {
-    "newman": "^6.2.2"
+    "newman": "^6.2.2",
+    "start-server-and-test": "^2.1.5"
   }
 }
