@@ -21,10 +21,10 @@ function cleanResource(resource) {
 
 // Función auxiliar para validar que el JSON tiene EXACTAMENTE la estructura esperada
 function isValidResource(body) {
-    const validKeys = ["country", "year", "rank", "score"];
+    const validKeys = ["country", "year", "rank", "score","rank_variation_from_two_thousand_eighteen"];
     const bodyKeys = Object.keys(body);
 
-    // 1. Comprobar que tiene exactamente 4 campos (ni más, ni menos)
+    // 1. Comprobar que tiene exactamente 5 campos (ni más, ni menos)
     if (bodyKeys.length !== validKeys.length) {
         return false;
     }
@@ -39,7 +39,8 @@ function isValidResource(body) {
     if (typeof body.country !== 'string' || 
         typeof body.year !== 'number' || 
         typeof body.rank !== 'number' || 
-        typeof body.score !== 'number') {
+        typeof body.score !== 'number' || 
+        typeof body.rank_variation_from_two_thousand_eighteen !== 'number') {
         return false;
     }
 
@@ -53,7 +54,7 @@ module.exports = function(app) {
 
     // --- RUTA DOCUMENTACIÓN ---
     app.get(MGN_URL + "/docs", (req, res) => {
-        res.redirect("TU_URL_DE_POSTMAN_AQUI");
+        res.redirect("https://documenter.getpostman.com/view/53034281/2sBXigMtLC");
     });
 
     // --- 1. GET a la colección (Listar todos los recursos) ---
@@ -66,6 +67,7 @@ module.exports = function(app) {
         if (req.query.year) query.year = Number(req.query.year);
         if (req.query.rank) query.rank = Number(req.query.rank);
         if (req.query.score) query.score = Number(req.query.score);
+        if (req.query.rank_variation_from_two_thousand_eighteen) query.rank_variation_from_two_thousand_eighteen = Number(req.query.rank_variation_from_two_thousand_eighteen);
 
         // 2. Variables para la paginación
         let offset = 0;
@@ -86,16 +88,16 @@ module.exports = function(app) {
     // --- 2. GET para cargar datos iniciales ---
     app.get(MGN_URL + "/loadInitialData", (req, res) => {
         const initial_rankings = [
-            { "country": "Alemania", "year": 2018, "rank": 1, "score": 1533 },
-            { "country": "Angola", "year": 2025, "rank": 87, "score": 1279.55 },
-            { "country": "Albania", "year": 2026, "rank": 63, "score": 1401.07 },
-            { "country": "Andorra", "year": 2020, "rank": 135, "score": 1082 },
-            { "country": "Afganistán", "year": 2024, "rank": 158, "score": 1017.68 },
-            { "country": "Anguila", "year": 2019, "rank": 208, "score": 864 },
-            { "country": "Antigua y Barbuda", "year": 2023, "rank": 133, "score": 1107.51 },
-            { "country": "Alemania", "year": 2026, "rank": 10, "score": 1724.15 },
-            { "country": "Albania", "year": 2018, "rank": 56, "score": 549 },
-            { "country": "Andorra", "year": 2026, "rank": 172, "score": 949.44 }
+            { "country": "Alemania", "year": 2018, "rank": 1, "score": 1533, "rank_variation_from_two_thousand_eighteen": 0 },
+            { "country": "Angola", "year": 2025, "rank": 87, "score": 1279.55, "rank_variation_from_two_thousand_eighteen": 1 },
+            { "country": "Albania", "year": 2026, "rank": 63, "score": 1401.07, "rank_variation_from_two_thousand_eighteen": 2 },
+            { "country": "Andorra", "year": 2020, "rank": 135, "score": 1082, "rank_variation_from_two_thousand_eighteen": 3 },
+            { "country": "Afganistán", "year": 2024, "rank": 158, "score": 1017.68, "rank_variation_from_two_thousand_eighteen": 4 },
+            { "country": "Anguila", "year": 2019, "rank": 208, "score": 864, "rank_variation_from_two_thousand_eighteen": 5 },
+            { "country": "Antigua y Barbuda", "year": 2023, "rank": 133, "score": 1107.51, "rank_variation_from_two_thousand_eighteen": 6 },
+            { "country": "Alemania", "year": 2026, "rank": 10, "score": 1724.15, "rank_variation_from_two_thousand_eighteen": 7 },
+            { "country": "Albania", "year": 2018, "rank": 56, "score": 549, "rank_variation_from_two_thousand_eighteen": 8 },
+            { "country": "Andorra", "year": 2026, "rank": 172, "score": 949.44, "rank_variation_from_two_thousand_eighteen": 9 }
         ];
 
         db.count({}, (err, count) => {

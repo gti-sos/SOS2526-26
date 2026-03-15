@@ -25,6 +25,8 @@
     "test-sdv-online": "newman run ./tests/SDV.json -e ./tests/env-online.json",
     "test-rfr-local": "newman run ./tests/RFR.json -e ./tests/env-local.json",
     "test-rfr-online": "newman run ./tests/RFR.json -e ./tests/env-online.json",
+    "test-mgn-local": "newman run ./tests/MGN.json -e ./tests/env-local.json",
+    "test-mgn-online": "newman run ./tests/MGN.json -e ./tests/env-online.json",
     "test-rfr-local-on": "start-server-and-test start http://localhost:3000 test-rfr-local",
     "test": "npm run test-sdv-local"
   },

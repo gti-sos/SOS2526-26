@@ -8,6 +8,13 @@
 			"type": "default",
 			"enabled": true
 		}
+		,
+		{
+			"key": "baseUrl",
+			"value": "https://sos2526-26.onrender.com",
+			"type": "default",
+			"enabled": true
+		}
 	],
 	"color": null,
 	"_postman_variable_scope": "environment",

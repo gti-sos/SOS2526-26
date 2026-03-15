@@ -8,6 +8,13 @@
 			"type": "default",
 			"enabled": true
 		}
+		,
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "default",
+			"enabled": true
+		}
 	],
 	"color": null,
 	"_postman_variable_scope": "environment",
