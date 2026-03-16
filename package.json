@@ -27,9 +27,9 @@
     "test-rfr-online": "newman run ./tests/RFR.json -e ./tests/env-online.json",
     "test-mgn-local": "newman run ./tests/MGN.json -e ./tests/env-local.json",
     "test-mgn-online": "newman run ./tests/MGN.json -e ./tests/env-online.json",
-    "test-rfr-online-on": "start-server-and-test start http://localhost:3000 test-rfr-local",
-    "test-sdv-online-on": "start-server-and-test start http://localhost:3000 test-rfr-local",
-    "test-mgn-online-on": "start-server-and-test start http://localhost:3000 test-rfr-local",
+    "test-rfr-online-on": "start-server-and-test start ./tests/env-online.json test-rfr-local",
+    "test-sdv-online-on": "start-server-and-test start ./tests/env-online.json test-sdv-local",
+    "test-mgn-online-on": "start-server-and-test start ./tests/env-online.json test-mgn-local",
     "test": "npm run test-sdv-online-on && npm run test-rfr-online-on && npm run test-mgn-online-on"
   },
   "devDependencies": {
