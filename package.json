@@ -28,7 +28,7 @@
     "test-mgn-local": "newman run ./tests/MGN.json -e ./tests/env-local.json",
     "test-mgn-online": "newman run ./tests/MGN.json -e ./tests/env-online.json",
     "test-rfr-local-on": "start-server-and-test start http://localhost:3000 test-rfr-local",
-    "test": "npm run test-sdv-local"
+    "test": "npm run test-sdv-local && npm run test-rfr-local && npm run test-mgn-local"
   },
   "devDependencies": {
     "newman": "^6.2.2",
