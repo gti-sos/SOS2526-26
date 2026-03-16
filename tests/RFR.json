@@ -29,12 +29,9 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "https://sos2526-26-nb69.onrender.com/api/v1/fifa-squad-value-per-years/loadInitialData",
-          "protocol": "https",
+          "raw": "{{url}}/api/v1/fifa-squad-value-per-years/loadInitialData",
           "host": [
-            "sos2526-26-nb69",
-            "onrender",
-            "com"
+            "{{url}}"
           ],
           "path": [
             "api",
@@ -142,12 +139,9 @@
           }
         },
         "url": {
-          "raw": "https://sos2526-26-nb69.onrender.com/api/v1/fifa-squad-value-per-years/",
-          "protocol": "https",
+          "raw": "{{url}}/api/v1/fifa-squad-value-per-years/",
           "host": [
-            "sos2526-26-nb69",
-            "onrender",
-            "com"
+            "{{url}}"
           ],
           "path": [
             "api",
