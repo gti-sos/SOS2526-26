@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {"country":"Anguila","year":2019,"rank":208,"score":864,"rank_variation_from_two_thousand_eighteen":5,"_id":"NU6RjL28X7PBsCar"}
 {"country":"Afganistán","year":2024,"rank":158,"score":1017.68,"rank_variation_from_two_thousand_eighteen":4,"_id":"SnhO4OmNj4Ddp0nn"}
 {"country":"Albania","year":2018,"rank":56,"score":549,"rank_variation_from_two_thousand_eighteen":8,"_id":"VFZwTMo3a658BPD1"}
@@ -67,3 +68,28 @@
 {"$$deleted":true,"_id":"d8VSjWAotRdC03tQ"}
 {"$$deleted":true,"_id":"paOx1sU496fLeNs1"}
 {"$$deleted":true,"_id":"zCy6UpEGqMuhF25Z"}
+=======
+{"country":"Alemania","year":2018,"rank":1,"score":1533,"rank_variation_from_two_thousand_eighteen":0,"_id":"rVnJDvNR0dCipQwm"}
+{"country":"Angola","year":2025,"rank":87,"score":1279.55,"rank_variation_from_two_thousand_eighteen":1,"_id":"Rze7XOY1wodVLw6o"}
+{"country":"Albania","year":2026,"rank":63,"score":1401.07,"rank_variation_from_two_thousand_eighteen":2,"_id":"tUiwaB855Jx3VYDf"}
+{"country":"Andorra","year":2020,"rank":135,"score":1082,"rank_variation_from_two_thousand_eighteen":3,"_id":"bGy2ZpyAwnW3B3LM"}
+{"country":"Afganistán","year":2024,"rank":158,"score":1017.68,"rank_variation_from_two_thousand_eighteen":4,"_id":"0U2oRnyNpZ5fVaiA"}
+{"country":"Anguila","year":2019,"rank":208,"score":864,"rank_variation_from_two_thousand_eighteen":5,"_id":"DYYCpDnOCzD0gDFo"}
+{"country":"Antigua y Barbuda","year":2023,"rank":133,"score":1107.51,"rank_variation_from_two_thousand_eighteen":6,"_id":"A4rLNiHX3ahjXx7P"}
+{"country":"Alemania","year":2026,"rank":10,"score":1724.15,"rank_variation_from_two_thousand_eighteen":7,"_id":"MNe7LyrFRBTgZtH1"}
+{"country":"Albania","year":2018,"rank":56,"score":549,"rank_variation_from_two_thousand_eighteen":8,"_id":"arK2jDQgZ8fT4JWH"}
+{"country":"Andorra","year":2026,"rank":172,"score":949.44,"rank_variation_from_two_thousand_eighteen":9,"_id":"FmGiYeYLC1dct8rF"}
+{"country":"TestLandia","year":200,"rank":11,"score":0,"rank_variation_from_two_thousand_eighteen":-10,"_id":"oQnooeDg8mAokZXP"}
+{"country":"TestLandia","year":200,"rank":11,"score":2000000,"rank_variation_from_two_thousand_eighteen":-10,"_id":"oQnooeDg8mAokZXP"}
+{"$$deleted":true,"_id":"oQnooeDg8mAokZXP"}
+{"$$deleted":true,"_id":"0U2oRnyNpZ5fVaiA"}
+{"$$deleted":true,"_id":"A4rLNiHX3ahjXx7P"}
+{"$$deleted":true,"_id":"DYYCpDnOCzD0gDFo"}
+{"$$deleted":true,"_id":"FmGiYeYLC1dct8rF"}
+{"$$deleted":true,"_id":"MNe7LyrFRBTgZtH1"}
+{"$$deleted":true,"_id":"Rze7XOY1wodVLw6o"}
+{"$$deleted":true,"_id":"arK2jDQgZ8fT4JWH"}
+{"$$deleted":true,"_id":"bGy2ZpyAwnW3B3LM"}
+{"$$deleted":true,"_id":"rVnJDvNR0dCipQwm"}
+{"$$deleted":true,"_id":"tUiwaB855Jx3VYDf"}
+>>>>>>> 571b1d475b02bd7449ac1e5812d719f139ec7b34
