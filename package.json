@@ -30,7 +30,7 @@
     "test-rfr-online-on": "start-server-and-test start http://localhost:3000 test-rfr-local",
     "test-sdv-online-on": "start-server-and-test start http://localhost:3000 test-rfr-local",
     "test-mgn-online-on": "start-server-and-test start http://localhost:3000 test-rfr-local",
-    "test": "npm run test-sdv-online-on && npm run test-rfr-online-on && npm run test-mgn-online-on"
+    "test": "npm run test-sdv-local && npm run test-rfr-local && npm run test-mgn-local"
   },
   "devDependencies": {
     "newman": "^6.2.2",
