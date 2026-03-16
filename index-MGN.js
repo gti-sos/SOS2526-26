@@ -19,34 +19,85 @@ function cleanResource(resource) {
     return resource;
 }
 
+// Función auxiliar para validar que el JSON tiene EXACTAMENTE la estructura esperada
+function isValidResource(body) {
+    const validKeys = ["country", "year", "rank", "score","rank_variation_from_two_thousand_eighteen"];
+    const bodyKeys = Object.keys(body);
+
+    // 1. Comprobar que tiene exactamente 5 campos (ni más, ni menos)
+    if (bodyKeys.length !== validKeys.length) {
+        return false;
+    }
+
+    // 2. Comprobar que los campos son exactamente los que pedimos
+    const hasAllKeys = validKeys.every(key => bodyKeys.includes(key));
+    if (!hasAllKeys) {
+        return false;
+    }
+
+    // 3. (Opcional pero te asegura la nota) Validar que los tipos de datos sean correctos
+    if (typeof body.country !== 'string' || 
+        typeof body.year !== 'number' || 
+        typeof body.rank !== 'number' || 
+        typeof body.score !== 'number' || 
+        typeof body.rank_variation_from_two_thousand_eighteen !== 'number') {
+        return false;
+    }
+
+    return true; // Si pasa todo lo anterior, el JSON es perfecto
+}
+
+
+
 module.exports = function(app) {
     const MGN_URL = "/api/v1/national-team-rankings-per-years";
 
     // --- RUTA DOCUMENTACIÓN ---
     app.get(MGN_URL + "/docs", (req, res) => {
-        res.redirect("TU_URL_DE_POSTMAN_AQUI");
+        res.redirect("https://documenter.getpostman.com/view/53034281/2sBXigNZXJ");
     });
 
     // --- 1. GET a la colección (Listar todos los recursos) ---
+    // --- 1. GET a la colección (Listar todos los recursos con Búsqueda y Paginación) ---
     app.get(MGN_URL, (req, res) => {
-        db.find({}, (err, docs) => {
-            res.status(200).json(cleanResource(docs));
+        // 1. Construimos el objeto de búsqueda dinámicamente
+        let query = {};
+        
+        if (req.query.country) query.country = req.query.country;
+        if (req.query.year) query.year = Number(req.query.year);
+        if (req.query.rank) query.rank = Number(req.query.rank);
+        if (req.query.score) query.score = Number(req.query.score);
+        if (req.query.rank_variation_from_two_thousand_eighteen) query.rank_variation_from_two_thousand_eighteen = Number(req.query.rank_variation_from_two_thousand_eighteen);
+
+        // 2. Variables para la paginación
+        let offset = 0;
+        let limit = 0; // 0 en NeDB significa "sin límite"
+
+        if (req.query.offset) offset = parseInt(req.query.offset);
+        if (req.query.limit) limit = parseInt(req.query.limit);
+
+        // 3. Ejecutamos la consulta con NeDB
+        db.find(query).skip(offset).limit(limit).exec((err, docs) => {
+            if (err) {
+                res.sendStatus(500);
+            } else {
+                res.status(200).json(cleanResource(docs));
+            }
         });
     });
-
     // --- 2. GET para cargar datos iniciales ---
     app.get(MGN_URL + "/loadInitialData", (req, res) => {
         const initial_rankings = [
-            { "country": "Alemania", "year": 2018, "rank": 1, "score": 1533 },
-            { "country": "Angola", "year": 2025, "rank": 87, "score": 1279.55 },
-            { "country": "Albania", "year": 2026, "rank": 63, "score": 1401.07 },
-            { "country": "Andorra", "year": 2020, "rank": 135, "score": 1082 },
-            { "country": "Afganistán", "year": 2024, "rank": 158, "score": 1017.68 },
-            { "country": "Anguila", "year": 2019, "rank": 208, "score": 864 },
-            { "country": "Antigua y Barbuda", "year": 2023, "rank": 133, "score": 1107.51 },
-            { "country": "Alemania", "year": 2026, "rank": 10, "score": 1724.15 },
-            { "country": "Albania", "year": 2018, "rank": 56, "score": 549 },
-            { "country": "Andorra", "year": 2026, "rank": 172, "score": 949.44 }
+            { "country": "Alemania", "year": 2018, "rank": 1, "score": 1533, "rank_variation_from_two_thousand_eighteen": 0 },
+            { "country": "Angola", "year": 2025, "rank": 87, "score": 1279.55, "rank_variation_from_two_thousand_eighteen": 1 },
+            { "country": "Albania", "year": 2026, "rank": 63, "score": 1401.07, "rank_variation_from_two_thousand_eighteen": 2 },
+            { "country": "Andorra", "year": 2020, "rank": 135, "score": 1082, "rank_variation_from_two_thousand_eighteen": 3 },
+            { "country": "Afganistán", "year": 2024, "rank": 158, "score": 1017.68, "rank_variation_from_two_thousand_eighteen": 4 },
+            { "country": "Anguila", "year": 2019, "rank": 208, "score": 864, "rank_variation_from_two_thousand_eighteen": 5 },
+            { "country": "Antigua y Barbuda", "year": 2023, "rank": 133, "score": 1107.51, "rank_variation_from_two_thousand_eighteen": 6 },
+            { "country": "Alemania", "year": 2026, "rank": 10, "score": 1724.15, "rank_variation_from_two_thousand_eighteen": 7 },
+            { "country": "Albania", "year": 2018, "rank": 56, "score": 549, "rank_variation_from_two_thousand_eighteen": 8 },
+            { "country": "Andorra", "year": 2026, "rank": 172, "score": 949.44, "rank_variation_from_two_thousand_eighteen": 9 }
         ];
 
         db.count({}, (err, count) => {
@@ -59,17 +110,16 @@ module.exports = function(app) {
             }
         });
     });
-
-    // --- 3. POST a la colección (Crear recurso) ---
+// --- 3. POST a la colección (Crear recurso) ---
     app.post(MGN_URL, (req, res) => {
         const newData = req.body;
 
-        // Validación: ¿Tiene todos los campos? (400)
-        if (!newData.country || !newData.year || newData.rank === undefined || newData.score === undefined) {
+        // 1. Validación estricta de estructura (400)
+        if (!isValidResource(newData)) {
             return res.sendStatus(400);
         }
 
-        // Validación: ¿Ya existe? (409)
+        // 2. Validación: ¿Ya existe? (409)
         db.find({ country: newData.country, year: Number(newData.year) }, (err, docs) => {
             if (docs.length > 0) {
                 res.sendStatus(409);
@@ -80,7 +130,6 @@ module.exports = function(app) {
             }
         });
     });
-
     // --- 4. GET a un recurso específico (Identificador compuesto: país/año) ---
     app.get(MGN_URL + "/:country/:year", (req, res) => {
         const { country, year } = req.params;
@@ -111,17 +160,22 @@ module.exports = function(app) {
             }
         });
     });
-
-    // --- 7. PUT a un recurso específico (Actualizar) ---
+// --- 7. PUT a un recurso específico (Actualizar) ---
     app.put(MGN_URL + "/:country/:year", (req, res) => {
         const { country, year } = req.params;
         const updatedData = req.body;
 
-        // El ID de la URL debe coincidir con el del cuerpo (400)
-        if (country !== updatedData.country || year != updatedData.year) {
+        // 1. Validación estricta de estructura (400)
+        if (!isValidResource(updatedData)) {
             return res.sendStatus(400);
         }
 
+        // 2. El ID de la URL debe coincidir con el del cuerpo (400)
+        if (country !== updatedData.country || Number(year) !== updatedData.year) {
+            return res.sendStatus(400);
+        }
+
+        // 3. Actualizamos
         db.update({ country: country, year: Number(year) }, updatedData, {}, (err, numReplaced) => {
             if (numReplaced > 0) {
                 res.sendStatus(200);

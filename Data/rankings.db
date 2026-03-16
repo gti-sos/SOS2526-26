@@ -1,10 +1,16 @@
-{"country":"Angola","year":2025,"rank":87,"score":1279.55,"_id":"1EnpeiHdNXMVXIdt"}
-{"country":"Alemania","year":2026,"rank":10,"score":1724.15,"_id":"356vA3ULgfkdK4VN"}
-{"country":"Albania","year":2026,"rank":63,"score":1401.07,"_id":"EtjAW4sNFqtJL3K0"}
-{"country":"Afganistán","year":2024,"rank":158,"score":1017.68,"_id":"KApXeHCKg7c3jtek"}
-{"country":"Andorra","year":2020,"rank":135,"score":1082,"_id":"RubIt8PLJ9djQtJq"}
-{"country":"Albania","year":2018,"rank":56,"score":549,"_id":"Xtif49BwFuhJv2zZ"}
-{"country":"Anguila","year":2019,"rank":208,"score":864,"_id":"gc6QKpLaGVSVrCMS"}
-{"country":"Andorra","year":2026,"rank":172,"score":949.44,"_id":"lxd8vOqMnFORfd2V"}
-{"country":"Antigua y Barbuda","year":2023,"rank":133,"score":1107.51,"_id":"t81IYz9y4hSRHgFF"}
-{"country":"Alemania","year":2018,"rank":1,"score":1533,"_id":"y4v3Bht3BqOZoHpJ"}
+{"country":"Anguila","year":2019,"rank":208,"score":864,"rank_variation_from_two_thousand_eighteen":5,"_id":"NU6RjL28X7PBsCar"}
+{"country":"Afganistán","year":2024,"rank":158,"score":1017.68,"rank_variation_from_two_thousand_eighteen":4,"_id":"SnhO4OmNj4Ddp0nn"}
+{"country":"Albania","year":2018,"rank":56,"score":549,"rank_variation_from_two_thousand_eighteen":8,"_id":"VFZwTMo3a658BPD1"}
+{"country":"Alemania","year":2018,"rank":1,"score":1533,"rank_variation_from_two_thousand_eighteen":0,"_id":"brJU1Z1bmw9ypIuj"}
+{"country":"Andorra","year":2026,"rank":172,"score":949.44,"rank_variation_from_two_thousand_eighteen":9,"_id":"cSO5qHZYOIKT851C"}
+{"country":"Antigua y Barbuda","year":2023,"rank":133,"score":1107.51,"rank_variation_from_two_thousand_eighteen":6,"_id":"eKVjHmBcW3iOzQXI"}
+{"country":"Alemania","year":2026,"rank":10,"score":1724.15,"rank_variation_from_two_thousand_eighteen":7,"_id":"eZLrtIbj36lxUk4a"}
+{"country":"Andorra","year":2020,"rank":135,"score":1082,"rank_variation_from_two_thousand_eighteen":3,"_id":"gVH3p3KrYT5WJDE1"}
+{"country":"Angola","year":2025,"rank":87,"score":1279.55,"rank_variation_from_two_thousand_eighteen":1,"_id":"lrNgfANsIr4gGBKN"}
+{"country":"Albania","year":2026,"rank":63,"score":1401.07,"rank_variation_from_two_thousand_eighteen":2,"_id":"zY4kIMqAVUH1kmVn"}
+{"country":"TestLandia","year":200,"rank":11,"score":0,"rank_variation_from_two_thousand_eighteen":-10,"_id":"KRXw88G6ns3lxp3m"}
+{"country":"TestLandia","year":200,"rank":11,"score":2000000,"rank_variation_from_two_thousand_eighteen":-10,"_id":"KRXw88G6ns3lxp3m"}
+{"$$deleted":true,"_id":"KRXw88G6ns3lxp3m"}
+{"country":"TestLandia","year":200,"rank":11,"score":0,"rank_variation_from_two_thousand_eighteen":-10,"_id":"jhGOM9ppb4vgDEbR"}
+{"country":"TestLandia","year":200,"rank":11,"score":2000000,"rank_variation_from_two_thousand_eighteen":-10,"_id":"jhGOM9ppb4vgDEbR"}
+{"$$deleted":true,"_id":"jhGOM9ppb4vgDEbR"}
