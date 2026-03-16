@@ -26,7 +26,8 @@
     "test-rfr-local": "newman run ./tests/RFR.json -e ./tests/env-local.json",
     "test-rfr-online": "newman run ./tests/RFR.json -e ./tests/env-online.json",
     "test-rfr-local-on": "start-server-and-test start http://localhost:3000 test-rfr-local",
-    "test": "npm run test-sdv-local"
+    "test": "npm run test-sdv-local",
+    "npm test": "npm run test-rfr-online test-sdv-online"
   },
   "devDependencies": {
     "newman": "^6.2.2",
