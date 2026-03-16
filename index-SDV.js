@@ -59,6 +59,8 @@ module.exports = function(app) {
         });
     });
 
+    // borrar
+
     // --- 2. GET para cargar datos iniciales ---
     app.get(SDV_URL + "/loadInitialData", (req, res) => {
         const initialData = [
