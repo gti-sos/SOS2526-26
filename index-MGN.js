@@ -54,7 +54,7 @@ module.exports = function(app) {
 
     // --- RUTA DOCUMENTACIÓN ---
     app.get(MGN_URL + "/docs", (req, res) => {
-        res.redirect("https://documenter.getpostman.com/view/53034281/2sBXigMtLC");
+        res.redirect("https://documenter.getpostman.com/view/53034281/2sBXigNZXJ");
     });
 
     // --- 1. GET a la colección (Listar todos los recursos) ---
