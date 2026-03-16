@@ -9,14 +9,58 @@
   },
   "item": [
     {
+      "name": "Delete All",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\r",
+              "    pm.response.to.have.status(201);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"year\": 2023, \"country\": \"England\", \"squad_size\": 25, \"total_market_value\": 1300, \"average_market_value\": 56.9 }"
+        },
+        "url": {
+          "raw": "{{url}}/api/v1/fifa-squad-value-per-years/",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "fifa-squad-value-per-years",
+            ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "LoadInitialData",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 201\", function () {",
+              "pm.test(\"status code is 201\",function(){",
               "    pm.response.to.have.status(201);",
+              "});",
+              "pm.test(\"Comprobación: Devuelve un ARRAY con los datos iniciales\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.be.an(\"array\");",
+              "    pm.expect(jsonData).to.have.lengthOf(11);",
               "});"
             ],
             "type": "text/javascript",
@@ -46,22 +90,39 @@
     },
     {
       "name": "Get Data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status code is 200\",function(){\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "pm.test(\"Comprobación: Devuelve un objeto\", function () {\r",
+              "    var jsonData = pm.response.json();\r",
+              "    pm.expect(jsonData).to.be.an(\"object\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "https://sos2526-26-nb69.onrender.com/api/v1/fifa-squad-value-per-years/England",
-          "protocol": "https",
+          "raw": "{{url}}/api/v1/fifa-squad-value-per-years/England/2026",
           "host": [
-            "sos2526-26-nb69",
-            "onrender",
-            "com"
+            "{{url}}"
           ],
           "path": [
             "api",
             "v1",
             "fifa-squad-value-per-years",
-            "England"
+            "England",
+            "2026"
           ]
         }
       },
@@ -69,6 +130,25 @@
     },
     {
       "name": "Get Data (multiple)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status code is 200\",function(){\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "pm.test(\"Comprobación: Devuelve un ARRAY\", function () {\r",
+              "    var jsonData = pm.response.json();\r",
+              "    pm.expect(jsonData).to.be.an(\"array\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [],
@@ -89,6 +169,21 @@
     },
     {
       "name": "Get Data (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status code is 404\",function(){\r",
+              "    pm.response.to.have.status(404);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [],
@@ -116,7 +211,7 @@
           "script": {
             "exec": [
               "pm.test(\"Successful POST request\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+              "    pm.response.to.have.status(201);",
               "});",
               ""
             ],
@@ -156,6 +251,21 @@
     },
     {
       "name": "Post Data (400 Body incorrecto)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status code is 400\",function(){\r",
+              "    pm.response.to.have.status(400);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [],
@@ -185,6 +295,22 @@
     },
     {
       "name": "Post Data (409)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status code is 409\",function(){\r",
+              "    pm.response.to.have.status(409);\r",
+              "});\r",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [],
@@ -214,6 +340,21 @@
     },
     {
       "name": "Post Data (405)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status code is 405\",function(){\r",
+              "    pm.response.to.have.status(405);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [],
@@ -244,6 +385,21 @@
     },
     {
       "name": "Put Data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status code is 200\",function(){\r",
+              "    pm.response.to.have.status(200);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "PUT",
         "header": [],
@@ -274,6 +430,21 @@
     },
     {
       "name": "Put Data (400 conflicto URL/Body)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status code is 400\",function(){\r",
+              "    pm.response.to.have.status(400);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "PUT",
         "header": [],
@@ -304,6 +475,21 @@
     },
     {
       "name": "Put Data (405)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status code is 405\",function(){\r",
+              "    pm.response.to.have.status(405);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "PUT",
         "header": [],
@@ -333,6 +519,22 @@
     },
     {
       "name": "Delete Data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"status code is 200\",function(){\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "DELETE",
         "header": [],
@@ -347,30 +549,6 @@
             "fifa-squad-value-per-years",
             "France",
             "2026"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Delete All",
-      "request": {
-        "method": "DELETE",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{ \"year\": 2023, \"country\": \"England\", \"squad_size\": 25, \"total_market_value\": 1300, \"average_market_value\": 56.9 }"
-        },
-        "url": {
-          "raw": "{{url}}/api/v1/fifa-squad-value-per-years/",
-          "host": [
-            "{{url}}"
-          ],
-          "path": [
-            "api",
-            "v1",
-            "fifa-squad-value-per-years",
-            ""
           ]
         }
       },
@@ -409,6 +587,11 @@
     {
       "key": "render",
       "value": ""
+    },
+    {
+      "key": "url",
+      "value": "",
+      "type": "default"
     }
   ]
 }

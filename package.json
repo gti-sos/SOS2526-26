@@ -23,14 +23,14 @@
     "start": "node index.js",
     "test-sdv-local": "newman run ./tests/SDV.json -e ./tests/env-local.json",
     "test-sdv-online": "newman run ./tests/SDV.json -e ./tests/env-online.json",
-    "test-rfr-local": "newman run ./tests/RFR.json -e ./tests/env-local.json",
-    "test-rfr-online": "newman run ./tests/RFR.json -e ./tests/env-online.json",
+    "test-fifa-squad-value-per-years-local": "newman run ./tests/RFR.json -e ./tests/env-local.json",
+    "test-fifa-squad-value-per-years-online": "newman run ./tests/RFR.json -e ./tests/env-online.json",
     "test-mgn-local": "newman run ./tests/MGN.json -e ./tests/env-local.json",
     "test-mgn-online": "newman run ./tests/MGN.json -e ./tests/env-online.json",
-    "test-rfr-online-on": "start-server-and-test start ./tests/env-online.json test-rfr-local",
+    "test-fifa-squad-value-per-years-online-on": "start-server-and-test start ./tests/env-online.json test-fifa-squad-value-per-years-local",
     "test-sdv-online-on": "start-server-and-test start ./tests/env-online.json test-sdv-local",
     "test-mgn-online-on": "start-server-and-test start ./tests/env-online.json test-mgn-local",
-    "test": "npm run test-sdv-online-on && npm run test-rfr-online-on && npm run test-mgn-online-on"
+    "test": "npm run test-sdv-online-on && npm run test-fifa-squad-value-per-years-online-on && npm run test-mgn-online-on"
   },
   "devDependencies": {
     "newman": "^6.2.2",
