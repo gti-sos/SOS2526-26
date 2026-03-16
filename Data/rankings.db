@@ -11,3 +11,6 @@
 {"country":"TestLandia","year":200,"rank":11,"score":0,"rank_variation_from_two_thousand_eighteen":-10,"_id":"KRXw88G6ns3lxp3m"}
 {"country":"TestLandia","year":200,"rank":11,"score":2000000,"rank_variation_from_two_thousand_eighteen":-10,"_id":"KRXw88G6ns3lxp3m"}
 {"$$deleted":true,"_id":"KRXw88G6ns3lxp3m"}
+{"country":"TestLandia","year":200,"rank":11,"score":0,"rank_variation_from_two_thousand_eighteen":-10,"_id":"jhGOM9ppb4vgDEbR"}
+{"country":"TestLandia","year":200,"rank":11,"score":2000000,"rank_variation_from_two_thousand_eighteen":-10,"_id":"jhGOM9ppb4vgDEbR"}
+{"$$deleted":true,"_id":"jhGOM9ppb4vgDEbR"}
