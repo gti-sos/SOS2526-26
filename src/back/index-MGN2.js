@@ -270,7 +270,7 @@ export default function (app) {
     });
 
     // --- 7. PUT a un recurso específico ---
-    app.put(MGN_URL + "/:country/:year", verifyToken, (req, res) => {
+    app.put(MGN_URL + "/:country/:year",  (req, res) => { // verifyToken,
         const { country, year } = req.params;
         const updatedData = req.body;
 
