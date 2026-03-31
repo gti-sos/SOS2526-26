@@ -1,0 +1,26 @@
+node_modules/
+# Carpeta de compilación del frontend (SvelteKit/Adapter-Node)
+src/front/build/
+
+# Dependencias específicas del frontend
+src/front/node_modules/
+
+# Archivos temporales de SvelteKit
+src/front/.svelte-kit/
+
+# Base de datos NeDB
+*.db
+data/*.db
+
+# Variables de entorno
+.env
+.env.*
+*.env
+!.env.example
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

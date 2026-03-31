@@ -1,0 +1,49 @@
+{
+  "name": "sos2526-26",
+  "version": "1.0.0",
+  "description": "Paquete del grupo de proyecto SOS 26",
+  "homepage": "https://github.com/gti-sos/SOS2526-26#readme",
+  "bugs": {
+    "url": "https://github.com/gti-sos/SOS2526-26/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gti-sos/SOS2526-26.git"
+  },
+  "dependencies": {
+    "cool-ascii-faces": "^1.3.4",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^4.18.2",
+    "express-oauth2-jwt-bearer": "^1.6.0",
+    "express-session": "^1.19.0",
+    "google-auth-library": "^10.6.2",
+    "jsonwebtoken": "^9.0.3",
+    "nedb": "^1.8.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0"
+  },
+  "license": "ISC",
+  "author": "Ricardo",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node --env-file=.env index.js",
+    "dev": "node --env-file=.env --watch index.js",
+    "build": "cd src/front && npm install && npm run build",
+    "test-sdv-local": "newman run ./tests/SDV2.json -e ./tests/env-local.json",
+    "test-sdv-online-on": "start-server-and-test start http://localhost:3000 test-sdv-local",
+    "test-fifa-squad-value-per-years-local": "newman run ./tests/RFR2.json -e ./tests/env-local.json",
+    "test-fifa-squad-value-per-years-online-on": "start-server-and-test start http://localhost:3000 test-fifa-squad-value-per-years-local",
+    "test-mgn-local": "newman run ./tests/MGN.json -e ./tests/env-local.json",
+    "test-mgn-online-on": "start-server-and-test start http://localhost:3000 test-mgn-local",
+    "test": "npm run build && npm run test-sdv-online-on && npm run test-fifa-squad-value-per-years-online-on && npm run test-mgn-online-on"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@sveltejs/adapter-node": "^5.5.4",
+    "@types/node": "^25.5.0",
+    "newman": "^6.2.2",
+    "start-server-and-test": "^2.1.5"
+  }
+}

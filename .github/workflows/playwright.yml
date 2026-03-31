@@ -1,0 +1,60 @@
+name: Playwright Tests
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build 
+
+    # --- AQUÍ EMPIEZA LA MAGIA PARA LA VELOCIDAD ---
+    - name: Get Playwright version
+      id: playwright-version
+      run: echo "version=$(npx playwright --version)" >> $GITHUB_OUTPUT
+
+    - name: Cache Playwright Browsers
+      id: playwright-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+        restore-keys: |
+          ${{ runner.os }}-playwright-
+
+    - name: Install Playwright Browsers
+      # Solo descarga si NO están en la caché
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      # OPTIMIZACIÓN: Solo instala Chromium si es el que más usas
+      run: npx playwright install --with-deps chromium
+
+    - name: Install OS Dependencies
+      # Si hubo caché de navegadores, aún necesitamos las librerías del sistema (rápido)
+      if: steps.playwright-cache.outputs.cache-hit == 'true'
+      run: npx playwright install-deps chromium
+    # -----------------------------------------------
+
+    - name: Run Playwright tests
+      run: npx playwright test
+
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
