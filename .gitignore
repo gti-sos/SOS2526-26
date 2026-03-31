@@ -24,3 +24,8 @@ data/*.db
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+#Firebase 
+*/firebase-key.json
+..\src\back-firebase\firebase-key.json
+src/back-firebase/firebase-key.json
