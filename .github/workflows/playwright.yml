@@ -25,8 +25,9 @@ jobs:
       env:
           PUBLIC_AUTH0_DOMAIN: ${{ secrets.PUBLIC_AUTH0_DOMAIN }}
           PUBLIC_AUTH0_CLIENT_ID: ${{ secrets.PUBLIC_AUTH0_CLIENT_ID }}
-          PUBLIC_AUTH0_DOMAIN: ${{ secrets.PUBLIC_AUTH0_DOMAIN }}
-          PUBLIC_AUTH0_CLIENT_ID: ${{ secrets.PUBLIC_AUTH0_CLIENT_ID }}
+          JWT_SECRET_MGN: ${{ secrets.JWT_SECRET_MGN }}
+          GOOGLE_CLIENT_SECRET_MGN: ${{ secrets.GOOGLE_CLIENT_SECRET_MGN }}
+          CLIENT_ID_MGN: ${{ secrets.CLIENT_ID_MGN }}
       run: npm run build 
 
     # --- AQUÍ EMPIEZA LA MAGIA PARA LA VELOCIDAD ---
