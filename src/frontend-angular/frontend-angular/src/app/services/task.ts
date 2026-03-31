@@ -25,4 +25,12 @@ export class TaskService {
     this.tasks = this.tasks.filter(t => t.id !== id);
     return this.tasks;
   }
+
+  toggleCompleted(id: number) {
+    const task = this.tasks.find(t => t.id === id);
+    if (task) {
+      task.completed = !task.completed; // Si era true pasa a false, y al revés
+    }
+    return this.tasks;
+  }
 }

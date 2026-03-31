@@ -9,9 +9,12 @@
 
   <ul>
     <li *ngFor="let task of tasks">
+      <input type="checkbox" [checked]="task.completed" (change)="toggleTask(task.id)">
+      
       <span [class.completed]="task.completed">
         {{ task.title }}
       </span>
+      
       <button (click)="deleteTask(task.id)">Eliminar</button>
     </li>
   </ul>
