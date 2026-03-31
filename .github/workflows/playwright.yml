@@ -28,7 +28,7 @@ jobs:
           JWT_SECRET_MGN: ${{ secrets.JWT_SECRET_MGN }}
           GOOGLE_CLIENT_SECRET_MGN: ${{ secrets.GOOGLE_CLIENT_SECRET_MGN }}
           CLIENT_ID_MGN: ${{ secrets.CLIENT_ID_MGN }}
-      run: npm run build 
+      run: touch .env && npm run build
 
     # --- AQUÍ EMPIEZA LA MAGIA PARA LA VELOCIDAD ---
     - name: Get Playwright version
