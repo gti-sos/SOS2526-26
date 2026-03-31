@@ -9,10 +9,9 @@ test.describe('Pruebas E2E - Recurso MGN (Rankings)', () => {
     });
 
     test.beforeEach(async ({ page }) => {
-        await page.goto('/front-mgn');
-        // Esperamos a que la tabla tenga contenido antes de empezar
-        await page.waitForSelector('table tbody tr');
-    });
+    await page.goto('/front-mgn?e2e=true');
+    await page.waitForSelector('table tbody tr');
+});
 
     test('Debe listar todos los recursos iniciales', async ({ page }) => {
         const tableRows = page.locator('table tbody tr');

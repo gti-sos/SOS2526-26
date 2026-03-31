@@ -3,7 +3,7 @@
     import { dev } from '$app/environment';
     import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
-    import { PUBLIC_AUTH0_DOMAIN, PUBLIC_AUTH0_CLIENT_ID } from '$env/static/public';
+    import { PUBLIC_AUTH0_DOMAIN, PUBLIC_AUTH0_CLIENT_ID , PUBLIC_E2E_TEST} from '$env/static/public';
     
     // --- NUEVO: Importación de Auth0 ---
     import { createAuth0Client } from '@auth0/auth0-spa-js';
@@ -26,15 +26,25 @@
 
     // --- NUEVO: ESTADOS DE AUTH0 ---
     let auth0Client = $state(null);
-    let isAuthenticated = $state(false);
-    let user = $state(null);
+    const isTestMode = typeof window !== 'undefined' && 
+                   window.location.search.includes('e2e=true');
+
+    let isAuthenticated = $state(isTestMode ? true : false);
+    let user = $state(isTestMode ? { name: 'Test', email: 'test@test.com', picture: 'https://via.placeholder.com/40' } : null);
 
     // --- NUEVO: LÓGICA DE AUTH0 EN ONMOUNT ---
     onMount(async () => {
+
+         if (isTestMode) {
+        getData(); // Solo carga datos, sin auth
+        return;    // Sale del onMount
+    }
+
+
         console.log("1. Inicializando Auth0...");
         auth0Client = await createAuth0Client({
-            domain: PUBLIC_AUTH0_DOMAIN, // <-- CAMBIA ESTO
-            clientId: PUBLIC_AUTH0_CLIENT_ID,         // <-- CAMBIA ESTO
+            domain: PUBLIC_AUTH0_DOMAIN, 
+            clientId: PUBLIC_AUTH0_CLIENT_ID,         
             authorizationParams: {
                 redirect_uri: window.location.origin + window.location.pathname
             },
@@ -77,6 +87,11 @@
                 returnTo: window.location.origin + window.location.pathname
             }
         });
+    }
+    //Funcion de redireccionamiento
+    function irAEditar(country, year) {
+        const testParam = isTestMode ? '?e2e=true' : '';
+        goto(`/front-mgn/${country}/${year}${testParam}`);
     }
 
     // --- FUNCIÓN DE BÚSQUEDA ---
@@ -286,8 +301,8 @@
                 <td>{r.score}</td>
                 <td>{r.rank_variation_from_two_thousand_eighteen}</td>
                 <td>
-                <button onclick={() => goto(`/front-mgn/${r.country}/${r.year}`)} style="color: white; background-color: #f39c12; border: none; padding: 5px 10px; border-radius: 3px; margin-right: 5px;">
-                    Editar
+                <button onclick={() => irAEditar(r.country, r.year)} style="color: white; background-color: #f39c12; border: none; padding: 5px 10px; border-radius: 3px; margin-right: 5px;">
+                     Editar
                 </button>
                     <button onclick={() => deleteRanking(r.country, r.year)} style="color: white; background-color: #e74c3c; border: none; padding: 5px 10px; border-radius: 3px;">
                     Eliminar

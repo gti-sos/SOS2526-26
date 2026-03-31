@@ -2,47 +2,66 @@
     import { page } from '$app/stores';
     import { onMount } from 'svelte';
     import { dev } from '$app/environment';
+    import { goto } from '$app/navigation';
 
-    // Saca 'Narnia' y '2050' directamente de la URL
     let country = $page.params.country;
     let year = $page.params.year;
-    
-    let API = '/api/v1/national-team-rankings-per-years';
+
+    let API = '/api/v2/national-team-rankings-per-years';
     if(dev) {
         API = "http://localhost:3000" + API;
     }
 
-    let mensaje = $state("Buscando información...");
+    let ranking = $state({ rank: "", score: "", rank_variation_from_two_thousand_eighteen: "" });
+    let mensaje = $state("");
     let esError = $state(false);
 
+    const isTestMode = typeof window !== 'undefined' && 
+                       window.location.search.includes('e2e=true');
+
     onMount(async () => {
-        // Hacemos la petición a la API con los datos de la URL
         const res = await fetch(`${API}/${country}/${year}`);
-        
-        if (res.status === 404) {
-            esError = true;
-            // AQUÍ ESTÁ EL REQUISITO EXACTO DEL BACKLOG
-            mensaje = `No existe ningún registro del país '${country}' para el año '${year}'.`;
-        } else if (res.status === 200) {
-            esError = false;
-            mensaje = `✅ El registro de ${country} para el año ${year} existe correctamente.`;
+        if (res.ok) {
+            ranking = await res.json();
         } else {
             esError = true;
-            mensaje = "Error de conexión con el servidor.";
+            mensaje = `No existe ningún registro de '${country}' para ${year}.`;
         }
     });
+
+    async function guardar() {
+        const res = await fetch(`${API}/${country}/${year}`, {
+            method: "PUT",
+            body: JSON.stringify(ranking),
+            headers: { "Content-Type": "application/json" }
+        });
+
+        if (res.ok) {
+            const testParam = isTestMode ? '?e2e=true' : '';
+            goto(`/front-mgn${testParam}`);
+        } else {
+            esError = true;
+            mensaje = "Error al guardar los cambios.";
+        }
+    }
 </script>
 
-<div style="display: flex; justify-content: center; align-items: center; height: 60vh; font-family: sans-serif;">
-    <div style="text-align: center; padding: 40px; border: 2px solid {esError ? '#e74c3c' : '#27ae60'}; border-radius: 10px; background-color: {esError ? '#fdf2f1' : '#eafaf1'};">
-        
-        <h2 style="color: {esError ? '#c0392b' : '#2ecc71'};">
-            {mensaje}
-        </h2>
+<div style="max-width: 500px; margin: 40px auto; font-family: sans-serif;">
+    <h2>Editar: {country} ({year})</h2>
 
-        <br>
-        <a href="/front-mgn" style="display: inline-block; padding: 10px 20px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px;">
-            Volver a la tabla
-        </a>
-    </div>
+    {#if mensaje}
+        <p style="color: {esError ? 'red' : 'green'}">{mensaje}</p>
+    {/if}
+
+    <label>Posición:</label>
+    <input type="number" bind:value={ranking.rank} /><br><br>
+
+    <label>Puntos:</label>
+    <input type="number" bind:value={ranking.score} /><br><br>
+
+    <label>Variación desde 2018:</label>
+    <input type="number" bind:value={ranking.rank_variation_from_two_thousand_eighteen} /><br><br>
+
+    <button onclick={guardar}>Guardar cambios</button>
+    <a href="/front-mgn">Volver</a>
 </div>
