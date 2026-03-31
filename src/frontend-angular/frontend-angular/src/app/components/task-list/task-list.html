@@ -1,0 +1,18 @@
+<div class="crud-container">
+  <h2>Mi Lista de Tareas (Angular)</h2>
+
+  <input 
+    [(ngModel)]="newTaskTitle" 
+    placeholder="Nueva tarea..." 
+    (keyup.enter)="addTask()">
+  <button (click)="addTask()">Añadir</button>
+
+  <ul>
+    <li *ngFor="let task of tasks">
+      <span [class.completed]="task.completed">
+        {{ task.title }}
+      </span>
+      <button (click)="deleteTask(task.id)">Eliminar</button>
+    </li>
+  </ul>
+</div>
