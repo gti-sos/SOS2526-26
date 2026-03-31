@@ -1,4 +1,5 @@
 name: Playwright Tests
+
 on:
   push:
     branches: [ main, master ]
@@ -21,6 +22,9 @@ jobs:
       run: npm ci
 
     - name: Build application
+      env:
+          PUBLIC_AUTH0_DOMAIN: ${{ vars.PUBLIC_AUTH0_DOMAIN }}
+          PUBLIC_AUTH0_CLIENT_ID: ${{ vars.PUBLIC_AUTH0_CLIENT_ID }}
       run: npm run build 
 
     # --- AQUÍ EMPIEZA LA MAGIA PARA LA VELOCIDAD ---
