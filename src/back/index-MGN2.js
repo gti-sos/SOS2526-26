@@ -10,13 +10,12 @@ import session from 'express-session';
 import dotenv from 'dotenv';
 dotenv.config();
 /////////////////////////////////////////////////////////////////
-const CLIENT_ID = process.env.CLIENT_ID_MGN;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET_MGN;
-const JWT_SECRET = process.env.JWT_SECRET_MGN;
-console.log("CLIENT_ID:", CLIENT_ID);
+const CLIENT_ID = process.env.CLIENT_ID_MGN || "generico_client_id";
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET_MGN || "secreto_por_defecto";
+const JWT_SECRET = process.env.JWT_SECRET_MGN || "super_secret_fallback";
+//console.log("CLIENT_ID:", CLIENT_ID);
 ;
-const SECRET_KEY = JWT_SECRET || "clave_secreta_para_jwt"; // En producción, esta clave debe ser segura y no compartida públicamente.
-
+const SECRET_KEY = JWT_SECRET 
 // 1. Inicialización de la base de datos
 const db = new Datastore({ filename: './data/rankings.db', autoload: true });
 
