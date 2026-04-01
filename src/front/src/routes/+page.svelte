@@ -26,7 +26,7 @@
             frontend: "/front-sdv",
             apis: [{url: "/api/v2/countries-idh-per-years", label: "v2"}],
             postman: [{label: "Doc v2", url: "https://documenter.getpostman.com/view/52429610/2sBXinGqPs"}]
-        }
+        } 
     ];
 </script>
 
