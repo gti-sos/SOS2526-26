@@ -33,6 +33,5 @@
 	},
 	"dependencies": {
 		"@auth0/auth0-spa-js": "^2.18.3"
-		
 	}
 }
