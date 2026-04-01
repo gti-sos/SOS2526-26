@@ -56,9 +56,17 @@ jobs:
       run: npx playwright install-deps chromium
     # -----------------------------------------------
 
-    - name: Run Playwright tests
-      run: npx playwright test
+    # 1. Ejecutamos todos los tests usando c8 para generar la cobertura
+    - name: Run all tests with coverage
+      env:
+          PUBLIC_AUTH0_DOMAIN: ${{ secrets.PUBLIC_AUTH0_DOMAIN }}
+          PUBLIC_AUTH0_CLIENT_ID: ${{ secrets.PUBLIC_AUTH0_CLIENT_ID }}
+          JWT_SECRET_MGN: ${{ secrets.JWT_SECRET_MGN }}
+          GOOGLE_CLIENT_SECRET_MGN: ${{ secrets.GOOGLE_CLIENT_SECRET_MGN }}
+          CLIENT_ID_MGN: ${{ secrets.CLIENT_ID_MGN }}
+      run: npm test
 
+    # 2. Subimos el reporte de Playwright (el que ya tenías)
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
@@ -66,7 +74,11 @@ jobs:
         path: playwright-report/
         retention-days: 30
     
+    # 3. SUBIDA A CODECOV (Aquí está la clave)
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage/lcov.info
+        fail_ci_if_error: true
+        verbose: true
