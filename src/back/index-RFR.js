@@ -10,7 +10,7 @@ if (!util.isRegExp) {
 }
 
 // 1. Inicialización de la base de datos para RFR
-const db = new Datastore({ filename: './data/squads.db', autoload: true });
+const db = new Datastore({ filename: './Data/squads.db', autoload: true });
 
 // Función auxiliar para eliminar el _id de NeDB
 function cleanResource(resource) {
