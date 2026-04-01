@@ -38,12 +38,13 @@
     "test-fifa-squad-value-per-years-online-on": "start-server-and-test start http://localhost:3000 test-fifa-squad-value-per-years-local",
     "test-mgn-local": "newman run ./tests/MGN.json -e ./tests/env-local.json",
     "test-mgn-online-on": "start-server-and-test start http://localhost:3000 test-mgn-local",
-    "test": "npm run build && npm run test-sdv-online-on && npm run test-fifa-squad-value-per-years-online-on && npm run test-mgn-online-on"
+    "test": "c8 --reporter=lcov --reporter=text npm run build && npm run test-sdv-online-on && npm run test-fifa-squad-value-per-years-online-on && npm run test-mgn-online-on"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@sveltejs/adapter-node": "^5.5.4",
     "@types/node": "^25.5.0",
+    "c8": "^11.0.0",
     "newman": "^6.2.2",
     "start-server-and-test": "^2.1.5"
   }
