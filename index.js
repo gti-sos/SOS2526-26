@@ -22,7 +22,7 @@ app.use("/", express.static("./static"));
 app.use(cors());
 
 // Inicializar los 4 módulos pasándoles 'app'
-mgn_api2(app);
+//mgn_api2(app);
 sdv_api2(app);
 //rfr_api1(app);
 rfr_api2(app);
