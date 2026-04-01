@@ -23,8 +23,8 @@ jobs:
 
     - name: Build application
       env:
-          PUBLIC_AUTH0_DOMAIN: ${{ secrets.PUBLIC_AUTH0_DOMAIN }}
-          PUBLIC_AUTH0_CLIENT_ID: ${{ secrets.PUBLIC_AUTH0_CLIENT_ID }}
+          PUBLIC_AUTH0_DOMAIN_MGN: ${{ secrets.PUBLIC_AUTH0_DOMAIN_MGN }}
+          PUBLIC_AUTH0_CLIENT_ID_MGN: ${{ secrets.PUBLIC_AUTH0_CLIENT_ID_MGN }}
           JWT_SECRET_MGN: ${{ secrets.JWT_SECRET_MGN }}
           GOOGLE_CLIENT_SECRET_MGN: ${{ secrets.GOOGLE_CLIENT_SECRET_MGN }}
           CLIENT_ID_MGN: ${{ secrets.CLIENT_ID_MGN }}
@@ -59,8 +59,8 @@ jobs:
     # 1. Ejecutamos todos los tests usando c8 para generar la cobertura
     - name: Run all tests with coverage
       env:
-          PUBLIC_AUTH0_DOMAIN: ${{ secrets.PUBLIC_AUTH0_DOMAIN }}
-          PUBLIC_AUTH0_CLIENT_ID: ${{ secrets.PUBLIC_AUTH0_CLIENT_ID }}
+          PUBLIC_AUTH0_DOMAIN_MGN: ${{ secrets.PUBLIC_AUTH0_DOMAIN_MGN }}
+          PUBLIC_AUTH0_CLIENT_ID_MGN: ${{ secrets.PUBLIC_AUTH0_CLIENT_ID_MGN }}
           JWT_SECRET_MGN: ${{ secrets.JWT_SECRET_MGN }}
           GOOGLE_CLIENT_SECRET_MGN: ${{ secrets.GOOGLE_CLIENT_SECRET_MGN }}
           CLIENT_ID_MGN: ${{ secrets.CLIENT_ID_MGN }}
