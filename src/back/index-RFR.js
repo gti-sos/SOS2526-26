@@ -1,7 +1,7 @@
 import util from 'util';
 import Datastore from 'nedb';
 
-// Polyfills para util (manteniendo tu lógica original)
+// Polyfills para util
 if (!util.isDate) {
     util.isDate = (obj) => Object.prototype.toString.call(obj) === '[object Date]';
 }
@@ -32,9 +32,7 @@ function cleanResource(resource) {
 }
 
 export default function(app) {
-    app.get(URL, (req, res) => {
-        db.find({}, (err, docs) => {  });
-    });
+    // Definimos la constante de la ruta al inicio
     const RFR_URL = "/api/v1/fifa-squad-value-per-years";
 
     // --- RUTA DOCUMENTACIÓN ---
@@ -42,17 +40,17 @@ export default function(app) {
         res.redirect("https://documenter.getpostman.com/view/52260149/2sBXigKYBt");
     });
 
-    // 1 --- GET a la colección con búsqueda y filtros ---
-app.get(RFR_URL, (req, res) => {
-    db.find({}, (err, docs) => {
-        if (err) {
-            console.error("Error accediendo a DB:", err);
-            return res.sendStatus(500);
-        }
-        // Devolvemos el array de objetos limpios
-        res.status(200).json(docs.map(d => cleanResource(d)));
+    // 1 --- GET a la colección ---
+    app.get(RFR_URL, (req, res) => {
+        db.find({}, (err, docs) => {
+            if (err) {
+                console.error("Error accediendo a DB:", err);
+                return res.sendStatus(500);
+            }
+            res.status(200).json(docs.map(d => cleanResource(d)));
+        });
     });
-});
+
     // --- 2. GET para cargar datos iniciales ---
     app.get(RFR_URL + "/loadInitialData", (req, res) => {
         const initialTeams = [
@@ -129,7 +127,7 @@ app.get(RFR_URL, (req, res) => {
     });
 
     // --- 4.2 GET por año ---
-    app.get(RFR_URL + "/year/:year", (req, res) => { // Sugerencia: añadir prefijo para evitar colisiones
+    app.get(RFR_URL + "/year/:year", (req, res) => {
         const { year } = req.params;
         db.find({ year: Number(year) }).exec((err, docs) => {
             if (err) return res.sendStatus(500);
