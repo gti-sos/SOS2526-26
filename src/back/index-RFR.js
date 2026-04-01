@@ -32,9 +32,6 @@ function cleanResource(resource) {
 }
 
 export default function(app) {
-    app.get(URL, (req, res) => {
-        db.find({}, (err, docs) => {  });
-    });
     const RFR_URL = "/api/v1/fifa-squad-value-per-years";
 
     // --- RUTA DOCUMENTACIÓN ---
