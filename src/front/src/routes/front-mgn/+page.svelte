@@ -3,7 +3,7 @@
     import { dev } from '$app/environment';
     import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
-    import { PUBLIC_AUTH0_DOMAIN_MGN, PUBLIC_AUTH0_CLIENT_ID_MGN , PUBLIC_E2E_TEST} from '$env/static/public';
+    import { PUBLIC_AUTH0_DOMAIN_MGN, PUBLIC_AUTH0_CLIENT_ID_MGN} from '$env/static/public';
     
     // --- NUEVO: Importación de Auth0 ---
     import { createAuth0Client } from '@auth0/auth0-spa-js';
