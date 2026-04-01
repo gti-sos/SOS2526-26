@@ -1,5 +1,5 @@
 ## SOS2526-26
-[![Known Vulnerabilities](https://snyk.io/test/github/gti-sos/SOS2526-26/badge.svg)](https://snyk.io/test/github/gti-sos/SOS2526-26)
+[![Vulnerabilities](https://snyk.io/test/github/gti-sos/SOS2526-26/badge.svg)](https://snyk.io/test/github/gti-sos/SOS2526-26)
 - **Team**
   - Ricardo Fernández Rodríguez-Navas (https://github.com/RicardoFernandez2004)
   - Moisés Guillermo Godoy Nava (https://github.com/Moisguille)
