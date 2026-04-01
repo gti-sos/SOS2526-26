@@ -17,8 +17,8 @@
             name: "Ricardo Fernandez Rodriguez-Navas",
             dataSource: "fifa-squad-value-per-years",
             frontend: "/front-rfr",
-            apis: [{url: "/api/v1/fifa-squad-value-per-years", label: "v1"}, {url: "/api/v2/fifa-squad-value-per-years", label: "v2"}],
-            postman: [{label: "Doc v1", url: "https://documenter.getpostman.com/view/52260149/2sBXigKYBt"}, {label: "Doc v2", url: "https://documenter.getpostman.com/view/52260149/2sBXinGW4o"}]
+            apis: [{url: "/api/v2/fifa-squad-value-per-years", label: "v2"}],
+            postman: [{label: "Doc v2", url: "https://documenter.getpostman.com/view/52260149/2sBXinGW4o"}]
         },
         {
             name: "Sergio Diaz Vazquez",

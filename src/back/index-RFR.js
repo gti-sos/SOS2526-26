@@ -41,7 +41,7 @@ export default function(app) {
     app.get(RFR_URL + "/docs", (req, res) => {
         res.redirect("https://documenter.getpostman.com/view/52260149/2sBXigKYBt");
     });
-/*
+
     // 1 --- GET a la colección con búsqueda y filtros ---
 app.get(RFR_URL, (req, res) => {
     db.find({}, (err, docs) => {
@@ -181,4 +181,4 @@ app.get(RFR_URL, (req, res) => {
     // --- MÉTODOS NO PERMITIDOS ---
     app.post(RFR_URL + "/:country/:year", (req, res) => res.sendStatus(405));
     app.put(RFR_URL, (req, res) => res.sendStatus(405));
-};*/ }
+};
