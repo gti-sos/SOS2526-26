@@ -11,7 +11,7 @@
             dataSource: "national-team-rankings-per-years", 
             frontend: "/front-mgn", 
             apis: [{url: "/api/v1/national-team-rankings-per-years", label: "v1"}], 
-            postman: [{label: "Doc v1", url: "https://documenter.getpostman.com/view/53034281/2sBXigNZXJ"}]
+            postman: [{label: "Doc v1", url: "https://documenter.getpostman.com/view/53034281/2sBXionVrX"}]
         },
         {
             name: "Ricardo Fernandez Rodriguez-Navas",
