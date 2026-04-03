@@ -1,31 +1,45 @@
 <script>
-    
-    
-    
     const githubRepo = "https://github.com/gti-sos/SOS2526-26"; 
 
-    
     const team = [
         {
             name: "Moises Guillermo Godoy Nava", 
             dataSource: "national-team-rankings-per-years", 
             frontend: "/front-mgn", 
-            apis: [{url: "/api/v2/national-team-rankings-per-years", label: "v2"}], 
-            postman: [{label: "Doc v2", url: "https://documenter.getpostman.com/view/53034281/2sBXionVrX"}]
+            apis: [
+                {url: "/api/v1/national-team-rankings-per-years", label: "v1"}, 
+                {url: "/api/v2/national-team-rankings-per-years", label: "v2"}   
+            ], 
+            postman: [
+                {label: "Doc v1", url: "https://documenter.getpostman.com/view/53034281/2sBXigNZXJ"}, 
+                {label: "Doc v2", url: "https://documenter.getpostman.com/view/53034281/2sBXionVrX"} 
+            ]
         },
         {
             name: "Ricardo Fernandez Rodriguez-Navas",
             dataSource: "fifa-squad-value-per-years",
             frontend: "/front-rfr",
-            apis: [{url: "/api/v2/fifa-squad-value-per-years", label: "v2"}],
-            postman: [{label: "Doc v2", url: "https://documenter.getpostman.com/view/52260149/2sBXinGW4o"}]
+            apis: [
+                {url: "/api/v1/fifa-squad-value-per-years", label: "v1"}, 
+                {url: "/api/v2/fifa-squad-value-per-years", label: "v2"}  
+            ],
+            postman: [
+                {label: "Doc v1", url: "https://documenter.getpostman.com/view/52260149/2sBXigKYBt"}, 
+                {label: "Doc v2", url: "https://documenter.getpostman.com/view/52260149/2sBXinGW4o"} 
+            ]
         },
         {
             name: "Sergio Diaz Vazquez",
             dataSource: "countries-idh-per-years",
             frontend: "/front-sdv",
-            apis: [{url: "/api/v2/countries-idh-per-years", label: "v2"}],
-            postman: [{label: "Doc v2", url: "https://documenter.getpostman.com/view/52429610/2sBXinGqPs"}]
+            apis: [
+                {url: "/api/v1/countries-idh-per-years", label: "v1"}, 
+                {url: "/api/v2/countries-idh-per-years", label: "v2"}  
+            ],
+            postman: [
+                {label: "Doc v1", url: "https://documenter.getpostman.com/view/52429610/2sBXietaKH"}, 
+                {label: "Doc v2", url: "https://documenter.getpostman.com/view/52429610/2sBXinGqPs"}
+            ]
         } 
     ];
 </script>
