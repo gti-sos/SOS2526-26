@@ -36,7 +36,7 @@
     "test-sdv-online-on": "start-server-and-test 'c8 --reporter=lcov --reporter=text node --env-file=.env index.js' http://localhost:3000 test-sdv-local",
     "test-fifa-squad-value-per-years-local": "newman run ./tests/RFR2.json -e ./tests/env-local.json",
     "test-fifa-squad-value-per-years-online-on": "start-server-and-test 'c8 --reporter=lcov --reporter=text node --env-file=.env index.js' http://localhost:3000 test-fifa-squad-value-per-years-local",
-    "test-mgn-local": "newman run ./tests/MGN.json -e ./tests/env-local.json",
+    "test-mgn-local": "newman run ./tests/MGN2.json -e ./tests/env-local.json",
     "test-mgn-online-on": "start-server-and-test 'c8 --reporter=lcov --reporter=text node --env-file=.env index.js' http://localhost:3000 test-mgn-local",
     "test": "npm run build && npm run test-sdv-online-on && npm run test-fifa-squad-value-per-years-online-on && npm run test-mgn-online-on"
   },
