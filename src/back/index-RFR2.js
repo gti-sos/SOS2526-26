@@ -36,7 +36,7 @@ export default function(app) {
 
     // --- RUTA DOCUMENTACIÓN ---
     app.get(RFR_URL + "/docs", (req, res) => {
-        res.redirect("https://documenter.getpostman.com/view/52260149/2sBXigKYBt");
+        res.redirect("https://documenter.getpostman.com/view/52260149/2sBXinGW4o");
     });
 
     // 1 --- GET a la colección con búsqueda y filtros ---
