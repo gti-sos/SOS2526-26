@@ -2,7 +2,7 @@ import Datastore from 'nedb';
 import path from 'path';
 
 // 1. Inicialización de la base de datos
-const db = new Datastore({ filename: './data/rankings.db', autoload: true });
+const db = new Datastore({ filename: './data/rankings1.db', autoload: true });
 
 // Función auxiliar para limpiar el _id de NeDB
 function cleanResource(resource) {

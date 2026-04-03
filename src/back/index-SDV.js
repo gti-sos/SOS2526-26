@@ -1,7 +1,7 @@
 import Datastore from 'nedb';
 
 // 1. Inicialización de la base de datos
-const db = new Datastore({ filename: './data/idh.db', autoload: true });
+const db = new Datastore({ filename: './data/idh1.db', autoload: true });
 
 // Función auxiliar para eliminar el _id de NeDB (Requisito F06)
 function cleanResource(resource) {
