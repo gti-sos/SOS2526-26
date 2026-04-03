@@ -150,7 +150,7 @@ export default function (app) {
     app.get(MGN_URL + "/docs", (req, res) => {
         res.redirect("https://documenter.getpostman.com/view/53034281/2sBXionVrX");
     });
-// Antiguo https://documenter.getpostman.com/view/53034281/2sBXigNZXJ
+
     // --- 1. GET a la colección (con Búsquedas Avanzadas y Paginación) ---
     app.get(MGN_URL, (req, res) => {
         let offset = parseInt(req.query.offset) || 0;

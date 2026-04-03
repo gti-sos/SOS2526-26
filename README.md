@@ -26,6 +26,7 @@ A continuación se detallan las fuentes de datos externas utilizadas en este pro
 
 - **APIs**: 
   - https://sos2526-26.onrender.com/api/v1/national-team-rankings-per-years/docs (developed by Moises Guillermo Godoy Nava)
+  - https://sos2526-26.onrender.com/api/v2/national-team-rankings-per-years/docs (developed by Moises Guillermo Godoy Nava)
   - https://sos2526-26.onrender.com/api/v1/countries-idh-per-years/docs (developed by Sergio Díaz Vazquez)
   - https://sos2526-26.onrender.com/api/v2/countries-idh-per-years/docs (developed by Sergio Díaz Vazquez)
   - https://sos2526-26.onrender.com/api/v1/fifa-squad-value-per-years/docs (developed by Ricardo Fernandez Rodríguez-Navas)
