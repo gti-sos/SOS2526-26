@@ -1,12 +1,16 @@
-{"country":"Alemania","year":2018,"rank":1,"score":1533,"rank_variation_from_two_thousand_eighteen":0,"_id":"fdVZf8nWS2gqedRN"}
-{"country":"Angola","year":2025,"rank":87,"score":1279.55,"rank_variation_from_two_thousand_eighteen":1,"_id":"4eCIiintWBmhns1y"}
-{"country":"Albania","year":2026,"rank":63,"score":1401.07,"rank_variation_from_two_thousand_eighteen":2,"_id":"lQUGXG6Ia1umdGvu"}
-{"country":"Andorra","year":2020,"rank":135,"score":1082,"rank_variation_from_two_thousand_eighteen":3,"_id":"QBkFrZAzZ97naczd"}
-{"country":"Afganistán","year":2024,"rank":158,"score":1017.68,"rank_variation_from_two_thousand_eighteen":4,"_id":"KPTEilwrQkrORoNP"}
-{"country":"Anguila","year":2019,"rank":208,"score":864,"rank_variation_from_two_thousand_eighteen":5,"_id":"e2Q9nRMzY9gANNjq"}
-{"country":"Antigua y Barbuda","year":2023,"rank":133,"score":1107.51,"rank_variation_from_two_thousand_eighteen":6,"_id":"EWYmIGYnaPilMFj3"}
-{"country":"Alemania","year":2026,"rank":10,"score":1724.15,"rank_variation_from_two_thousand_eighteen":7,"_id":"bxo3KFK0cxsOYiDD"}
-{"country":"Albania","year":2018,"rank":56,"score":549,"rank_variation_from_two_thousand_eighteen":8,"_id":"aIALy0WZqDO0h9vh"}
-{"country":"Andorra","year":2026,"rank":172,"score":949.44,"rank_variation_from_two_thousand_eighteen":9,"_id":"Vd5j7SvOblzdWHvP"}
-{"country":"Narnia_6062","year":2026,"rank":1,"score":2000,"rank_variation_from_two_thousand_eighteen":10,"_id":"xy7HMsjB5lkfl08p"}
-{"$$deleted":true,"_id":"4eCIiintWBmhns1y"}
+{"country":"Albania","year":2018,"rank":56,"score":549,"rank_variation_from_two_thousand_eighteen":8,"_id":"FmzJkJblmmtyET3m"}
+{"country":"Eliminar","year":3030,"rank":1,"score":2500,"rank_variation_from_two_thousand_eighteen":5,"_id":"GdpHkEmtVPPguzxl"}
+{"country":"Albania","year":2026,"rank":63,"score":1401.07,"rank_variation_from_two_thousand_eighteen":2,"_id":"IMJPJkc00slO8kya"}
+{"country":"Anguila","year":2019,"rank":208,"score":864,"rank_variation_from_two_thousand_eighteen":5,"_id":"KhEZXGBXmr3Obkfm"}
+{"country":"Alemania","year":2026,"rank":888,"score":1724.15,"rank_variation_from_two_thousand_eighteen":7,"_id":"No1Z9O1DsDoUiRDs"}
+{"country":"Antigua y Barbuda","year":2023,"rank":133,"score":1107.51,"rank_variation_from_two_thousand_eighteen":6,"_id":"PIkrJvDkp5mxoLX7"}
+{"country":"Alemania","year":2018,"rank":1,"score":1533,"rank_variation_from_two_thousand_eighteen":0,"_id":"TdLgez9ckLdnTatE"}
+{"country":"Andorra","year":2020,"rank":135,"score":1082,"rank_variation_from_two_thousand_eighteen":3,"_id":"a8uEvaVJfji43v7K"}
+{"country":"Wakanda","year":3030,"rank":1,"score":2500,"rank_variation_from_two_thousand_eighteen":5,"_id":"dp3SjYmc6lGS0E2E"}
+{"country":"Andorra","year":2026,"rank":172,"score":949.44,"rank_variation_from_two_thousand_eighteen":9,"_id":"ioUhP94GVh3nMcef"}
+{"country":"Alemania","year":2026,"rank":888,"score":1724.15,"rank_variation_from_two_thousand_eighteen":7,"_id":"No1Z9O1DsDoUiRDs"}
+{"country":"Prueba","year":3030,"rank":1,"score":2500,"rank_variation_from_two_thousand_eighteen":5,"_id":"X7gyzaBWzuHrKhHn"}
+{"$$deleted":true,"_id":"X7gyzaBWzuHrKhHn"}
+{"country":"Prueba","year":3030,"rank":1,"score":2500,"rank_variation_from_two_thousand_eighteen":5,"_id":"xSX8MqJSwHWECnix"}
+{"$$deleted":true,"_id":"xSX8MqJSwHWECnix"}
+{"country":"Alemania","year":2026,"rank":888,"score":1724.15,"rank_variation_from_two_thousand_eighteen":7,"_id":"No1Z9O1DsDoUiRDs"}
