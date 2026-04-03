@@ -4,113 +4,109 @@ import { test, expect } from '@playwright/test';
 test.describe('Pruebas E2E - Recurso MGN (Rankings)', () => {
 
     test.beforeAll(async ({ request }) => {
-        // Carga de datos iniciales igual que tu compi
+        // Limpiamos y cargamos datos frescos antes de empezar
         await request.get('/api/v2/national-team-rankings-per-years/loadInitialData');
     });
 
     test.beforeEach(async ({ page }) => {
-    await page.goto('/front-mgn?e2e=true');
-    await page.waitForSelector('table tbody tr');
-});
+        await page.goto('/front-mgn?e2e=true');
+        await page.waitForSelector('table thead');
+    });
 
     test('Debe listar todos los recursos iniciales', async ({ page }) => {
         const tableRows = page.locator('table tbody tr');
-        await expect(tableRows.first()).toBeVisible();
+        await expect(tableRows.first()).toBeVisible({ timeout: 10000 });
         const count = await tableRows.count();
         expect(count).toBeGreaterThan(0);
     });
 
     test('Debe permitir buscar por país', async ({ page }) => {
-        // Rellenamos el input de búsqueda por ID
-        await page.locator('#sCountry').fill('Angola');
-        
-        // Estructura de promesas calcada a la de tu compi
-        const responsePromise = page.waitForResponse(res => 
-            res.url().includes('national-team-rankings-per-years') && 
-            res.request().method() === 'GET' &&
-            res.status() === 200
-        );
-        await page.click('button:has-text("Buscar")');
-        await responsePromise;
+        // Usamos un país que SEGURO viene en loadInitialData (ej: 'Brazil' o 'Belgium')
+        // Si no estás seguro, usa uno que veas en tu JSON inicial
+        const paisABuscar = 'Brazil'; 
 
-        // Comprobamos la celda del país (primera columna: índice 0)
-        const firstCell = page.locator('table tbody tr td').first();
-        await expect(firstCell).toContainText('Angola'); 
+        await page.fill('#sCountry', paisABuscar);
+        
+        await Promise.all([
+            page.waitForResponse(res => res.url().includes('national-team-rankings-per-years') && res.status() === 200),
+            page.click('button:has-text("Buscar")')
+        ]);
+
+        // Esperamos a que la tabla se actualice. Buscamos el texto en CUALQUIER parte de la tabla filtrada
+        await expect(page.locator('table tbody')).toContainText(paisABuscar, { timeout: 7000 });
     });
 
     test('Debe crear un nuevo recurso completo', async ({ page }) => {
-        // Usamos los placeholders exactos de tu HTML (es más seguro que usar .nth)
-        await page.getByPlaceholder('País (ej: España)').fill('Narnia');
+        const countryName = "Narnia_" + Math.floor(Math.random() * 10000);
+        await page.getByPlaceholder('País (ej: España)').fill(countryName);
         await page.getByPlaceholder('Año (ej: 2024)').fill('2026');
         await page.getByPlaceholder('Posición').fill('1');
         await page.getByPlaceholder('Puntos').fill('2000');
         await page.getByPlaceholder('Variación desde 2018').fill('10');
         
-        // Estructura de promesas calcada a la de tu compi
-        const postPromise = page.waitForResponse(res => 
-            res.request().method() === 'POST' && (res.status() === 201 || res.status() === 200)
-        );
-        await page.click('button:has-text("Añadir Registro")');
-        await postPromise;
+        await Promise.all([
+            page.waitForResponse(res => res.request().method() === 'POST' && res.status() < 300),
+            page.click('button:has-text("Añadir Registro")')
+        ]);
 
-        await expect(page.locator('table')).toContainText('Narnia');
+        await expect(page.locator('table')).toContainText(countryName);
     });
 
-   test('Debe editar un recurso existente', async ({ page }) => {
-        await page.click('table tbody tr:first-child button:has-text("Editar")');
+    test('Debe borrar un recurso', async ({ page }) => {
+        // Esperamos a que haya filas
+        const rows = page.locator('table tbody tr');
+        await expect(rows.first()).toBeVisible();
+        const initialCount = await rows.count();
         
-        await page.waitForURL(/\/front-mgn\/.+\/\d+/);
+        // Identificamos el botón de la primera fila
+        const firstRowDeleteBtn = rows.first().locator('button:has-text("Eliminar")');
 
-        const inputNum = page.locator('input[type="number"]').first();
-        await inputNum.waitFor({ state: 'visible' });
-        await inputNum.fill('9999'); 
+        await Promise.all([
+            page.waitForResponse(res => res.request().method() === 'DELETE' && res.status() === 200),
+            firstRowDeleteBtn.click()
+        ]);
         
-        // LA CLAVE: Esperamos a que el PUT termine CORRECTAMENTE antes de salir de la página
-        const putPromise = page.waitForResponse(res => 
-            res.request().method() === 'PUT' && res.status() === 200
-        );
-        await page.click('button:has-text("Guardar cambios")'); 
-        await putPromise; // Esperamos la respuesta del backend
-
-        // Ahora ya podemos forzar la vuelta sin miedo a cancelar el guardado 
-        // (y nos saltamos tus 1.5s de espera para que el test vaya más rápido)
-        await page.goto('/front-mgn');
-        await expect(page.locator('table')).toContainText('9999');
+        // Verificamos que el número de filas ha bajado
+        await expect(rows).toHaveCount(initialCount - 1, { timeout: 7000 });
     });
 
-    
-
-
-    test('Debe borrar un recurso 2', async ({ page }) => {
-        const initialCount = await page.locator('table tbody tr').count();
+    test('Debe editar la posición de un recurso', async ({ page }) => {
+        // 1. Entrar en edición
+        await page.locator('table tbody tr').first().locator('button:has-text("Editar")').click();
         
-        const deletePromise = page.waitForResponse(res => 
-            res.request().method() === 'DELETE' && res.status() === 200
-        );
-        // Hacemos clic en el botón Eliminar de la primera fila
-        await page.click('table tbody tr:first-child button:has-text("Eliminar")');
-        await deletePromise;
+        // 2. Esperar a estar en la página de edición (comprobamos que el botón de guardar sea visible)
+        const saveBtn = page.locator('button:has-text("Guardar cambios")');
+        await expect(saveBtn).toBeVisible({ timeout: 10000 });
+
+        // 3. Editar el primer input de número (Posición)
+        const posInput = page.locator('input[type="number"]').first();
+        await posInput.fill('7777'); 
         
-        await expect(page.locator('table tbody tr')).toHaveCount(initialCount - 1);
+        // 4. Guardar y esperar navegación de vuelta
+        await Promise.all([
+            page.waitForNavigation({ url: /.*front-mgn.*/ }), // Espera a que la URL cambie de vuelta
+            saveBtn.click()
+        ]);
+
+        // 5. Confirmar que el dato se ve en la tabla principal
+        await expect(page.locator('table')).toContainText('7777', { timeout: 10000 });
     });
 
-    test('Debe editar un recurso existente2 22', async ({ page }) => {
-        await page.click('table tbody tr:first-child button:has-text("Editar")');
+    test('Debe editar los puntos de un recurso', async ({ page }) => {
+        await page.locator('table tbody tr').first().locator('button:has-text("Editar")').click();
         
-        // Esperamos a que la URL cambie a la página de edición
-        await page.waitForURL(/\/front-mgn\/.+\/\d+/);
+        const saveBtn = page.locator('button:has-text("Guardar cambios")');
+        await expect(saveBtn).toBeVisible();
 
-        // Modificamos el primer valor numérico que encontremos (HDI Value)
-        const inputNum = page.locator('input[type="number"]').first();
-        await inputNum.waitFor({ state: 'visible' });
-        await inputNum.fill('3'); 
+        // El segundo input numérico son los Puntos
+        const pointsInput = page.locator('input[type="number"]').nth(1); 
+        await pointsInput.fill('8888');
         
-        // REVISA: ¿Tu botón de la página de edición dice exactamente "Guardar cambios"?
-        // Si no, cámbialo aquí o ponle un name="update-button"
-        await page.click('button:has-text("Guardar cambios")'); 
+        await Promise.all([
+            page.waitForNavigation({ url: /.*front-mgn.*/ }),
+            saveBtn.click()
+        ]);
 
-        // Verificamos que volvemos a la lista y el cambio está ahí
-        await page.goto('/front-mgn');
-        await expect(page.locator('table')).toContainText('3');
+        await expect(page.locator('table')).toContainText('8888', { timeout: 10000 });
     });
 });

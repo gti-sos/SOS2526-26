@@ -62,6 +62,6 @@
     <label>Variación desde 2018:</label>
     <input type="number" bind:value={ranking.rank_variation_from_two_thousand_eighteen} /><br><br>
 
-    <button onclick={guardar}>Guardar cambios</button>
+    <button onclick={guardar}>Guardar Cambios</button>
     <a href="/front-mgn">Volver</a>
 </div>
