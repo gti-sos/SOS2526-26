@@ -32,6 +32,12 @@ function cleanResource(resource) {
 }
 
 export default function(app) {
+    const RFR_URL1 = "/api/v1/fifa-squad-value-per-years";
+
+    // --- RUTA DOCUMENTACIÓN ---
+    app.get(RFR_URL1 + "/docs", (req, res) => {
+        res.redirect("https://documenter.getpostman.com/view/52260149/2sBXigKYBt");
+    });
     const RFR_URL = "/api/v2/fifa-squad-value-per-years";
 
     // --- RUTA DOCUMENTACIÓN ---
