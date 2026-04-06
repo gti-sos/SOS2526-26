@@ -91,7 +91,7 @@ test.describe('Pruebas E2E - Recurso SDV', () => {
     test('Debe borrar todos los recursos existentes con confirmación', async ({ page }) => {
     // 1. Preparamos la espera de la respuesta DELETE ANTES de cualquier acción
     const deleteAllPromise = page.waitForResponse(res =>
-        res.url().includes('national-team-rankings-per-years') &&
+        res.url().includes('countries-idh-per-years') &&
         res.request().method() === 'DELETE' &&
         res.status() === 200
     );
