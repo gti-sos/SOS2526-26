@@ -103,14 +103,14 @@
 
         if (res.status === 404) {
             // Manejo específico si el servidor devuelve 404
-            idhs = []; // Limpiamos la tabla
+            rankings = []; // Limpiamos la tabla
             showMessage("No existe ningún recurso para esos filtros", true);
             return;
         }
 
         if (res.ok) {
             const data = await res.json();
-            idhs = data;
+            rankings = data;
             if (data.length === 0) {
                 showMessage("No existe ningún recurso para esos filtros", true);
             }
