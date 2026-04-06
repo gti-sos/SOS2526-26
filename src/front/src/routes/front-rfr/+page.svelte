@@ -82,7 +82,18 @@
             }
         }
     }
-
+ async function loadInitialData() {
+        const res = await fetch(`${API}/loadInitialData`);
+        
+        if (res.ok) {
+            showMessage("Datos iniciales cargados correctamente.");
+            // Una vez cargados en el servidor, refrescamos la lista local
+            getData(); 
+        } else {
+            showMessage("Error al intentar cargar los datos iniciales.", true);
+        }
+    };
+    
     onMount(getData);
 
 // ... tus otros estados ...
