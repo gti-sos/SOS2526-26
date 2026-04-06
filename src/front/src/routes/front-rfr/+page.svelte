@@ -101,8 +101,26 @@
         const res = await fetch(`${API}?${query.toString()}`);
         if (res.ok) {
             rankings = await res.json(); // La tabla se actualiza sola
+            if (data.length === 0) {
+                // Caso: El servidor responde 200 pero el array está vacío
+                alert("ℹ️ No hay resultados para esos filtros.");
+                rankings = []; 
+            } else {
+                rankings = data; // La tabla se actualiza sola
+            }
+        } else {
+            // Manejo de errores según el código de estado (status)
+            if (res.status === 404) {
+                alert("❌ No se encontraron datos para los criterios seleccionados (Error 404).");
+                rankings = []; // Limpiamos la tabla para que no muestre datos viejos
+            } else if (res.status === 400) {
+                alert("⚠️ Formato de búsqueda incorrecto. Revisa los años introducidos.");
+            } else {
+                alert(`🔥 Error en el servidor: ${res.status} ${res.statusText}`);
+            }
         }
-    }
+        }
+        
 
     function resetSearch() {
         search = { from: "", to: "", country: "" };
