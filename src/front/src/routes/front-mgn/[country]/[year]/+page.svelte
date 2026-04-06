@@ -30,20 +30,24 @@
     });
 
     async function guardar() {
-        const res = await fetch(`${API}/${country}/${year}`, {
-            method: "PUT",
-            body: JSON.stringify(ranking),
-            headers: { "Content-Type": "application/json" }
-        });
+    const res = await fetch(`${API}/${country}/${year}`, {
+        method: "PUT",
+        body: JSON.stringify(ranking),
+        headers: { "Content-Type": "application/json" }
+    });
 
-        if (res.ok) {
-            const testParam = isTestMode ? '?e2e=true' : '';
+    if (res.ok) {
+        const testParam = isTestMode ? '?e2e=true' : '';
+        esError = false;
+        mensaje = "✅ Cambio efectuado correctamente";
+        setTimeout(() => {
             goto(`/front-mgn${testParam}`);
-        } else {
-            esError = true;
-            mensaje = "Error al guardar los cambios.";
-        }
+        }, 3000);
+    } else {
+        esError = true;
+        mensaje = "❌ Error al guardar los cambios.";
     }
+}
 </script>
 
 <div style="max-width: 500px; margin: 40px auto; font-family: sans-serif;">
