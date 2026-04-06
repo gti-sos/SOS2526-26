@@ -98,27 +98,30 @@
         if (search.to) query.append("to", search.to);
         if (search.country) query.append("country", search.country);
 
+         try {
         const res = await fetch(`${API}?${query.toString()}`);
+
+        if (res.status === 404) {
+            // Manejo específico si el servidor devuelve 404
+            idhs = []; // Limpiamos la tabla
+            showMessage("No existe ningún recurso para esos filtros", true);
+            return;
+        }
+
         if (res.ok) {
-            rankings = await res.json(); // La tabla se actualiza sola
+            const data = await res.json();
+            idhs = data;
             if (data.length === 0) {
-                // Caso: El servidor responde 200 pero el array está vacío
-                alert("ℹ️ No hay resultados para esos filtros.");
-                rankings = []; 
-            } else {
-                rankings = data; // La tabla se actualiza sola
+                showMessage("No existe ningún recurso para esos filtros", true);
             }
         } else {
-            // Manejo de errores según el código de estado (status)
-            if (res.status === 404) {
-                alert("❌ No se encontraron datos para los criterios seleccionados (Error 404).");
-                rankings = []; // Limpiamos la tabla para que no muestre datos viejos
-            } else if (res.status === 400) {
-                alert("⚠️ Formato de búsqueda incorrecto. Revisa los años introducidos.");
-            } else {
-                alert(`🔥 Error en el servidor: ${res.status} ${res.statusText}`);
-            }
+            showMessage("Error al realizar la búsqueda", true);
         }
+    } catch (error) {
+        console.error(error);
+        showMessage("Error de conexión con el servidor", true);
+    }
+        
         }
         
 
