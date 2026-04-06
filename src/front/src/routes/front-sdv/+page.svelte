@@ -102,16 +102,35 @@
         country: ""
     });
     async function handleSearch() {
-        const query = new URLSearchParams();
-        if (search.from) query.append("from", search.from);
-        if (search.to) query.append("to", search.to);
-        if (search.country) query.append("country", search.country);
+    const query = new URLSearchParams();
+    if (search.from) query.append("from", search.from);
+    if (search.to) query.append("to", search.to);
+    if (search.country) query.append("country", search.country);
 
+    try {
         const res = await fetch(`${API}?${query.toString()}`);
-        if (res.ok) {
-            idhs = await res.json(); 
+
+        if (res.status === 404) {
+            // Manejo específico si el servidor devuelve 404
+            idhs = []; // Limpiamos la tabla
+            showMessage("No existe ningún recurso para esos filtros", true);
+            return;
         }
+
+        if (res.ok) {
+            const data = await res.json();
+            idhs = data;
+            if (data.length === 0) {
+                showMessage("No existe ningún recurso para esos filtros", true);
+            }
+        } else {
+            showMessage("Error al realizar la búsqueda", true);
+        }
+    } catch (error) {
+        console.error(error);
+        showMessage("Error de conexión con el servidor", true);
     }
+}
 
     function resetSearch() {
         search = { from: "", to: "", country: "" };
