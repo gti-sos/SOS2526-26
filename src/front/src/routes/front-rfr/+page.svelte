@@ -93,7 +93,7 @@
             showMessage("Error al intentar cargar los datos iniciales.", true);
         }
     };
-    
+
     onMount(getData);
 
 // ... tus otros estados ...
@@ -209,7 +209,7 @@
 </table>
 
 <div style="margin-top: 20px; display: flex; gap: 10px;">
-    <button onclick={getData} style="background-color: #3498db; color: white; border: none; padding: 10px;">Actualizar Lista</button>
+    <button onclick={loadInitialData} style="background-color: #3498db; color: white; border: none; padding: 10px;">Actualizar Lista</button>
     <button onclick={deleteAll} style="background-color: #c0392b; color: white; border: none; padding: 10px;">BORRAR TODO</button>
 </div>
 
