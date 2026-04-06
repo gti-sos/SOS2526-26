@@ -82,4 +82,31 @@ test.describe('Pruebas E2E - Recurso MGN (Rankings)', () => {
        
         await expect(page.locator('table')).toContainText('888');
     });
+
+   test('Debe borrar todos los recursos existentes con confirmación', async ({ page }) => {
+    // 1. Preparamos la espera de la respuesta DELETE ANTES de cualquier acción
+    const deleteAllPromise = page.waitForResponse(res =>
+        res.url().includes('national-team-rankings-per-years') &&
+        res.request().method() === 'DELETE' &&
+        res.status() === 200
+    );
+
+    // 2. Registramos el handler del diálogo de confirmación ANTES del clic
+    page.once('dialog', async dialog => {
+        // Puedes verificar el mensaje si quieres
+        expect(dialog.message()).toContain('borrar'); // opcional
+        await dialog.accept();
+    });
+
+    // 3. Hacemos clic en el botón (dispara el confirm())
+    await page.click('button:has-text("BORRAR TODO")');
+
+    // 4. Esperamos a que la API responda tras la confirmación
+    await deleteAllPromise;
+
+    // 5. Verificamos que la tabla ya no tenga filas de datos
+    const tableRows = page.locator('table tbody tr');
+    const rowCount = await tableRows.count();
+    expect(rowCount).toBeLessThanOrEqual(2);
+});
 });
