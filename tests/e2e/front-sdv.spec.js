@@ -88,4 +88,22 @@ test.describe('Pruebas E2E - Recurso SDV', () => {
         await page.goto('/front-sdv');
         await expect(page.locator('table')).toContainText('0.999');
     });
+    test('Debe borrar todos los recursos existentes sin confirmación', async ({ page }) => {
+        // 1. Preparamos la espera de la respuesta DELETE de la API
+        const deleteAllPromise = page.waitForResponse(res => 
+            res.url().includes('countries-idh-per-years') && 
+            res.request().method() === 'DELETE' && 
+            res.status() === 200
+        );
+
+        // 2. Hacemos clic directamente en el botón
+        await page.click('button:has-text("BORRAR TODO")');
+
+        // 3. Esperamos a que la API responda
+        await deleteAllPromise;
+
+        // 4. Verificamos que la tabla ya no tenga filas de datos
+        const tableRows = page.locator('table tbody tr');
+        await expect(tableRows).toHaveCount(0);
+    });
 });
