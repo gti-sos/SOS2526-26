@@ -195,7 +195,7 @@
                         Editar
                     </button>
                     <button onclick={() => deleteIdh(i.country, i.year)} style="color: white; background-color: #e74c3c; border: none; padding: 5px 10px; border-radius: 3px;">
-                        Eliminar
+                        EliminarHOLA
                     </button>
                 </td>
             </tr>
