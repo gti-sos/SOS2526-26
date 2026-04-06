@@ -226,6 +226,7 @@
         if (res.ok) {
             // Si usas una función para mostrar mensajes, ponla aquí
             console.log("Datos iniciales cargados correctamente.");
+            showMessage("Datos iniciales Cargados.", false);
             // Refrescamos la tabla para que se vean los datos nuevos
             getData(); 
         } else {
