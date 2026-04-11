@@ -20,7 +20,7 @@ jobs:
       - name: Build and push Backend
         uses: docker/build-push-action@v4
         with:
-          context: ./src/back
+          context: .
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mgn-backend:latest
 
