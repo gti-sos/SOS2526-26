@@ -1,6 +1,8 @@
 ## SOS2526-26
 [![Vulnerabilities](https://snyk.io/test/github/gti-sos/SOS2526-26/badge.svg)](https://snyk.io/test/github/gti-sos/SOS2526-26)
 [![codecov](https://codecov.io/gh/gti-sos/SOS2526-26/graph/badge.svg)](https://codecov.io/gh/gti-sos/SOS2526-26)
+![Docker Build](https://img.shields.io/docker/v/TU_USUARIO/mgn-frontend?label=Frontend%20Image)
+![Docker Build](https://img.shields.io/docker/v/TU_USUARIO/mgn-backend?label=Backend%20Image)
 - **Team**
   - Ricardo Fernández Rodríguez-Navas (https://github.com/RicardoFernandez2004)
   - Moisés Guillermo Godoy Nava (https://github.com/Moisguille)

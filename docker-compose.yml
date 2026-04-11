@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Aquí pones tus variables de Auth0 si las necesitas en el back
+    networks:
+      - mgn-network
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - mgn-network
+
+networks:
+  mgn-network:
+    driver: bridge
