@@ -20,14 +20,14 @@ jobs:
       - name: Build and push Backend
         uses: docker/build-push-action@v4
         with:
-          context: ./backend
+          context: ./src/back
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mgn-backend:latest
 
       - name: Build and push Frontend
         uses: docker/build-push-action@v4
         with:
-          context: ./frontend
+          context: ./src/front
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mgn-frontend:latest
           build-args: |
