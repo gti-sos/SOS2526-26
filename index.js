@@ -37,7 +37,8 @@ app.get('/about', (req, res) => {
 
 app.use(handler);
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`Servidor listo en puerto ${port}`);
-}); //proof2
+// Añade el "0.0.0.0" para que Docker exponga el puerto hacia fuera
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});

@@ -30,3 +30,6 @@ jobs:
           context: ./frontend
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mgn-frontend:latest
+          build-args: |
+            PUBLIC_AUTH0_DOMAIN_MGN=${{ secrets.PUBLIC_AUTH0_DOMAIN_MGN }}
+            PUBLIC_AUTH0_CLIENT_ID_MGN=${{ secrets.PUBLIC_AUTH0_CLIENT_ID_MGN }}
