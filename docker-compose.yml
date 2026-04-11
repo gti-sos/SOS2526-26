@@ -2,7 +2,7 @@ services:
   back:
     build:
       context: .             # <--- Mira en la raíz del proyecto
-      dockerfile: src/back/Dockerfile  # <--- Pero usa el Dockerfile que está aquí dentro
+      dockerfile: ./Dockerfile  # <--- Pero usa el Dockerfile que está aquí dentro
     ports:
       - "3000:3000"
     networks:
