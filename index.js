@@ -8,7 +8,7 @@ import { handler } from './src/front/build/handler.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Importar los 3 módulos (usando import)
+// Importar los 6 módulos (usando import)
 import mgn_api1 from './src/back/index-MGN.js';
 import mgn_api2 from './src/back/index-MGN2.js';
 import rfr_api1 from './src/back/index-RFR.js';
