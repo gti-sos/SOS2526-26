@@ -1,4 +1,15 @@
 import Datastore from 'nedb';
+import express from 'express';
+import cors from 'cors';
+const app = express();
+
+app.use(cors({
+    origin: [
+        "https://SOS2526-26.onrender.com", // Producción
+        "http://localhost:8080",            // Tu frontend local (ajusta el puerto si es otro)
+        "http://localhost:5173"             // Puerto común de Svelte/Vite
+    ]
+}));
 
 // 1. Inicialización de la base de datos
 const db = new Datastore({ filename: './data/idh.db', autoload: true });

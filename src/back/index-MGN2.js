@@ -8,6 +8,17 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import session from 'express-session';
 import dotenv from 'dotenv';
+import express from 'express';
+import cors from 'cors';
+const app = express();
+
+app.use(cors({
+    origin: [
+        "https://SOS2526-26.onrender.com", // Producción
+        "http://localhost:8080",            // Tu frontend local (ajusta el puerto si es otro)
+        "http://localhost:5173"             // Puerto común de Svelte/Vite
+    ]
+}));
 dotenv.config();
 /////////////////////////////////////////////////////////////////
 const CLIENT_ID = process.env.CLIENT_ID_MGN || "generico_client_id";
