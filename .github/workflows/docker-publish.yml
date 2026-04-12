@@ -21,6 +21,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mgn-backend:latest
 
@@ -28,8 +29,11 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./src/front
+          file: ./src/front/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mgn-frontend:latest
+          # AÑADIMOS ESTO PARA QUE EL FRONT SEPA DÓNDE ESTÁ EL BACK
           build-args: |
-            PUBLIC_AUTH0_DOMAIN_MGN=${{ secrets.PUBLIC_AUTH0_DOMAIN_MGN }}
-            PUBLIC_AUTH0_CLIENT_ID_MGN=${{ secrets.PUBLIC_AUTH0_CLIENT_ID_MGN }}
+            PUBLIC_API_URL=http://localhost:3000
+            PUBLIC_AUTH0_DOMAIN_MGN=${{ secrets.AUTH0_DOMAIN }}
+            PUBLIC_AUTH0_CLIENT_ID_MGN=${{ secrets.AUTH0_CLIENT_ID }}

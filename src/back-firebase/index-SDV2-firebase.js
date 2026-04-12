@@ -24,6 +24,7 @@ function isValidResource(body) {
     if (typeof body.country !== 'string' ||
         typeof body.year !== 'number' ||
         typeof body.hdi_value !== 'number' ||
+        typeof body.hdi_rank !== 'number' ||
         typeof body.hdi_change !== 'number') {
         return false;
     }
@@ -48,7 +49,7 @@ app.get(SDV_URL, async (req, res) => {
         let queryRef = db.collection(COLLECTION_NAME);
 
         if (year) queryRef = queryRef.where('year', '==', Number(year));
-        if (hdi_value) queryRef = queryRef.where('hdi_value', '==', Number(rank));
+        if (hdi_value) queryRef = queryRef.where('hdi_value', '==', Number(hdi_value));
         if (hdi_rank) queryRef = queryRef.where('hdi_rank', '==', Number(hdi_rank));
         if (hdi_change) {
             queryRef = queryRef.where('hdi_change', '==', Number(hdi_change));

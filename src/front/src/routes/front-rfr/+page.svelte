@@ -4,12 +4,12 @@
     import { dev } from '$app/environment';
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
+    import { env } from '$env/dynamic/public'; // <--- Importa esto (SvelteKit)
 
-    // 1. Configuración de la API (Cambia a v2 si es necesario)
-    let API = '/api/v2/fifa-squad-value-per-years';
-    if(dev) {
-        API = "http://localhost:3000" + API;
-    }
+    // Usamos la variable de entorno que pasaremos por Docker, 
+    // o localhost si estamos trabajando en local sin Docker.
+    const BASE_URL = env.PUBLIC_API_URL || "http://localhost:3000";
+    let API = BASE_URL + '/api/v2/fifa-squad-value-per-years';
 
     // 2. Estados (Svelte 5)
     let rankings = $state([]);

@@ -7,8 +7,13 @@
     // Importamos todo lo necesario de Auth0
     import { isAuthenticated, user, login, logout } from '$lib/authService.js';
 
-    let API = '/api/v2/countries-idh-per-years';
-    if(dev) { API = "http://localhost:3000" + API; }
+    import { env } from '$env/dynamic/public'; // <--- Importa esto (SvelteKit)
+
+    // Usamos la variable de entorno que pasaremos por Docker, 
+    // o localhost si estamos trabajando en local sin Docker.
+    const BASE_URL = env.PUBLIC_API_URL || "http://localhost:3000";
+    let API = BASE_URL + '/api/v2/countries-idh-per-years';
+
 
     let idhs = $state([]);
     let message = $state("");

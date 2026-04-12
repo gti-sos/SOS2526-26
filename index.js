@@ -18,9 +18,10 @@ import sdv_api2 from './src/back/index-SDV2.js';
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use("/", express.static("./static"));
-app.use(cors());
+
 
 
 mgn_api1(app);

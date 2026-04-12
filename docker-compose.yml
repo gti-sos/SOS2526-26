@@ -1,8 +1,8 @@
 services:
   back:
     build:
-      context: .             # <--- Mira en la raíz del proyecto
-      dockerfile: ./Dockerfile  # <--- Pero usa el Dockerfile que está aquí dentro
+      context: .
+      dockerfile: ./Dockerfile
     ports:
       - "3000:3000"
     networks:
@@ -11,8 +11,9 @@ services:
   front:
     build:
       context: ./src/front
-      # Aquí le pasamos los argumentos al Dockerfile
+      dockerfile: Dockerfile
       args:
+        - PUBLIC_API_URL=http://localhost:3000  # <--- ¡La clave está aquí!
         - PUBLIC_AUTH0_DOMAIN_MGN=${PUBLIC_AUTH0_DOMAIN_MGN}
         - PUBLIC_AUTH0_CLIENT_ID_MGN=${PUBLIC_AUTH0_CLIENT_ID_MGN}
     ports:
