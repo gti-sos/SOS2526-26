@@ -8,7 +8,7 @@
 
     // Usamos la variable de entorno que pasaremos por Docker, 
     // o localhost si estamos trabajando en local sin Docker.
-    const BASE_URL = env.PUBLIC_API_URL || "http://localhost:3000";
+    const BASE_URL = dev ? "http://localhost:3000" : "https://sos2526-26.onrender.com";
     let API = BASE_URL + '/api/v2/fifa-squad-value-per-years';
 
     // 2. Estados (Svelte 5)
