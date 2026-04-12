@@ -1,11 +1,10 @@
 <script>
-	import favicon from '$lib/assets/favicon.svg';
+    import { onMount } from 'svelte';
+    import { initAuth } from '$lib/authService.js';
 
-	let { children } = $props();
+    onMount(async () => {
+        await initAuth();
+    });
 </script>
 
-<svelte:head>
-	<link rel="icon" href={favicon} />
-</svelte:head>
-
-{@render children()}
+<slot />
