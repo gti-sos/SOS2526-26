@@ -1,5 +1,5 @@
 ## SOS2526-26
-[![Vulnerabilities](https://snyk.io/test/github/gti-sos/SOS2526-26/badge.svg)](https://snyk.io/test/github/gti-sos/SOS2526-26)
+
 [![Known Vulnerabilities](https://snyk.io/test/github/gti-sos/SOS2526-26/badge.svg)](https://snyk.io/test/github/gti-sos/SOS2526-26)
 [![codecov](https://codecov.io/gh/gti-sos/SOS2526-26/graph/badge.svg)](https://codecov.io/gh/gti-sos/SOS2526-26)
 ![Docker Build](https://img.shields.io/docker/v/moigodnav/mgn-frontend?label=Frontend%20Image)
