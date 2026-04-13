@@ -1,6 +1,6 @@
 ## SOS2526-26
 
-[![Known Vulnerabilities](https://snyk.io/org/gti-sos/proyect/0c5865ed-43a7-4064-9663-84a903573daf/badge.svg)](https://snyk.io/test/github/sergiodiazvazquez/SOS2526-26)
+[![Known Vulnerabilities](https://snyk.io/org/gti-sos/proyect/0c5865ed-43a7-4064-9663-84a903573daf/badge.svg)](https://snyk.io/org/gti-sos/project/0c5865ed-43a7-4064-9663-84a903573daf)
 [![codecov](https://codecov.io/gh/gti-sos/SOS2526-26/graph/badge.svg)](https://codecov.io/gh/gti-sos/SOS2526-26)
 ![Docker Build](https://img.shields.io/docker/v/moigodnav/mgn-frontend?label=Frontend%20Image)
 ![Docker Build](https://img.shields.io/docker/v/moigodnav/mgn-backend?label=Backend%20Image)
