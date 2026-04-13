@@ -73,7 +73,7 @@ export default function(app) {
         });
     });
 
-    // --- 2. GET para cargar datos iniciales ---
+    // --- 2. GET para cargar datos iniciales  ---
     app.get(MGN_URL + "/loadInitialData", (req, res) => {
         const initial_rankings = [
             { "country": "Alemania", "year": 2018, "rank": 1, "score": 1533, "rank_variation_from_two_thousand_eighteen": 0 },
