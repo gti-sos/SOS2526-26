@@ -13,7 +13,7 @@ services:
       context: ./src/front
       dockerfile: Dockerfile
       args:
-        - PUBLIC_API_URL=http://localhost:3000  # <--- ¡La clave está aquí!
+        - PUBLIC_API_URL=http://localhost:3000  
         - PUBLIC_AUTH0_DOMAIN_MGN=${PUBLIC_AUTH0_DOMAIN_MGN}
         - PUBLIC_AUTH0_CLIENT_ID_MGN=${PUBLIC_AUTH0_CLIENT_ID_MGN}
     ports:
