@@ -4,7 +4,7 @@ test.describe('Pruebas E2E - Recurso MGN (Rankings)', () => {
 
 
     test.beforeAll(async ({ request }) => {
-        await request.get('/api/v2/national-team-rankings-per-years/loadInitialData');
+        await request.get('/api/v2/national-team-rankings-per-years/loadInitialData?e2e=true');
     });
 
     test.beforeEach(async ({ page }) => {
