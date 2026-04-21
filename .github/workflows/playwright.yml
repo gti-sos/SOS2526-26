@@ -28,7 +28,13 @@ jobs:
           JWT_SECRET_MGN: ${{ secrets.JWT_SECRET_MGN }}
           GOOGLE_CLIENT_SECRET_MGN: ${{ secrets.GOOGLE_CLIENT_SECRET_MGN }}
           CLIENT_ID_MGN: ${{ secrets.CLIENT_ID_MGN }}
-      run: touch .env && npm run build
+      run: |
+        echo "PUBLIC_AUTH0_DOMAIN_MGN=${{ secrets.PUBLIC_AUTH0_DOMAIN_MGN }}" >> .env
+        echo "PUBLIC_AUTH0_CLIENT_ID_MGN=${{ secrets.PUBLIC_AUTH0_CLIENT_ID_MGN }}" >> .env
+        echo "JWT_SECRET_MGN=${{ secrets.JWT_SECRET_MGN }}" >> .env
+        echo "GOOGLE_CLIENT_SECRET_MGN=${{ secrets.GOOGLE_CLIENT_SECRET_MGN }}" >> .env
+        echo "CLIENT_ID_MGN=${{ secrets.CLIENT_ID_MGN }}" >> .env
+        npm run build
 
     - name: Get Playwright version
       id: playwright-version
