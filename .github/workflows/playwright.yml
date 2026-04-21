@@ -30,7 +30,6 @@ jobs:
           CLIENT_ID_MGN: ${{ secrets.CLIENT_ID_MGN }}
       run: touch .env && npm run build
 
-    # --- AQUÍ EMPIEZA LA MAGIA PARA LA VELOCIDAD ---
     - name: Get Playwright version
       id: playwright-version
       run: echo "version=$(npx playwright --version)" >> $GITHUB_OUTPUT
@@ -45,28 +44,23 @@ jobs:
           ${{ runner.os }}-playwright-
 
     - name: Install Playwright Browsers
-      # Solo descarga si NO están en la caché
       if: steps.playwright-cache.outputs.cache-hit != 'true'
-      # OPTIMIZACIÓN: Solo instala Chromium si es el que más usas
       run: npx playwright install --with-deps chromium
 
     - name: Install OS Dependencies
-      # Si hubo caché de navegadores, aún necesitamos las librerías del sistema (rápido)
+      # Even with browser cache, system dependencies are required on CI runners.
       if: steps.playwright-cache.outputs.cache-hit == 'true'
       run: npx playwright install-deps chromium
-    # -----------------------------------------------
 
-    # 1. Ejecutamos todos los tests usando c8 para generar la cobertura
-    - name: Run all tests with coverage
+    - name: Run Playwright tests
       env:
           PUBLIC_AUTH0_DOMAIN_MGN: ${{ secrets.PUBLIC_AUTH0_DOMAIN_MGN }}
           PUBLIC_AUTH0_CLIENT_ID_MGN: ${{ secrets.PUBLIC_AUTH0_CLIENT_ID_MGN }}
           JWT_SECRET_MGN: ${{ secrets.JWT_SECRET_MGN }}
           GOOGLE_CLIENT_SECRET_MGN: ${{ secrets.GOOGLE_CLIENT_SECRET_MGN }}
           CLIENT_ID_MGN: ${{ secrets.CLIENT_ID_MGN }}
-      run: npm test
+      run: npx playwright test
 
-    # 2. Subimos el reporte de Playwright (el que ya tenías)
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
@@ -74,7 +68,6 @@ jobs:
         path: playwright-report/
         retention-days: 30
     
-    # 3. SUBIDA A CODECOV (Aquí está la clave)
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4
       with:

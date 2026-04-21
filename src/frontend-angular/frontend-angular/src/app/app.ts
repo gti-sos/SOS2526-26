@@ -4,10 +4,10 @@ import { TaskListComponent } from './components/task-list/task-list';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [TaskListComponent], // <--- QUITAMOS RouterOutlet y PONEMOS el tuyo
+  imports: [TaskListComponent],
   templateUrl: './app.html',
-  styleUrl: './app.css' // Asegúrate que este nombre también sea el corto
+  styleUrl: './app.css'
 })
-export class App { // O export class AppComponent
+export class App {
   title = 'frontend-angular';
 }
