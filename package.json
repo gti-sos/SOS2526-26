@@ -19,6 +19,7 @@
     "express-session": "^1.19.0",
     "firebase-admin": "^13.8.0",
     "google-auth-library": "^10.6.2",
+    "highcharts": "^12.6.0",
     "jsonwebtoken": "^9.0.3",
     "nedb": "^1.8.0",
     "passport": "^0.7.0",
