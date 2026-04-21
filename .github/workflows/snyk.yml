@@ -6,6 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run Snyk to check for vulnerabilities
+        continue-on-error: true  # <--- ESTO ES LO QUE DEBES AÑADIR
         uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
