@@ -58,7 +58,7 @@ Highcharts.chart('container', {
         }
     },
                 series: [{
-                    name: 'Porcentaje sobre el valor total',
+                    name: 'Valor de plantilla (millones de €)',
                     colorByPoint: true,
                     data: chartData,
                 }]
