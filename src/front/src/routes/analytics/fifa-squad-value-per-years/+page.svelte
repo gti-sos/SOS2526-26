@@ -31,7 +31,7 @@ Highcharts.chart('container', {
         text: 'Valor de las selecciones nacionales'
     },
     tooltip: {
-        valueSuffix: '%'
+        valueSuffix: 'M €'
     },
     plotOptions: {
         pie: {

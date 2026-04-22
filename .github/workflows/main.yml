@@ -24,3 +24,36 @@ jobs:
           GOOGLE_CLIENT_SECRET_MGN: ${{ secrets.GOOGLE_CLIENT_SECRET_MGN }}
           CLIENT_ID_MGN: ${{ secrets.CLIENT_ID_MGN }}
         run: touch .env && npm run build
+
+      - name: Install Playwright Browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install OS Dependencies
+      # Even with browser cache, system dependencies are required on CI runners.
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run Playwright tests
+        env:
+          PUBLIC_AUTH0_DOMAIN_MGN: ${{ secrets.PUBLIC_AUTH0_DOMAIN_MGN }}
+          PUBLIC_AUTH0_CLIENT_ID_MGN: ${{ secrets.PUBLIC_AUTH0_CLIENT_ID_MGN }}
+          JWT_SECRET_MGN: ${{ secrets.JWT_SECRET_MGN }}
+          GOOGLE_CLIENT_SECRET_MGN: ${{ secrets.GOOGLE_CLIENT_SECRET_MGN }}
+          CLIENT_ID_MGN: ${{ secrets.CLIENT_ID_MGN }}
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
+    
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./coverage/lcov.info
+        fail_ci_if_error: true
+        verbose: true
