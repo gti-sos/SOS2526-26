@@ -17,7 +17,7 @@
             if (res.ok) {
                 rankings = await res.json();
                 
-                // Si la API está vacía, intentamos cargar los iniciales
+                // Si la API está vacía, intentamos cargar los iniciales Nuevos
                 if (rankings.length === 0) {
                     await fetch("/api/v2/national-team-rankings-per-years/loadInitialData");
                     const retry = await fetch("/api/v2/national-team-rankings-per-years");
