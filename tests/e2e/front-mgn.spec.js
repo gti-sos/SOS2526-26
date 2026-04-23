@@ -4,7 +4,7 @@ test.describe('Pruebas E2E - Recurso MGN (Rankings)', () => {
     const API = '/api/v2/national-team-rankings-per-years';
     const seeded = {
         country: 'Seedland',
-        year: 2024
+        year: 2024,
         rank: 10,
         score: 1500,
         rank_variation_from_two_thousand_eighteen: 2
