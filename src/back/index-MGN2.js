@@ -10,6 +10,7 @@ import session from 'express-session';
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
+import data from '../../data/data-MGN.js';
 const app = express();
 
 app.use(cors({
@@ -214,6 +215,7 @@ export default function (app) {
             { "country": "Albania", "year": 2018, "rank": 56, "score": 549, "rank_variation_from_two_thousand_eighteen": 8 },
             { "country": "Andorra", "year": 2026, "rank": 172, "score": 949.44, "rank_variation_from_two_thousand_eighteen": -9 }
         ];
+        //const initial_rankings = data;
 
         db.count({}, (err, count) => {
             if (err) return res.sendStatus(500);
