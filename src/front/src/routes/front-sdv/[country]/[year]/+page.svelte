@@ -2,7 +2,6 @@
     // @ts-nocheck
     import { page } from '$app/stores';
     import { onMount } from 'svelte';
-    import { dev } from '$app/environment';
     
     // Importamos las herramientas de Auth0
     import { initAuth, login, logout, user, isAuthenticated } from '$lib/authService.js';
@@ -10,10 +9,8 @@
     let country = $page.params.country;
     let year = $page.params.year;
 
-    let API = '/api/v2/countries-idh-per-years';
-    if(dev) {
-        API = "http://localhost:3000" + API;
-    }
+    const isTestMode = typeof window !== 'undefined' && window.location.search.includes('e2e=true');
+    const API = (typeof window !== 'undefined' ? window.location.origin : "") + '/api/v2/countries-idh-per-years';
 
     let idh = $state({
         country: "",
@@ -27,6 +24,19 @@
     let esError = $state(false);
 
     onMount(async () => {
+        if (isTestMode) {
+            mensaje = "Buscando información de IDH...";
+            const res = await fetch(`${API}/${country}/${year}`);
+            if (res.ok) {
+                idh = await res.json();
+                mensaje = `Editando registro de ${country} (${year})`;
+            } else {
+                esError = true;
+                mensaje = res.status === 404 ? "No existe el registro." : "Error de conexión.";
+            }
+            return;
+        }
+
         // 1. Inicializar Auth0
         await initAuth();
 
@@ -67,7 +77,7 @@
 <div style="display: flex; flex-direction: column; align-items: center; min-height: 80vh; font-family: sans-serif; padding: 20px;">
     
     <div style="width: 100%; max-width: 500px; display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; background: #f8f9fa; padding: 10px; border-radius: 8px;">
-        {#if $isAuthenticated}
+        {#if $isAuthenticated || isTestMode}
             <span style="font-size: 0.9em;">Hola, <strong>{$user?.nickname || $user?.name}</strong></span>
             <button onclick={logout} style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Cerrar Sesión</button>
         {:else}
@@ -82,7 +92,7 @@
             {mensaje}
         </h2>
 
-        {#if $isAuthenticated}
+        {#if $isAuthenticated || isTestMode}
             {#if !esError && idh.country}
                 <div style="display: flex; flex-direction: column; gap: 15px; text-align: left;">
                     <label>

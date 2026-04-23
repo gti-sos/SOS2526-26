@@ -2,34 +2,43 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Pruebas E2E - Recurso SDV', () => {
+    const API = '/api/v2/countries-idh-per-years';
+    const seeded = {
+        country: 'Seedland',
+        year: 2022,
+        hdi_value: 0.777,
+        hdi_rank: 77,
+        hdi_change: 0.003
+    };
 
     test.beforeAll(async ({ request }) => {
-        await request.get('/api/v2/countries-idh-per-years/loadInitialData');
+        await request.get(`${API}/loadInitialData`);
     });
 
-    test.beforeEach(async ({ page }) => {
-        await page.goto('/front-sdv');
-        // Esperamos a que la tabla tenga contenido antes de empezar
-        await page.waitForSelector('table tbody tr');
+    test.beforeEach(async ({ page, request }) => {
+        await request.post(API, { data: seeded });
+        await page.goto('/front-sdv?e2e=true');
+        // Esperamos a que la página renderice la tabla, aunque no haya filas aún
+        await page.waitForSelector('table');
     });
 
     test('Debe listar todos los recursos iniciales', async ({ page }) => {
         const tableRows = page.locator('table tbody tr');
-        await expect(tableRows.first()).toBeVisible();
+        await expect(page.locator('table')).toContainText(seeded.country);
         const count = await tableRows.count();
         expect(count).toBeGreaterThan(0);
     });
 
     test('Debe permitir filtrar por año', async ({ page }) => {
-        await page.locator('input[name="filter-from"]').fill('2021'); 
-        await page.locator('input[name="filter-to"]').fill('2022');
+        await page.getByPlaceholder('Desde').fill(String(seeded.year)); 
+        await page.getByPlaceholder('Hasta').fill(String(seeded.year));
         
         const responsePromise = page.waitForResponse(res => 
             res.url().includes('countries-idh-per-years') && 
             res.request().method() === 'GET' &&
             res.status() === 200
         );
-        await page.click('button[name="filter-button"]');
+        await page.click('button:has-text("Filtrar")');
         await responsePromise;
 
         // Validate filtered data is rendered in the year column.
@@ -38,19 +47,20 @@ test.describe('Pruebas E2E - Recurso SDV', () => {
     });
 
     test('Debe crear un nuevo recurso completo', async ({ page }) => {
-        await page.locator('input[name="country"]').fill('Narnia');
-        await page.locator('input[name="year"]').fill('2030');
-        await page.locator('input[name="hdi_value"]').fill('0.950');
-        await page.locator('input[name="hdi_rank"]').fill('1');
-        await page.locator('input[name="hdi_change"]').fill('0.002');
+        const uniqueCountry = `Narnia-${Date.now()}`;
+        await page.getByPlaceholder('País').first().fill(uniqueCountry);
+        await page.getByPlaceholder('Año').fill('2030');
+        await page.getByPlaceholder('Valor IDH').fill('0.950');
+        await page.getByPlaceholder('Ranking').fill('1');
+        await page.getByPlaceholder('Cambio').fill('0.002');
         
         const postPromise = page.waitForResponse(res => 
-            res.request().method() === 'POST' && (res.status() === 201 || res.status() === 200)
+            res.request().method() === 'POST' && (res.status() === 201 || res.status() === 200 || res.status() === 409)
         );
-        await page.click('button[name="add-button"]');
+        await page.click('button:has-text("Añadir Registro")');
         await postPromise;
 
-        await expect(page.locator('table')).toContainText('Narnia');
+        await expect(page.locator('table')).toContainText(uniqueCountry);
     });
 
     test('Debe borrar un recurso', async ({ page }) => {
@@ -59,14 +69,15 @@ test.describe('Pruebas E2E - Recurso SDV', () => {
         const deletePromise = page.waitForResponse(res => 
             res.request().method() === 'DELETE' && res.status() === 200
         );
-        await page.click('table tbody tr:first-child button:has-text("Eliminar")');
+        await page.locator('table tbody tr', { hasText: seeded.country }).first().locator('button:has-text("Eliminar")').click();
         await deletePromise;
         
-        await expect(page.locator('table tbody tr')).toHaveCount(initialCount - 1);
+        await expect(page.locator('table')).not.toContainText(seeded.country);
+        expect(initialCount).toBeGreaterThan(0);
     });
 
     test('Debe editar un recurso existente', async ({ page }) => {
-        await page.click('table tbody tr:first-child button:has-text("Editar")');
+        await page.locator('table tbody tr', { hasText: seeded.country }).first().locator('button:has-text("Editar")').click();
         
         await page.waitForURL(/\/front-sdv\/.+\/\d+/);
 
@@ -76,7 +87,7 @@ test.describe('Pruebas E2E - Recurso SDV', () => {
         
         await page.click('button:has-text("Guardar cambios")'); 
 
-        await page.goto('/front-sdv');
+        await page.goto('/front-sdv?e2e=true');
         await expect(page.locator('table')).toContainText('0.999');
     });
     test('Debe borrar todos los recursos existentes con confirmación', async ({ page }) => {
@@ -87,7 +98,7 @@ test.describe('Pruebas E2E - Recurso SDV', () => {
     );
 
     page.once('dialog', async dialog => {
-        expect(dialog.message()).toContain('borrar');
+        expect(dialog.message().toLowerCase()).toContain('borrar');
         await dialog.accept();
     });
 

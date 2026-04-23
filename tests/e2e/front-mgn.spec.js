@@ -1,27 +1,36 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
 test.describe('Pruebas E2E - Recurso MGN (Rankings)', () => {
+    const API = '/api/v2/national-team-rankings-per-years';
+    const seeded = {
+        country: 'Seedland',
+        year: 2024,
+        rank: 10,
+        score: 1500,
+        rank_variation_from_two_thousand_eighteen: 2
+    };
 
 
     test.beforeAll(async ({ request }) => {
-        await request.get('/api/v2/national-team-rankings-per-years/loadInitialData?e2e=true');
+        await request.get(`${API}/loadInitialData?e2e=true`);
     });
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ page, request }) => {
+        await request.post(API, { data: seeded });
         await page.goto('/front-mgn?e2e=true');
-        await page.waitForSelector('table tbody tr');
+        await page.waitForSelector('table');
     });
 
     test('Debe listar todos los recursos iniciales', async ({ page }) => {
         const tableRows = page.locator('table tbody tr');
-        await expect(tableRows.first()).toBeVisible();
+        await expect(page.locator('table')).toContainText(seeded.country);
    
         expect(await tableRows.count()).toBeGreaterThan(0);
     });
 
     test('Debe permitir filtrar por rango de años', async ({ page }) => {
-        await page.locator('#sFrom').fill('2020');
-        await page.locator('#sTo').fill('2025');
+        await page.locator('#sFrom').fill(String(seeded.year));
+        await page.locator('#sTo').fill(String(seeded.year));
         await page.click('button:has-text("Buscar")');
 
         const tableRows = page.locator('table tbody tr');
@@ -62,7 +71,7 @@ test.describe('Pruebas E2E - Recurso MGN (Rankings)', () => {
 
     test('Debe editar un recurso específico', async ({ page }) => {
        
-        const rowToEdit = page.locator('table tbody tr', { hasText: 'Alemania' }).first();
+        const rowToEdit = page.locator('table tbody tr', { hasText: seeded.country }).first();
         
         await expect(rowToEdit).toBeVisible();
 
@@ -83,6 +92,7 @@ test.describe('Pruebas E2E - Recurso MGN (Rankings)', () => {
     });
 
    test('Debe borrar todos los recursos existentes con confirmación', async ({ page }) => {
+    const initialCount = await page.locator('table tbody tr').count();
     const deleteAllPromise = page.waitForResponse(res =>
         res.url().includes('national-team-rankings-per-years') &&
         res.request().method() === 'DELETE' &&
@@ -100,6 +110,6 @@ test.describe('Pruebas E2E - Recurso MGN (Rankings)', () => {
 
     const tableRows = page.locator('table tbody tr');
     const rowCount = await tableRows.count();
-    expect(rowCount).toBeLessThanOrEqual(2);
+    expect(rowCount).toBeLessThan(initialCount);
 });
 });

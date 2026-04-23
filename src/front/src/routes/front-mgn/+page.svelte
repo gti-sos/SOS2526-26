@@ -1,6 +1,5 @@
 <script>
     // @ts-nocheck
-    import { dev } from '$app/environment';
     import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
     import { PUBLIC_AUTH0_DOMAIN_MGN, PUBLIC_AUTH0_CLIENT_ID_MGN} from '$env/static/public';
@@ -10,9 +9,9 @@
 
     import { env } from '$env/dynamic/public'; // <--- Importa esto (SvelteKit)
 
-    // Usamos la variable de entorno que pasaremos por Docker, 
-    // o localhost si estamos trabajando en local sin Docker.
-    const BASE_URL = dev ? "http://localhost:3000" : "https://sos2526-26.onrender.com";
+    // Usamos el mismo origen donde se sirve la app para evitar
+    // que E2E en build de producción apunte al backend remoto.
+    const BASE_URL = typeof window !== 'undefined' ? window.location.origin : "";
     let API = BASE_URL + '/api/v2/national-team-rankings-per-years';
 
 

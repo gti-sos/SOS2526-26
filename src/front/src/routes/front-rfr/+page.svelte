@@ -1,14 +1,13 @@
 <script>
 // @ts-nocheck
 
-    import { dev } from '$app/environment';
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { env } from '$env/dynamic/public'; // <--- Importa esto (SvelteKit)
 
-    // Usamos la variable de entorno que pasaremos por Docker, 
-    // o localhost si estamos trabajando en local sin Docker.
-    const BASE_URL = dev ? "http://localhost:3000" : "https://sos2526-26.onrender.com";
+    // Usamos el mismo origen donde se sirve la app para evitar
+    // que E2E en build de producción apunte al backend remoto.
+    const BASE_URL = typeof window !== 'undefined' ? window.location.origin : "";
     let API = BASE_URL + '/api/v2/fifa-squad-value-per-years';
 
     // 2. Estados (Svelte 5)
