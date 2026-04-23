@@ -1,11 +1,21 @@
 <script>
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import { env } from '$env/dynamic/public';
 
 	let loading = $state(true);
 	let errorMessage = $state('');
 	let chartContainer;
 	const REQUEST_TIMEOUT_MS = 12000;
+	const API_BASE_URL = (
+		(env.PUBLIC_API_URL && env.PUBLIC_API_URL.trim()) ||
+		(typeof window !== 'undefined' ? window.location.origin : '')
+	).replace(/\/$/, '');
+
+	function toApiUrl(path) {
+		if (/^https?:\/\//.test(path)) return path;
+		return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+	}
 
 	async function fetchWithTimeout(url) {
 		const controller = new AbortController();
@@ -59,29 +69,30 @@
 	}
 
 	async function loadDataset(apiBasePath) {
-		const response = await fetchWithTimeout(apiBasePath);
+		const endpoint = toApiUrl(apiBasePath);
+		const response = await fetchWithTimeout(endpoint);
 		if (!response.ok) {
-			throw new Error(`No se pudo cargar ${apiBasePath}.`);
+			throw new Error(`No se pudo cargar ${endpoint}.`);
 		}
 
 		const payload = await response.json();
 		const collection = Array.isArray(payload) ? payload : [];
-		console.log(`[analytics] ${apiBasePath} -> registros iniciales:`, collection.length);
-		console.log(`[analytics] ${apiBasePath} muestra inicial:`, collection.slice(0, 5));
+		console.log(`[analytics] ${endpoint} -> registros iniciales:`, collection.length);
+		console.log(`[analytics] ${endpoint} muestra inicial:`, collection.slice(0, 5));
 		if (collection.length > 0) return collection;
 
 		// Solo se intenta cargar semilla si la colección está vacía.
-		await fetchWithTimeout(`${apiBasePath}/loadInitialData`).catch(() => null);
+		await fetchWithTimeout(`${endpoint}/loadInitialData`).catch(() => null);
 
-		const seededResponse = await fetchWithTimeout(apiBasePath);
+		const seededResponse = await fetchWithTimeout(endpoint);
 		if (!seededResponse.ok) {
-			throw new Error(`No se pudo cargar ${apiBasePath} después de inicializar datos.`);
+			throw new Error(`No se pudo cargar ${endpoint} después de inicializar datos.`);
 		}
 
 		const seededPayload = await seededResponse.json();
 		const seededCollection = Array.isArray(seededPayload) ? seededPayload : [];
-		console.log(`[analytics] ${apiBasePath} -> registros tras loadInitialData:`, seededCollection.length);
-		console.log(`[analytics] ${apiBasePath} muestra tras loadInitialData:`, seededCollection.slice(0, 5));
+		console.log(`[analytics] ${endpoint} -> registros tras loadInitialData:`, seededCollection.length);
+		console.log(`[analytics] ${endpoint} muestra tras loadInitialData:`, seededCollection.slice(0, 5));
 		return seededCollection;
 	}
 
