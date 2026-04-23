@@ -79,6 +79,8 @@ export default function(app) {
     app.get(SDV_URL + "/loadInitialData", (req, res) => {
         const initialData = [
             {"year":2022,"country":"españa","hdi_value":0.911,"hdi_rank":27,"hdi_change":1},
+            {"year":2025,"country":"españa","hdi_value":0.910,"hdi_rank":26,"hdi_change":1},
+            {"year":2026,"country":"españa","hdi_value":0.909,"hdi_rank":25,"hdi_change":1},
             {"year":2022,"country":"alemania","hdi_value":0.95,"hdi_rank":7,"hdi_change":0},
             {"year":2022,"country":"reino-unido","hdi_value":0.94,"hdi_rank":15,"hdi_change":2},
             {"year":2022,"country":"francia","hdi_value":0.91,"hdi_rank":28,"hdi_change":-1},

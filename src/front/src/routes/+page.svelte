@@ -53,6 +53,12 @@
         </a>
     </section>
 
+    <section style="text-align: center; margin-bottom: 35px;">
+        <a href="/analytics" style="background-color: #8e44ad; color: white; padding: 10px 18px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            📊 Ver visualización integrada de analytics
+        </a>
+    </section>
+
     <h2 style="border-bottom: 2px solid #3498db; padding-bottom: 10px;">Componentes del equipo y recursos</h2>
     
     <div style="display: flex; flex-direction: column; gap: 20px; margin-top: 20px;">
