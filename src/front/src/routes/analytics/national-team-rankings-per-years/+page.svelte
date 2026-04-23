@@ -13,14 +13,14 @@
 
     async function fetchData() {
         try {
-            const res = await fetch("http://localhost:3000/api/v2/national-team-rankings-per-years");
+            const res = await fetch("/api/v2/national-team-rankings-per-years");
             if (res.ok) {
                 rankings = await res.json();
                 
                 // Si la API está vacía, intentamos cargar los iniciales
                 if (rankings.length === 0) {
-                    await fetch("http://localhost:3000/api/v2/national-team-rankings-per-years/loadInitialData");
-                    const retry = await fetch("http://localhost:3000/api/v2/national-team-rankings-per-years");
+                    await fetch("/api/v2/national-team-rankings-per-years/loadInitialData");
+                    const retry = await fetch("/api/v2/national-team-rankings-per-years");
                     rankings = await retry.json();
                 }
 
