@@ -79,6 +79,9 @@
 </script>
 
 <main>
+	<p class="map-link">
+		<a href="/analytics/countries-idh-per-years/map">Ver mapa geoespacial de la API</a>
+	</p>
 	<div id="container"></div>
 </main>
 
@@ -87,5 +90,20 @@
 		width: 100%;
 		max-width: 900px;
 		margin: 0 auto;
+	}
+
+	.map-link {
+		text-align: center;
+		margin: 10px 0 16px;
+	}
+
+	.map-link a {
+		display: inline-block;
+		padding: 10px 14px;
+		background: #1e5cb3;
+		color: #fff;
+		text-decoration: none;
+		border-radius: 6px;
+		font-weight: 600;
 	}
 </style>
