@@ -1,9 +1,9 @@
 <script>
     import { onMount } from 'svelte';
-    import { browser } from '$app/environment'; // Para evitar errores de servidor
+    import { browser } from '$app/environment';
 
-    let rankings = [];
     let chartContainer;
+    let rankings = [];
 
     onMount(async () => {
         if (browser) {
@@ -17,7 +17,6 @@
             if (res.ok) {
                 rankings = await res.json();
                 
-                // Si la API está vacía, intentamos cargar los iniciales Nuevos
                 if (rankings.length === 0) {
                     await fetch("/api/v2/national-team-rankings-per-years/loadInitialData");
                     const retry = await fetch("/api/v2/national-team-rankings-per-years");
@@ -25,51 +24,73 @@
                 }
 
                 if (rankings.length > 0) {
-                    // Importamos Highcharts dinámicamente solo aquí para que no falle el servidor
+                    // --- CARGA SEGURA DE MÓDULOS ---
                     const Highcharts = (await import('highcharts')).default;
+                    
+                    // Importamos el módulo y verificamos si la función está en .default o es el módulo en sí
+                    const stockModule = await import('highcharts/modules/stock');
+                    const Stock = stockModule.default || stockModule; 
+                    
+                    // Verificamos que sea una función antes de llamarla
+                    if (typeof Stock === 'function') {
+                        Stock(Highcharts);
+                    }
+
                     loadChart(Highcharts);
                 }
             }
         } catch (error) {
-            console.error("Error de red:", error);
+            console.error("Error cargando la gráfica:", error);
         }
     }
 
     function loadChart(Highcharts) {
-        // Preparamos los datos con colores: Verde si sube o igual (>=0), Rojo si baja (<0)
-        const processedData = rankings.map(r => ({
-            name: `${r.country} (${r.year})`,
-            y: r.score,
-            rank: r.rank,
-            variation: r.rank_variation_from_two_thousand_eighteen,
-            color: r.rank_variation_from_two_thousand_eighteen >= 0 ? '#2ecc71' : '#e74c3c'
-        }));
+        // 1. PROCESAMIENTO: Solo el año más reciente por país
+        const latestRankingsMap = {};
+        rankings.forEach(r => {
+            if (!latestRankingsMap[r.country] || r.year > latestRankingsMap[r.country].year) {
+                latestRankingsMap[r.country] = r;
+            }
+        });
+
+        const dataForChart = Object.values(latestRankingsMap)
+            .sort((a, b) => b.score - a.score); // Ordenados de mejor a peor
 
         Highcharts.chart(chartContainer, {
             chart: {
-                type: 'column', // COLUMNAS VERTICALES (distinto a bar y line)
+                type: 'column',
                 backgroundColor: '#ffffff'
             },
-            title: {
-                text: '📊 Puntuaciones y Variación de Rankings FIFA'
-            },
+            title: { text: '📊 Ranking FIFA: Puntuación Actual' },
+            subtitle: { text: 'Desliza la barra inferior para ver todos los países' },
             xAxis: {
-                categories: processedData.map(d => d.name),
-                title: { text: 'País y Año' }
+                categories: dataForChart.map(d => d.country),
+                min: 0,
+                max: 10, // Muestra solo 11 columnas a la vez para evitar el efecto "peine"
+                scrollbar: {
+                    enabled: true // Requiere el módulo Stock cargado arriba
+                },
+                labels: {
+                    style: { fontSize: '12px' }
+                }
             },
             yAxis: {
-                title: { text: 'Puntos (Score)' }
+                title: { text: 'Puntos (Score)' },
+                min: 0
             },
             tooltip: {
                 useHTML: true,
                 pointFormat: `
+                    <b>País:</b> {point.category}<br/>
                     <b>Puntos:</b> {point.y}<br/>
-                    <b>Posición:</b> #{point.rank}<br/>
-                    <b>Variación:</b> <span style="color:{point.color}"><b>{point.variation}</b></span> posiciones
+                    <b>Puesto:</b> #{point.rank}<br/>
+                    <b>Año del dato:</b> {point.year}
                 `
             },
             plotOptions: {
                 column: {
+                    borderRadius: 5,
+                    colorByPoint: true,
                     dataLabels: {
                         enabled: true,
                         format: '{point.y}'
@@ -78,48 +99,49 @@
             },
             series: [{
                 name: 'Puntuación',
-                data: processedData,
+                // Pasamos los datos como objetos para que el tooltip tenga acceso a "rank" y "year"
+                data: dataForChart.map(d => ({
+                    y: d.score,
+                    rank: d.rank,
+                    year: d.year
+                })),
                 showInLegend: false
             }],
+            colors: ['#2c3e50', '#2980b9', '#27ae60', '#f1c40f', '#e67e22', '#e74c3c'],
             credits: { enabled: false }
         });
     }
 </script>
 
 <main>
-    <div class="container">
-        <h1>Visualización: Rankings Nacionales</h1>
-        <p>Las columnas <b>Rojas</b> indican una bajada en el ranking desde 2018.</p>
-
-        <div bind:this={chartContainer} class="chart-box"></div>
-
-        <div style="margin-top: 20px; text-align: center;">
-            <a href="/front-mgn" class="btn-back">← Volver al Listado</a>
+    <div class="card">
+        <div bind:this={chartContainer}></div>
+        
+        <div class="info">
+            <p>Se muestra únicamente el registro más reciente de cada selección para facilitar la comparativa.</p>
+            <a href="/front-mgn" class="btn">Volver a la tabla</a>
         </div>
     </div>
 </main>
 
 <style>
-    .container {
-        max-width: 900px;
-        margin: 30px auto;
+    .card {
+        max-width: 1000px;
+        margin: 40px auto;
         padding: 20px;
         background: white;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        font-family: sans-serif;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
-    h1 { text-align: center; color: #333; }
-    p { text-align: center; color: #666; }
-    .chart-box {
-        width: 100%;
-        height: 500px;
+    .info {
+        text-align: center;
         margin-top: 20px;
     }
-    .btn-back {
+    .btn {
         display: inline-block;
-        padding: 10px 20px;
-        background: #34495e;
+        margin-top: 15px;
+        padding: 10px 25px;
+        background: #2c3e50;
         color: white;
         text-decoration: none;
         border-radius: 5px;
