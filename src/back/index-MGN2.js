@@ -203,7 +203,7 @@ export default function (app) {
 
     // --- 2. GET para cargar datos iniciales ---
     app.get(MGN_URL + "/loadInitialData", (req, res) => {
-        const initial_rankings = [
+        /*const example = [
             { "country": "Alemania", "year": 2018, "rank": 1, "score": 1533, "rank_variation_from_two_thousand_eighteen": 0 },
             { "country": "Angola", "year": 2025, "rank": 87, "score": 1279.55, "rank_variation_from_two_thousand_eighteen": 1 },
             { "country": "Albania", "year": 2026, "rank": 63, "score": 1401.07, "rank_variation_from_two_thousand_eighteen": 2 },
@@ -214,8 +214,9 @@ export default function (app) {
             { "country": "Alemania", "year": 2026, "rank": 10, "score": 1724.15, "rank_variation_from_two_thousand_eighteen": 7 },
             { "country": "Albania", "year": 2018, "rank": 56, "score": 549, "rank_variation_from_two_thousand_eighteen": 8 },
             { "country": "Andorra", "year": 2026, "rank": 172, "score": 949.44, "rank_variation_from_two_thousand_eighteen": -9 }
-        ];
-        //const initial_rankings = data;
+        ];*/
+        const initial_rankings = example;
+        const initial_rankings = data;
 
         db.count({}, (err, count) => {
             if (err) return res.sendStatus(500);
