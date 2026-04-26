@@ -215,7 +215,7 @@ export default function (app) {
             { "country": "Albania", "year": 2018, "rank": 56, "score": 549, "rank_variation_from_two_thousand_eighteen": 8 },
             { "country": "Andorra", "year": 2026, "rank": 172, "score": 949.44, "rank_variation_from_two_thousand_eighteen": -9 }
         ];*/
-        const initial_rankings = example;
+        //const initial_rankings = example;
         const initial_rankings = data;
 
         db.count({}, (err, count) => {
