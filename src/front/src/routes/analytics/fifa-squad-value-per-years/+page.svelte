@@ -10,7 +10,7 @@
 
             const chartData = data.map(item => {
         return {
-            name: item.country, // Convertimos 'country' en 'name'
+            name: item.country + " " + item.year, // Etiqueta con el país y el año
             y: parseFloat(item.total_market_value) // Convertimos el valor en el eje 'y'
         };
     });

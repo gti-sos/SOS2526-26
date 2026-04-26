@@ -6,6 +6,7 @@
             name: "Moises Guillermo Godoy Nava", 
             dataSource: "national-team-rankings-per-years", 
             frontend: "/front-mgn", 
+            graficas: "/analytics/national-team-rankings-per-years",
             apis: [
                 {url: "/api/v1/national-team-rankings-per-years", label: "v1"}, 
                 {url: "/api/v2/national-team-rankings-per-years", label: "v2"}   
@@ -19,6 +20,7 @@
             name: "Ricardo Fernandez Rodriguez-Navas",
             dataSource: "fifa-squad-value-per-years",
             frontend: "/front-rfr",
+            graficas: "/analytics/fifa-squad-value-per-years",
             apis: [
                 {url: "/api/v1/fifa-squad-value-per-years", label: "v1"}, 
                 {url: "/api/v2/fifa-squad-value-per-years", label: "v2"}  
@@ -32,6 +34,7 @@
             name: "Sergio Diaz Vazquez",
             dataSource: "countries-idh-per-years",
             frontend: "/front-sdv",
+            graficas: "/analytics/countries-idh-per-years",
             apis: [
                 {url: "/api/v1/countries-idh-per-years", label: "v1"}, 
                 {url: "/api/v2/countries-idh-per-years", label: "v2"}  
@@ -76,6 +79,14 @@
                             🖥️ Front-end Web
                         </a>
                     </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                    <div>
+                        <a href={member.graficas} style="display: inline-block; padding: 10px 15px; background-color: #3498db; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                            📊 Gráficas
+                        </a>
+                    </div>
+                </div>
 
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                         <span style="font-weight: bold; color: #666;">⚙️ APIs:</span>
@@ -94,7 +105,6 @@
                             </a>
                         {/each}
                     </div>
-                </div>
             </div>
         {/each}
     </div>
