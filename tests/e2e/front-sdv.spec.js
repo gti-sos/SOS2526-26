@@ -22,6 +22,10 @@ test.describe('Pruebas E2E - Recurso SDV', () => {
         await page.waitForSelector('table');
     });
 
+    async function countSeedlandRows(page) {
+        return page.locator('table tbody tr', { hasText: seeded.country }).count();
+    }
+
     test('Debe listar todos los recursos iniciales', async ({ page }) => {
         const tableRows = page.locator('table tbody tr');
         await expect(page.locator('table')).toContainText(seeded.country);
@@ -30,7 +34,8 @@ test.describe('Pruebas E2E - Recurso SDV', () => {
     });
 
     test('Debe permitir filtrar por año', async ({ page }) => {
-        await page.getByPlaceholder('Desde').fill(String(seeded.year)); 
+        await page.getByRole('checkbox', { name: 'Rango de años' }).check();
+        await page.getByPlaceholder('Desde').fill(String(seeded.year));
         await page.getByPlaceholder('Hasta').fill(String(seeded.year));
         
         const responsePromise = page.waitForResponse(res => 
@@ -38,12 +43,14 @@ test.describe('Pruebas E2E - Recurso SDV', () => {
             res.request().method() === 'GET' &&
             res.status() === 200
         );
-        await page.click('button:has-text("Filtrar")');
+        await page.getByRole('button', { name: 'Buscar' }).click();
         await responsePromise;
 
-        // Validate filtered data is rendered in the year column.
-        const yearCell = page.locator('table tbody tr td').nth(1);
-        await expect(yearCell).not.toBeEmpty(); 
+        // Validate all visible rows match the filtered year.
+        const yearCells = page.locator('table tbody tr td:nth-child(2)');
+        const years = (await yearCells.allTextContents()).map(text => text.trim());
+        expect(years.length).toBeGreaterThan(0);
+        expect(years.every(year => year === String(seeded.year))).toBeTruthy();
     });
 
     test('Debe crear un nuevo recurso completo', async ({ page }) => {
@@ -64,7 +71,7 @@ test.describe('Pruebas E2E - Recurso SDV', () => {
     });
 
     test('Debe borrar un recurso', async ({ page }) => {
-        const initialCount = await page.locator('table tbody tr').count();
+        const initialCount = await countSeedlandRows(page);
         
         const deletePromise = page.waitForResponse(res => 
             res.request().method() === 'DELETE' && res.status() === 200
@@ -72,7 +79,7 @@ test.describe('Pruebas E2E - Recurso SDV', () => {
         await page.locator('table tbody tr', { hasText: seeded.country }).first().locator('button:has-text("Eliminar")').click();
         await deletePromise;
         
-        await expect(page.locator('table')).not.toContainText(seeded.country);
+        await expect.poll(async () => countSeedlandRows(page)).toBe(initialCount - 1);
         expect(initialCount).toBeGreaterThan(0);
     });
 
@@ -85,7 +92,7 @@ test.describe('Pruebas E2E - Recurso SDV', () => {
         await inputNum.waitFor({ state: 'visible' });
         await inputNum.fill('0.999'); 
         
-        await page.click('button:has-text("Guardar cambios")'); 
+        await page.getByRole('button', { name: 'Guardar Cambios' }).click();
 
         await page.goto('/front-sdv?e2e=true');
         await expect(page.locator('table')).toContainText('0.999');
@@ -107,7 +114,6 @@ test.describe('Pruebas E2E - Recurso SDV', () => {
     await deleteAllPromise;
 
     const tableRows = page.locator('table tbody tr');
-    const rowCount = await tableRows.count();
-    expect(rowCount).toBeLessThanOrEqual(2);
+    await expect(tableRows).toHaveCount(0);
 });
 });
