@@ -27,6 +27,11 @@
     let searchYear = $state("");
     let searchFrom = $state("");
     let searchTo = $state("");
+    let searchRank = $state("");
+    let searchScore = $state("");
+    let searchRankVariationFrom2018 = $state("");
+    let searchOffset = $state("");
+    let searchLimit = $state("");
 
     // --- NUEVO: ESTADOS DE AUTH0 ---
     let auth0Client = $state(null);
@@ -107,6 +112,13 @@
         if (searchYear) queryParams.append("year", searchYear);
         if (searchFrom) queryParams.append("from", searchFrom);
         if (searchTo) queryParams.append("to", searchTo);
+        if (searchRank) queryParams.append("rank", searchRank);
+        if (searchScore) queryParams.append("score", searchScore);
+        if (searchRankVariationFrom2018) {
+            queryParams.append("rank_variation_from_two_thousand_eighteen", searchRankVariationFrom2018);
+        }
+        if (searchOffset) queryParams.append("offset", searchOffset);
+        if (searchLimit) queryParams.append("limit", searchLimit);
 
         const queryString = queryParams.toString();
         // Si hay filtros, añadimos el ?, si no, llamamos a la API normal
@@ -139,6 +151,11 @@
         searchYear = "";
         searchFrom = "";
         searchTo = "";
+        searchRank = "";
+        searchScore = "";
+        searchRankVariationFrom2018 = "";
+        searchOffset = "";
+        searchLimit = "";
         // Llama a tu función original que carga todos los datos (supongo que se llama getData o getRankings)
         getData(); 
         showMessage("Filtros limpiados. Mostrando todos los registros.");
@@ -182,7 +199,7 @@
             newRanking = { country: "", year: "", rank: "", score: "", rank_variation_from_two_thousand_eighteen: "" };
             
             // RECARGA AUTOMÁTICA: Si había una búsqueda activa, refrescamos la búsqueda, si no, los datos normales.
-            if (searchCountry || searchYear || searchFrom || searchTo) {
+            if (searchCountry || searchYear || searchFrom || searchTo || searchRank || searchScore || searchRankVariationFrom2018 || searchOffset || searchLimit) {
                 await searchRankings(); 
             } else {
                 await getData();
@@ -202,7 +219,7 @@
             showMessage(`Se ha eliminado el registro de ${country}.`);
             
             // RECARGA AUTOMÁTICA inteligente
-            if (searchCountry || searchYear || searchFrom || searchTo) {
+            if (searchCountry || searchYear || searchFrom || searchTo || searchRank || searchScore || searchRankVariationFrom2018 || searchOffset || searchLimit) {
                 await searchRankings(); 
             } else {
                 await getData();
@@ -217,7 +234,9 @@
             const res = await fetch(API, { method: "DELETE" });
             if (res.ok) {
                 showMessage("Base de datos vaciada con éxito.");
-                searchCountry = ""; searchYear = ""; searchFrom = ""; searchTo = ""; // Limpiamos variables de búsqueda
+                searchCountry = ""; searchYear = ""; searchFrom = ""; searchTo = "";
+                searchRank = ""; searchScore = ""; searchRankVariationFrom2018 = "";
+                searchOffset = ""; searchLimit = "";
                 await getData(); // Recarga automática
             }
         }
@@ -346,6 +365,31 @@
         <div style="display: flex; flex-direction: column; gap: 5px;">
             <label for="sTo" style="font-size: 0.9rem; font-weight: bold;">Hasta (Año):</label>
             <input id="sTo" type="number" bind:value={searchTo} placeholder="Ej: 2020" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100px;" />
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+            <label for="sRank" style="font-size: 0.9rem; font-weight: bold;">Posición (Exacta):</label>
+            <input id="sRank" type="number" bind:value={searchRank} placeholder="Ej: 1" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 110px;" />
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+            <label for="sScore" style="font-size: 0.9rem; font-weight: bold;">Puntos (Exactos):</label>
+            <input id="sScore" type="number" bind:value={searchScore} placeholder="Ej: 1500" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 130px;" />
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+            <label for="sVar2018" style="font-size: 0.9rem; font-weight: bold;">Var. desde 2018 (Exacta):</label>
+            <input id="sVar2018" type="number" bind:value={searchRankVariationFrom2018} placeholder="Ej: 2" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 160px;" />
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+            <label for="sOffset" style="font-size: 0.9rem; font-weight: bold;">Offset:</label>
+            <input id="sOffset" type="number" min="0" bind:value={searchOffset} placeholder="0" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 90px;" />
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+            <label for="sLimit" style="font-size: 0.9rem; font-weight: bold;">Limit:</label>
+            <input id="sLimit" type="number" min="0" bind:value={searchLimit} placeholder="0" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 90px;" />
         </div>
 
         <div style="display: flex; gap: 10px; margin-bottom: 2px;">

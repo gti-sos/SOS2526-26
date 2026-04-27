@@ -10,6 +10,17 @@ test.describe('Pruebas E2E - Recurso MGN (Rankings)', () => {
         rank_variation_from_two_thousand_eighteen: 2
     };
 
+    async function safeGoto(page, url) {
+        try {
+            await page.goto(url);
+        } catch (err) {
+            // En Windows/CI a veces hay un reinicio breve del webServer y Playwright
+            // falla con net::ERR_NETWORK_CHANGED. Reintentamos una vez.
+            await page.waitForTimeout(1500);
+            await page.goto(url);
+        }
+    }
+
 
     test.beforeAll(async ({ request }) => {
         await request.get(`${API}/loadInitialData?e2e=true`);
@@ -17,7 +28,7 @@ test.describe('Pruebas E2E - Recurso MGN (Rankings)', () => {
 
     test.beforeEach(async ({ page, request }) => {
         await request.post(API, { data: seeded });
-        await page.goto('/front-mgn?e2e=true');
+        await safeGoto(page, '/front-mgn?e2e=true');
         await page.waitForSelector('table');
     });
 
@@ -35,6 +46,36 @@ test.describe('Pruebas E2E - Recurso MGN (Rankings)', () => {
 
         const tableRows = page.locator('table tbody tr');
         await expect(tableRows).not.toHaveCount(0);
+    });
+
+    test('Debe permitir filtrar por rank (exacto)', async ({ page }) => {
+        await page.locator('#sRank').fill(String(seeded.rank));
+        await page.click('button:has-text("Buscar")');
+
+        await expect(page.locator('table')).toContainText(seeded.country);
+    });
+
+    test('Debe permitir filtrar por score (exacto)', async ({ page }) => {
+        await page.locator('#sScore').fill(String(seeded.score));
+        await page.click('button:has-text("Buscar")');
+
+        await expect(page.locator('table')).toContainText(seeded.country);
+    });
+
+    test('Debe permitir filtrar por variación desde 2018 (exacta)', async ({ page }) => {
+        await page.locator('#sVar2018').fill(String(seeded.rank_variation_from_two_thousand_eighteen));
+        await page.click('button:has-text("Buscar")');
+
+        await expect(page.locator('table')).toContainText(seeded.country);
+    });
+
+    test('Debe permitir paginar con offset/limit', async ({ page }) => {
+        await page.locator('#sOffset').fill('0');
+        await page.locator('#sLimit').fill('1');
+        await page.click('button:has-text("Buscar")');
+
+        const tableRows = page.locator('table tbody tr');
+        await expect(tableRows).toHaveCount(1);
     });
 
     test('Debe crear un nuevo recurso completo', async ({ page }) => {
