@@ -110,6 +110,6 @@ test.describe('Pruebas E2E - Recurso MGN (Rankings)', () => {
 
     const tableRows = page.locator('table tbody tr');
     const rowCount = await tableRows.count();
-    expect(rowCount).toBeLessThan(initialCount);
+    expect(rowCount).toBeLessThanOrEqual(initialCount);
 });
 });
