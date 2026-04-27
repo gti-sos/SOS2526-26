@@ -60,7 +60,7 @@ export default function(app) {
         if (req.query.rank_variation_from_two_thousand_eighteen) {
             query.rank_variation_from_two_thousand_eighteen = Number(req.query.rank_variation_from_two_thousand_eighteen);
         }
-
+        // .
         let offset = parseInt(req.query.offset) || 0;
         let limit = parseInt(req.query.limit) || 0;
 
