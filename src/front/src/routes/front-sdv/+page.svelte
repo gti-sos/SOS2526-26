@@ -70,15 +70,68 @@
 
     onMount(getData);
 
-    // Búsqueda
-    let search = $state({ from: "", to: "", country: "" });
+    // Búsqueda avanzada (menú interactivo en español)
+    let filtros = $state({
+        usarPais: true,
+        country: "",
+        usarAnioExacto: false,
+        year: "",
+        usarRangoAnios: false,
+        from: "",
+        to: "",
+        usarValorIdh: false,
+        hdi_value: "",
+        usarRanking: false,
+        hdi_rank: "",
+        usarCambio: false,
+        hdi_change: "",
+        usarPaginacion: false,
+        offset: "",
+        limit: ""
+    });
+
+    function appendIfEnabled(query, enabled, key, value) {
+        if (!enabled) return;
+        const normalized = String(value ?? "").trim();
+        if (normalized !== "") query.append(key, normalized);
+    }
+
     async function handleSearch() {
         const query = new URLSearchParams();
-        if (search.from) query.append("from", search.from);
-        if (search.to) query.append("to", search.to);
-        if (search.country) query.append("country", search.country);
+        appendIfEnabled(query, filtros.usarPais, "country", filtros.country);
+        appendIfEnabled(query, filtros.usarAnioExacto, "year", filtros.year);
+        appendIfEnabled(query, filtros.usarRangoAnios, "from", filtros.from);
+        appendIfEnabled(query, filtros.usarRangoAnios, "to", filtros.to);
+        appendIfEnabled(query, filtros.usarValorIdh, "hdi_value", filtros.hdi_value);
+        appendIfEnabled(query, filtros.usarRanking, "hdi_rank", filtros.hdi_rank);
+        appendIfEnabled(query, filtros.usarCambio, "hdi_change", filtros.hdi_change);
+        appendIfEnabled(query, filtros.usarPaginacion, "offset", filtros.offset);
+        appendIfEnabled(query, filtros.usarPaginacion, "limit", filtros.limit);
+
         const res = await fetch(`${API}?${query.toString()}`);
         if (res.ok) { idhs = await res.json(); }
+    }
+
+    function limpiarFiltros() {
+        filtros = {
+            usarPais: true,
+            country: "",
+            usarAnioExacto: false,
+            year: "",
+            usarRangoAnios: false,
+            from: "",
+            to: "",
+            usarValorIdh: false,
+            hdi_value: "",
+            usarRanking: false,
+            hdi_rank: "",
+            usarCambio: false,
+            hdi_change: "",
+            usarPaginacion: false,
+            offset: "",
+            limit: ""
+        };
+        getData();
     }
 </script>
 
@@ -123,13 +176,64 @@
         <p style="color: #e67e22; font-size: 0.9em; margin-top: 10px;">⚠️ Debes iniciar sesión para añadir datos.</p>
     {/if}
 
-    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
-      <strong>Buscar: </strong>
-      <input type="text" placeholder="País" bind:value={search.country} style="width: 120px;"/>
-      <input type="number" placeholder="Desde" bind:value={search.from} style="width: 80px;"/>
-      <input type="number" placeholder="Hasta" bind:value={search.to} style="width: 80px;"/>
-      <button onclick={handleSearch}>Filtrar</button>
-      <button onclick={() => { search = {from:"", to:"", country:""}; getData(); }}>Limpiar</button>
+    <div class="filtros-panel">
+        <h4>Menú interactivo de búsqueda</h4>
+        <p class="hint">Activa solo los filtros que quieras aplicar.</p>
+
+        <div class="filtros-grid">
+            <label class="filtro-item">
+                <input type="checkbox" bind:checked={filtros.usarPais} />
+                País
+                <input type="text" placeholder="Ej: españa" bind:value={filtros.country} disabled={!filtros.usarPais} />
+            </label>
+
+            <label class="filtro-item">
+                <input type="checkbox" bind:checked={filtros.usarAnioExacto} />
+                Año exacto
+                <input type="number" placeholder="Ej: 2022" bind:value={filtros.year} disabled={!filtros.usarAnioExacto} />
+            </label>
+
+            <label class="filtro-item">
+                <input type="checkbox" bind:checked={filtros.usarRangoAnios} />
+                Rango de años
+                <div class="filtro-inline">
+                    <input type="number" placeholder="Desde" bind:value={filtros.from} disabled={!filtros.usarRangoAnios} />
+                    <input type="number" placeholder="Hasta" bind:value={filtros.to} disabled={!filtros.usarRangoAnios} />
+                </div>
+            </label>
+
+            <label class="filtro-item">
+                <input type="checkbox" bind:checked={filtros.usarValorIdh} />
+                Valor IDH
+                <input type="number" step="0.001" placeholder="Ej: 0.911" bind:value={filtros.hdi_value} disabled={!filtros.usarValorIdh} />
+            </label>
+
+            <label class="filtro-item">
+                <input type="checkbox" bind:checked={filtros.usarRanking} />
+                Ranking IDH
+                <input type="number" placeholder="Ej: 27" bind:value={filtros.hdi_rank} disabled={!filtros.usarRanking} />
+            </label>
+
+            <label class="filtro-item">
+                <input type="checkbox" bind:checked={filtros.usarCambio} />
+                Cambio IDH
+                <input type="number" placeholder="Ej: 1" bind:value={filtros.hdi_change} disabled={!filtros.usarCambio} />
+            </label>
+
+            <label class="filtro-item">
+                <input type="checkbox" bind:checked={filtros.usarPaginacion} />
+                Paginación
+                <div class="filtro-inline">
+                    <input type="number" min="0" placeholder="Offset" bind:value={filtros.offset} disabled={!filtros.usarPaginacion} />
+                    <input type="number" min="1" placeholder="Limit" bind:value={filtros.limit} disabled={!filtros.usarPaginacion} />
+                </div>
+            </label>
+        </div>
+
+        <div class="filtros-actions">
+            <button onclick={handleSearch}>Buscar</button>
+            <button onclick={limpiarFiltros}>Limpiar filtros</button>
+        </div>
     </div>
 </section>
 
@@ -182,4 +286,39 @@
     .btn-edit { color: white; background-color: #f39c12; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; margin-right: 5px; }
     .btn-delete { color: white; background-color: #e74c3c; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; }
     button:hover { opacity: 0.8; }
+    .filtros-panel {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #ddd;
+    }
+    .hint { margin: 6px 0 14px; color: #666; font-size: 0.92rem; }
+    .filtros-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 12px;
+    }
+    .filtro-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: white;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    .filtro-item input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+    }
+    .filtro-inline {
+        display: flex;
+        gap: 8px;
+    }
+    .filtros-actions {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+    }
 </style>
