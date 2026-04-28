@@ -30,7 +30,7 @@ function cleanResource(resource) {
     return resource;
 }
 
-export default function(app) {
+export default function (app) {
     const SDV_URL = "/api/v2/countries-idh-per-years";
 
     // --- RUTA DOCUMENTACIÓN (CORREGIDA: Se añade /docs para no pisar la ruta principal) ---
@@ -42,7 +42,7 @@ export default function(app) {
     app.get(SDV_URL, (req, res) => {
         let offset = parseInt(req.query.offset) || 0;
         let limit = parseInt(req.query.limit) || 0;
-        
+
         // Extraemos los posibles parámetros de búsqueda de req.query
         let { country, from, to, year, hdi_value, hdi_rank, hdi_change } = req.query;
         let query = {};
@@ -78,18 +78,30 @@ export default function(app) {
     // --- 2. GET para cargar datos iniciales ---
     app.get(SDV_URL + "/loadInitialData", (req, res) => {
         const initialData = [
-            {"year":2022,"country":"españa","hdi_value":0.911,"hdi_rank":27,"hdi_change":1},
-            {"year":2025,"country":"españa","hdi_value":0.910,"hdi_rank":26,"hdi_change":1},
-            {"year":2026,"country":"españa","hdi_value":0.909,"hdi_rank":25,"hdi_change":1},
-            {"year":2022,"country":"alemania","hdi_value":0.95,"hdi_rank":7,"hdi_change":0},
-            {"year":2022,"country":"reino-unido","hdi_value":0.94,"hdi_rank":15,"hdi_change":2},
-            {"year":2022,"country":"francia","hdi_value":0.91,"hdi_rank":28,"hdi_change":-1},
-            {"year":2022,"country":"italia","hdi_value":0.906,"hdi_rank":30,"hdi_change":0},
-            {"year":2022,"country":"portugal","hdi_value":0.874,"hdi_rank":42,"hdi_change":-3},
-            {"year":2022,"country":"estados-unidos","hdi_value":0.927,"hdi_rank":20,"hdi_change":1},
-            {"year":2022,"country":"japón","hdi_value":0.92,"hdi_rank":24,"hdi_change":-2},
-            {"year":2022,"country":"china","hdi_value":0.788,"hdi_rank":75,"hdi_change":-1},
-            {"year":2021,"country":"españa","hdi_value":0.904,"hdi_rank":28,"hdi_change":1}
+            { "year": 2022, "country": "españa", "hdi_value": 0.911, "hdi_rank": 27, "hdi_change": 1 },
+            { "year": 2021, "country": "españa", "hdi_value": 0.904, "hdi_rank": 27, "hdi_change": 0 },
+            { "year": 2020, "country": "españa", "hdi_value": 0.899, "hdi_rank": 28, "hdi_change": -1 },
+
+            { "year": 2022, "country": "estados-unidos", "hdi_value": 0.927, "hdi_rank": 20, "hdi_change": 1 },
+            { "year": 2021, "country": "estados-unidos", "hdi_value": 0.921, "hdi_rank": 21, "hdi_change": 0 },
+            { "year": 2020, "country": "estados-unidos", "hdi_value": 0.920, "hdi_rank": 21, "hdi_change": -1 },
+            { "year": 2015, "country": "estados-unidos", "hdi_value": 0.912, "hdi_rank": 15, "hdi_change": 0 },
+
+            { "year": 2022, "country": "china", "hdi_value": 0.788, "hdi_rank": 75, "hdi_change": 1 },
+            { "year": 2021, "country": "china", "hdi_value": 0.768, "hdi_rank": 79, "hdi_change": 2 },
+            { "year": 2015, "country": "china", "hdi_value": 0.733, "hdi_rank": 90, "hdi_change": 1 },
+
+            { "year": 2022, "country": "francia", "hdi_value": 0.910, "hdi_rank": 28, "hdi_change": -1 },
+            { "year": 2021, "country": "francia", "hdi_value": 0.903, "hdi_rank": 28, "hdi_change": 0 },
+            { "year": 2015, "country": "francia", "hdi_value": 0.890, "hdi_rank": 22, "hdi_change": 0 },
+
+            { "year": 2022, "country": "japón", "hdi_value": 0.920, "hdi_rank": 24, "hdi_change": -2 },
+            { "year": 2021, "country": "japón", "hdi_value": 0.917, "hdi_rank": 22, "hdi_change": 1 },
+            { "year": 2015, "country": "japón", "hdi_value": 0.905, "hdi_rank": 19, "hdi_change": 0 },
+
+            { "year": 2022, "country": "india", "hdi_value": 0.644, "hdi_rank": 134, "hdi_change": 1 },
+            { "year": 2021, "country": "india", "hdi_value": 0.633, "hdi_rank": 135, "hdi_change": -1 },
+            { "year": 2015, "country": "india", "hdi_value": 0.627, "hdi_rank": 130, "hdi_change": 0 }
         ];
 
         db.count({}, (err, count) => {
@@ -107,9 +119,9 @@ export default function(app) {
     // --- 3. POST a la colección ---
     app.post(SDV_URL, (req, res) => {
         const newData = req.body;
-        
+
         // Validación de campos requeridos
-        if (!newData.country || !newData.year || newData.hdi_value === undefined || 
+        if (!newData.country || !newData.year || newData.hdi_value === undefined ||
             newData.hdi_rank === undefined || newData.hdi_change === undefined) {
             return res.status(400).send("Faltan campos obligatorios");
         }
