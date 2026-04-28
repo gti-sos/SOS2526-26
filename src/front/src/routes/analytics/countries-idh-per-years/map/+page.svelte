@@ -1,4 +1,5 @@
 <script>
+	// @ts-nocheck
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import 'leaflet/dist/leaflet.css';
