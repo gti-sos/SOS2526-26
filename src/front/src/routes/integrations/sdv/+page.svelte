@@ -217,11 +217,95 @@
 		}
 	}
 
-	// UN SOLO onMount para controlarlos a todos
+	async function loadDisasterIntegration() {
+		if (typeof google === 'undefined') {
+			setTimeout(loadDisasterIntegration, 500);
+			return;
+		}
+
+		try {
+			const resIDH = await fetch('/api/v2/countries-idh-per-years');
+			const myData = await resIDH.json();
+			const resDisasters = await fetch('https://sos2526-29.onrender.com/api/v2/natural-disasters');
+			const peerData = await resDisasters.json();
+
+			// @ts-ignore
+			google.charts.load('current', { packages: ['geochart'] });
+
+			// @ts-ignore
+			google.charts.setOnLoadCallback(() => {
+				const chartData = [['País', 'Daño Económico Promedio (USD)']];
+
+				// TRADUCTOR: Relaciona TUS nombres con los de la API de TUS COMPAÑEROS
+				const countryMapper = {
+					españa: 'spain',
+					francia: 'france',
+					japón: 'japan',
+					china: 'china',
+					india: 'india',
+					'estados-unidos': 'united states',
+					afganistán: 'afghanistan',
+					italia: 'italy',
+					alemania: 'germany'
+				};
+
+				const myCountries = [...new Set(myData.map((d) => d.country.toLowerCase().trim()))];
+
+				myCountries.forEach((myCountry) => {
+					const peerName = countryMapper[myCountry] || myCountry;
+
+					const peerEntries = peerData.filter((p) => p.country.toLowerCase().trim() === peerName);
+
+					if (peerEntries.length > 0) {
+						const avgDamage =
+							peerEntries.reduce((s, c) => s + (parseFloat(c.economic_damage_usd) || 0), 0) /
+							peerEntries.length;
+
+						// Extraemos los años únicos y los juntamos (ej: "2024" o "1990, 2010")
+						const years = [...new Set(peerEntries.map((p) => p.year))].join(', ');
+
+						// CAPITALIZAMOS el nombre para que Google lo reconozca bien
+						const cleanName = peerName.charAt(0).toUpperCase() + peerName.slice(1);
+
+						// USAMOS UN OBJETO DE VALOR FORMATEADO:
+						// v: es el ID interno que Google usa para pintar (Spain)
+						// f: es lo que el usuario ve en el cuadro de texto (Spain (Año: 2024))
+						chartData.push([{ v: cleanName, f: `${cleanName} (Años: ${years})` }, avgDamage]);
+					}
+				});
+
+				console.log('Países cruzados con éxito:', chartData.length - 1);
+
+				if (chartData.length > 1) {
+					// @ts-ignore
+					const dataTable = google.visualization.arrayToDataTable(chartData);
+					const options = {
+						colorAxis: { colors: ['#ffecb3', '#ffa000', '#e65100'] },
+						backgroundColor: '#f4f7f6',
+						datalessRegionColor: '#e0e0e0', // Gris para países sin datos
+						defaultColor: '#f5f5f5'
+					};
+					// @ts-ignore
+					const chart = new google.visualization.GeoChart(
+						document.getElementById('chart-map-disasters')
+					);
+					chart.draw(dataTable, options);
+				} else {
+					console.warn(
+						'No se han encontrado coincidencias. Revisa los nombres de los países en la consola.'
+					);
+				}
+			});
+		} catch (error) {
+			console.error('Error en el mapa:', error);
+		}
+	}
+
 	onMount(() => {
 		loadSpaceIntegration();
 		loadSpiceIntegration();
 		loadWaterIntegration();
+		loadDisasterIntegration();
 	});
 </script>
 
@@ -230,6 +314,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/d3/dist/d3.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/billboard.js/dist/billboard.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+	<script src="https://www.gstatic.com/charts/loader.js"></script>
 </svelte:head>
 
 <main>
@@ -250,6 +335,13 @@
 	<section class="chart-section">
 		<h3 class="chart-subtitle">Integración: IDH vs Acceso a Agua Urbana (Billboard + scatter)</h3>
 		<div id="chart-water-integration"></div>
+	</section>
+
+	<section class="chart-section">
+		<h3 class="chart-subtitle">
+			Integración: IDH vs Daños por desastres naturales (Google Charts + GeoChart)
+		</h3>
+		<div id="chart-map-disasters"></div>
 	</section>
 </main>
 
