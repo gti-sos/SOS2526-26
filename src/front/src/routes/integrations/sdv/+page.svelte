@@ -99,7 +99,6 @@
 			});
 
 			const columns = [['x', 'IDH', 'Producción', 'Consumo', 'Importación', 'Exportación']];
-
 			commonYears
 				.sort((a, b) => a - b)
 				.forEach((year) => {
@@ -119,14 +118,12 @@
 				bb.generate({
 					data: { x: 'x', columns: columns, type: 'radar' },
 					radar: {
-						axis: { max: 115 }, // Un poco de margen para que el texto no se pise
+						axis: { max: 115 },
 						level: { depth: 4 },
 						direction: { clockwise: true }
 					},
 					color: { pattern: ['#1f77b4', '#ff7f0e', '#2ca02c'] },
-					tooltip: {
-						format: { value: (v) => v.toFixed(1) + '% del máximo' }
-					},
+					tooltip: { format: { value: (v) => v.toFixed(1) + '% del máximo' } },
 					bindto: '#chart-radar-spice'
 				});
 			}
@@ -134,81 +131,97 @@
 			console.error('Error en Spice Integration:', error);
 		}
 	}
+
 	async function loadWaterIntegration() {
 		try {
-			// 1. PETICIONES
 			const resIDH = await fetch('/api/v2/countries-idh-per-years');
 			const myData = await resIDH.json();
-
 			const resWater = await fetch(
 				'https://sos2526-27.onrender.com/api/v1/drinking-water-services'
 			);
 			const peerData = await resWater.json();
 
-			// 2. PROCESAMIENTO
+			const idhByYear = myData.reduce((acc, curr) => {
+				const y = parseInt(curr.year);
+				if (!acc[y]) acc[y] = { sum: 0, count: 0 };
+				acc[y].sum += parseFloat(curr.hdi_value) || 0;
+				acc[y].count += 1;
+				return acc;
+			}, {});
+
+			const waterByYear = peerData.reduce((acc, curr) => {
+				const y = parseInt(curr.year);
+				if (!acc[y]) acc[y] = { sum: 0, count: 0 };
+				acc[y].sum += parseFloat(curr.wat_bas_pop_residence_urban) || 0;
+				acc[y].count += 1;
+				return acc;
+			}, {});
+
 			const scatterX = ['IDH'];
 			const scatterY = ['Población Agua Urbana'];
 
-			myData.forEach((myEntry) => {
-				// Buscamos coincidencia por AÑO y PAÍS (entity)
-				const matches = peerData.filter(
-					(p) =>
-						parseInt(p.year) === parseInt(myEntry.year) &&
-						p.entity.toLowerCase().trim() === myEntry.country.toLowerCase().trim()
-				);
+			// Creamos un objeto para guardar la relación IDH -> Año
+			const idhToYearMap = {};
 
-				matches.forEach((match) => {
-					scatterX.push(parseFloat(myEntry.hdi_value) || 0);
-					scatterY.push(parseFloat(match.wat_bas_pop_residence_urban) || 0);
-				});
+			const commonYears = Object.keys(idhByYear).filter((y) => waterByYear[y]);
+
+			commonYears.forEach((year) => {
+				const avgIDH = idhByYear[year].sum / idhByYear[year].count;
+				const avgWater = waterByYear[year].sum / waterByYear[year].count;
+
+				if (avgWater > 0) {
+					// Redondeamos a 3 decimales para asegurar que la búsqueda coincida
+					const idhKey = avgIDH.toFixed(3);
+					scatterX.push(avgIDH);
+					scatterY.push(avgWater);
+
+					// Guardamos: "Para este IDH, el año es tal"
+					idhToYearMap[idhKey] = year;
+				}
 			});
 
-			// 3. RENDERIZADO CON BILLBOARD.JS
 			if (scatterX.length > 1) {
-				// @ts-ignore
 				bb.generate({
 					data: {
-						xs: {
-							'Población Agua Urbana': 'IDH'
-						},
+						xs: { 'Población Agua Urbana': 'IDH' },
 						columns: [scatterX, scatterY],
 						type: 'scatter'
 					},
-					axis: {
-						x: {
-							label: 'Índice de Desarrollo Humano (IDH)',
-							tick: { fit: false, format: (v) => v.toFixed(2) }
-						},
-						y: {
-							label: 'Pob. Acceso Agua Urbana'
+					tooltip: {
+						format: {
+							// Aquí está el truco: buscamos en nuestro mapa usando el valor X
+							title: (x) => 'Año seleccionado: ' + (idhToYearMap[x.toFixed(3)] || 'Desconocido')
 						}
 					},
-					point: {
-						r: 6 // Puntos ligeramente más grandes para que destaquen
+					axis: {
+						x: {
+							label: 'IDH Promedio Anual',
+							tick: { fit: false, format: (v) => v.toFixed(3) },
+							padding: { left: 0.05, right: 0.05 }
+						},
+						y: {
+							label: 'Media Acceso Agua Urbana',
+							tick: {
+								format: (v) => (v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v)
+							}
+						}
 					},
-					color: {
-						pattern: ['#af4bce'] // Un color púrpura para diferenciarlo de los otros gráficos
-					},
+					grid: { x: { show: true }, y: { show: true } },
+					point: { r: 8 },
+					color: { pattern: ['#af4bce'] },
 					bindto: '#chart-water-integration'
 				});
-			} else {
-				console.warn('No se encontraron coincidencias para la gráfica de dispersión.');
 			}
 		} catch (error) {
 			console.error('Error en la integración de Agua:', error);
 		}
 	}
 
-	
+	// UN SOLO onMount para controlarlos a todos
 	onMount(() => {
 		loadSpaceIntegration();
 		loadSpiceIntegration();
 		loadWaterIntegration();
-	});
-
-	onMount(() => {
-		loadSpaceIntegration();
-		loadSpiceIntegration();
 	});
 </script>
 
@@ -235,9 +248,9 @@
 	</section>
 
 	<section class="chart-section">
-    <h3 class="chart-subtitle">Integración: IDH vs Acceso a Agua Urbana (Billboard + scatter)</h3>
-    <div id="chart-water-integration"></div>
-</section>
+		<h3 class="chart-subtitle">Integración: IDH vs Acceso a Agua Urbana (Billboard + scatter)</h3>
+		<div id="chart-water-integration"></div>
+	</section>
 </main>
 
 <style>
