@@ -535,6 +535,97 @@
 		}
 	}
 
+	async function loadWeatherDonut() {
+		try {
+			// LLAMADA DIRECTA (Sin Proxy porque la API permite CORS)
+			const response = await fetch(
+				'https://api.open-meteo.com/v1/forecast?latitude=37.3828&longitude=-5.9731&current_weather=true'
+			);
+			const data = await response.json();
+			const temp = data.current_weather.temperature;
+			const wind = data.current_weather.windspeed;
+
+			// Combinación Nueva: Billboard.js + Donut Chart
+			bb.generate({
+				data: {
+					columns: [
+						['Temperatura (ºC)', temp],
+						['Viento (km/h)', wind]
+					],
+					type: 'donut', // Tipo de gráfica no repetido en Billboard
+					onclick: function (d, i) {
+						console.log('onclick', d, i);
+					},
+					onover: function (d, i) {
+						console.log('onover', d, i);
+					},
+					onout: function (d, i) {
+						console.log('onout', d, i);
+					}
+				},
+				donut: {
+					title: 'Clima en Sevilla'
+				},
+				bindto: '#chart-weather-donut'
+			});
+		} catch (error) {
+			console.error('Error cargando la API de clima directa:', error);
+		}
+	}
+
+	let countriesChartLoaded = false;
+	async function loadCountriesPie() {
+		try {
+			const response = await fetch('https://restcountries.com/v3.1/all?fields=region');
+			if (!response.ok) throw new Error('Error API');
+			const countries = await response.json();
+
+			// 1. Calculamos el total para sacar nosotros el porcentaje
+			const totalCountries = countries.length;
+			const stats = {};
+			countries.forEach((c) => {
+				const region = c.region || 'Otros';
+				stats[region] = (stats[region] || 0) + 1;
+			});
+
+			// 2. Metemos el % en el texto de la etiqueta
+			const dataForChart = [['Región', 'Nº de Países']];
+			for (let region in stats) {
+				const percentage = ((stats[region] / totalCountries) * 100).toFixed(1);
+				// Esto hace que la etiqueta sea: "Europe (21.2%)"
+				dataForChart.push([`${region} (${percentage}%)`, stats[region]]);
+			}
+
+			google.charts.load('current', { packages: ['corechart'] });
+			google.charts.setOnLoadCallback(() => {
+				const data = google.visualization.arrayToDataTable(dataForChart);
+
+				const options = {
+					title: 'Distribución Global de Países por Continente',
+					is3D: false, // El 3D es el que causa el parpadeo en navegadores modernos
+					pieSliceText: 'none', // Quitamos el texto de dentro para evitar que unos se vean y otros no
+					sliceVisibilityThreshold: 0,
+					legend: {
+						position: 'labeled', // Esto saca las líneas hacia afuera
+						textStyle: { fontSize: 11 }
+					},
+					// Damos más margen a los lados (80%) para que las etiquetas no se corten
+					chartArea: { left: '10%', width: '80%', height: '80%' },
+					tooltip: { trigger: 'focus' },
+					// Colores limpios
+					colors: ['#3366cc', '#dc3912', '#ff9900', '#109618', '#990099', '#0099c6']
+				};
+
+				const chart = new google.visualization.PieChart(
+					document.getElementById('chart-countries-pie')
+				);
+				chart.draw(data, options);
+			});
+		} catch (error) {
+			console.error('Error:', error);
+		}
+	}
+
 	onMount(() => {
 		loadSpaceIntegration();
 		loadSpiceIntegration();
@@ -542,6 +633,8 @@
 		loadDisasterIntegration();
 		loadFertilityIntegration();
 		loadEducationIntegration();
+		loadWeatherDonut();
+		loadCountriesPie();
 	});
 </script>
 
@@ -593,6 +686,18 @@
 	<section class="chart-section">
 		<h3 class="chart-subtitle">Integración: IDH vs Educacion (ApexCharts + Area Chart)</h3>
 		<div id="chart-education"></div>
+	</section>
+
+	<section class="chart-section">
+		<h3 class="chart-subtitle">Uso: Clima en Sevilla(Billboard + Donut Chart)</h3>
+		<div id="chart-weather-donut"></div>
+	</section>
+
+	<section class="chart-section">
+		<h3 class="chart-subtitle">
+			Uso: Distribución de países por continentes(Google charts + Pie Chart)
+		</h3>
+		<div id="chart-countries-pie"></div>
 	</section>
 </main>
 
