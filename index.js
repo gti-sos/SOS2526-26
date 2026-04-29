@@ -15,17 +15,49 @@ import rfr_api1 from './src/back/index-RFR.js';
 import rfr_api2 from './src/back/index-RFR2.js';
 import sdv_api from './src/back/index-SDV.js';
 import sdv_api2 from './src/back/index-SDV2.js';
-import request from 'request';
 
 const app = express();
 
 var proxyPath = '/api/v1/proxy/education-spending';
-// URL de la API externa (Banco Mundial - Gasto en educación) 
-var remoteUrl = 'https://api.worldbank.org/v2/country/all/indicator/SE.XPD.TOTL.GD.ZS?format=json&per_page=1000';
+const worldBankCountries = ['ESP', 'USA', 'CHN', 'FRA', 'JPN', 'IND', 'NOR', 'BRA', 'NGA', 'AUS'];
+const worldBankIndicator = 'SE.XPD.TOTL.GD.ZS';
+const worldBankBaseUrl = `https://api.worldbank.org/v2/country/all/indicator/${worldBankIndicator}`;
 
-app.use(proxyPath, function(req, res) {
-    console.log('Petición redirigida vía Proxy a: ' + remoteUrl);
-    req.pipe(request(remoteUrl)).pipe(res); 
+app.get(proxyPath, async function(req, res) {
+    try {
+        const wantedCountries = new Set(worldBankCountries);
+        const perPage = 20000;
+        const firstUrl = `${worldBankBaseUrl}?format=json&per_page=${perPage}&page=1`;
+
+        console.log('Petición redirigida vía Proxy a: ' + firstUrl);
+        const firstResp = await fetch(firstUrl);
+        if (!firstResp.ok) {
+            return res.status(firstResp.status).send(`Error consultando World Bank: ${firstResp.status}`);
+        }
+
+        const firstPayload = await firstResp.json();
+        const meta = firstPayload?.[0] || {};
+        const totalPages = Number(meta.pages) || 1;
+        let rows = Array.isArray(firstPayload?.[1]) ? firstPayload[1] : [];
+
+        if (totalPages > 1) {
+            for (let page = 2; page <= totalPages; page += 1) {
+                const pageUrl = `${worldBankBaseUrl}?format=json&per_page=${perPage}&page=${page}`;
+                const pageResp = await fetch(pageUrl);
+                if (!pageResp.ok) continue;
+                const pagePayload = await pageResp.json();
+                const pageRows = Array.isArray(pagePayload?.[1]) ? pagePayload[1] : [];
+                rows = rows.concat(pageRows);
+            }
+        }
+
+        rows = rows.filter((row) => wantedCountries.has(String(row?.countryiso3code || '').toUpperCase()));
+
+        return res.status(200).json([{ ...meta, pages: 1, page: 1, per_page: String(rows.length), total: rows.length }, rows]);
+    } catch (error) {
+        console.error('Error en proxy de educación:', error);
+        return res.status(500).json({ error: 'Error en proxy de educación' });
+    }
 });
 
 app.use(cors());

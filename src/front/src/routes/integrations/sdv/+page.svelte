@@ -380,53 +380,158 @@
 	// INTEGRACIONES CON APIS EXTERNAS
 	async function loadEducationIntegration() {
 		try {
-			// 1. Obtener tus datos de IDH
+			const normalizeCountry = (value = '') =>
+				value
+					.toString()
+					.toLowerCase()
+					.normalize('NFD')
+					.replace(/[\u0300-\u036f]/g, '')
+					.replace(/[^a-z0-9]/g, '');
+
+			// 1. Obtener datos internos de IDH
 			const resIDH = await fetch('/api/v2/countries-idh-per-years');
 			const myData = await resIDH.json();
 
-			// 2. Obtener datos externos a través de TU PROXY
+			// 2. Obtener datos externos usando el proxy propio
 			const resExt = await fetch('/api/v1/proxy/education-spending');
 			const response = await resExt.json();
-			const externalData = response[1]; // Datos del Banco Mundial
+			const externalData = Array.isArray(response?.[1]) ? response[1] : [];
 
+			// Relación país interno -> alias de nombre y código ISO3 del Banco Mundial.
+			const countryMap = {
+				espana: { name: 'spain', iso3: 'ESP' },
+				estadosunidos: { name: 'unitedstates', iso3: 'USA' },
+				china: { name: 'china', iso3: 'CHN' },
+				francia: { name: 'france', iso3: 'FRA' },
+				japon: { name: 'japan', iso3: 'JPN' },
+				india: { name: 'india', iso3: 'IND' },
+				noruega: { name: 'norway', iso3: 'NOR' },
+				brasil: { name: 'brazil', iso3: 'BRA' },
+				nigeria: { name: 'nigeria', iso3: 'NGA' },
+				australia: { name: 'australia', iso3: 'AUS' }
+			};
+
+			// 3. Indexar API externa por clave pais+año para cruce O(1)
+			const externalByCountryYear = new Map();
+			const externalByCountry = new Map();
+			externalData.forEach((ext) => {
+				const extCountry = normalizeCountry(ext?.country?.value);
+				const extIso3 = String(ext?.countryiso3code ?? '')
+					.trim()
+					.toUpperCase();
+				const extYear = String(ext?.date ?? '').trim();
+				const extYearNum = parseInt(extYear, 10);
+				const extValue = parseFloat(ext?.value);
+
+				if (!extCountry || !extYear || Number.isNaN(extValue)) return;
+				externalByCountryYear.set(`${extCountry}_${extYear}`, extValue);
+				if (extIso3) externalByCountryYear.set(`${extIso3}_${extYear}`, extValue);
+
+				if (!externalByCountry.has(extCountry)) externalByCountry.set(extCountry, []);
+				externalByCountry.get(extCountry).push({ year: extYearNum, value: extValue });
+				if (extIso3) {
+					if (!externalByCountry.has(extIso3)) externalByCountry.set(extIso3, []);
+					externalByCountry.get(extIso3).push({ year: extYearNum, value: extValue });
+				}
+			});
+
+			externalByCountry.forEach((items) => {
+				items.sort((a, b) => a.year - b.year);
+			});
+
+			// 4. Cruce de datos internos con externos
 			const finalData = [];
-
-			// 3. Lógica de INTEGRACIÓN: Cruzamos por nombre de país
 			myData.forEach((myEntry) => {
-				const match = externalData.find(
-					(ext) =>
-						ext.country.value.toLowerCase() === myEntry.country.toLowerCase() && ext.value !== null
-				);
-				if (match) {
+				const myCountry = normalizeCountry(myEntry?.country);
+				const mapping = countryMap[myCountry] || {};
+				const targetCountryByName = mapping.name || myCountry;
+				const targetCountryByIso3 = mapping.iso3 || '';
+				const myYear = parseInt(String(myEntry?.year).trim(), 10);
+				const yearText = String(myEntry?.year).trim();
+				const keyByName = `${targetCountryByName}_${yearText}`;
+				const keyByIso3 = targetCountryByIso3 ? `${targetCountryByIso3}_${yearText}` : '';
+
+				let educationValue =
+					externalByCountryYear.get(keyByIso3) ?? externalByCountryYear.get(keyByName);
+				let educationYear = myYear;
+
+				// Fallback: si no hay ese año exacto, buscar por país el año más cercano con dato.
+				if (educationValue === undefined) {
+					const candidates =
+						externalByCountry.get(targetCountryByIso3) ||
+						externalByCountry.get(targetCountryByName);
+					if (!candidates || candidates.length === 0) return;
+
+					const nearest = candidates.reduce((best, current) => {
+						if (!best) return current;
+						const bestDiff = Math.abs(best.year - myYear);
+						const currDiff = Math.abs(current.year - myYear);
+						return currDiff < bestDiff ? current : best;
+					}, null);
+					if (nearest) {
+						educationValue = nearest.value;
+						educationYear = nearest.year;
+					}
+				}
+				const idh = parseFloat(myEntry?.hdi_value);
+
+				if (educationValue !== undefined && !Number.isNaN(idh)) {
 					finalData.push({
-						name: myEntry.country,
-						idh: myEntry.hdi_value,
-						spending: match.value
+						countryLabel: `${myEntry.country} (IDH ${myEntry.year} / Edu ${educationYear})`,
+						idh,
+						education: educationValue
 					});
 				}
 			});
 
-			// Ordenamos por IDH para que el gráfico de área tenga sentido
 			finalData.sort((a, b) => a.idh - b.idh);
+			console.info(
+				`[education-integration] registros internos: ${myData.length}, externos validos: ${externalByCountryYear.size}, cruces: ${finalData.length}`
+			);
 
-			// 4. Generar el WIDGET: ApexCharts + Area
-			const options = {
-				series: [
-					{ name: 'Valor IDH', data: finalData.map((d) => d.idh) },
-					{ name: '% PIB Educación', data: finalData.map((d) => d.spending) }
-				],
-				chart: { type: 'area', height: 450, zoom: { enabled: false } },
-				dataLabels: { enabled: false },
-				stroke: { curve: 'smooth' },
-				xaxis: { categories: finalData.map((d) => d.name) },
-				yaxis: { title: { text: 'Escala Comparativa' } },
-				colors: ['#008FFB', '#FF4560']
-			};
+			if (finalData.length > 0) {
+				const options = {
+					series: [
+						{ name: 'Valor IDH', data: finalData.map((d) => d.idh) },
+						{ name: 'Inversión Educación (% PIB)', data: finalData.map((d) => d.education) }
+					],
+					chart: {
+						type: 'area',
+						height: 450,
+						toolbar: { show: true }
+					},
+					dataLabels: { enabled: false },
+					stroke: { curve: 'smooth' },
+					xaxis: {
+						categories: finalData.map((d) => d.countryLabel),
+						labels: { rotate: -45, style: { fontSize: '10px' } }
+					},
+					yaxis: {
+						labels: {
+							formatter: function (value) {
+								return value.toFixed(2); // Esto dejará solo 2 decimales
+							}
+						},
+						title: { text: 'Valor / Porcentaje' }
+					},
+					colors: ['#00E396', '#FF4560'],
+					fill: {
+						type: 'gradient',
+						gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.3 }
+					}
+				};
 
-			const chart = new ApexCharts(document.querySelector('#chart-education'), options);
-			chart.render();
+				const educationContainer = document.querySelector('#chart-education');
+				if (educationContainer) {
+					educationContainer.innerHTML = '';
+					const chart = new ApexCharts(educationContainer, options);
+					chart.render();
+				}
+			} else {
+				console.error('No se han podido cruzar los datos. Revisa país/año del proxy en consola.');
+			}
 		} catch (error) {
-			console.error('Error en la integración:', error);
+			console.error('Error cargando la integración de educación:', error);
 		}
 	}
 
@@ -442,13 +547,12 @@
 
 <svelte:head>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/billboard.js/dist/billboard.min.css" />
+
 	<script src="https://cdn.jsdelivr.net/npm/d3/dist/d3.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/billboard.js/dist/billboard.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 	<script src="https://www.gstatic.com/charts/loader.js"></script>
-	<script src="https://code.highcharts.com/highcharts.js"></script>
-	<script src="https://code.highcharts.com/highcharts-more.js"></script>
-	<script src="https://code.highcharts.com/modules/exporting.js"></script>
+
 	<script src="https://code.highcharts.com/highcharts.js"></script>
 	<script src="https://code.highcharts.com/highcharts-more.js"></script>
 	<script src="https://code.highcharts.com/modules/exporting.js"></script>
