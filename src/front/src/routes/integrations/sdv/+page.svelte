@@ -4,6 +4,8 @@
 
 	let chartContainer;
 
+	// INTEGRACIONES CON APIS DE OTROS COMPAÑEROS
+
 	async function loadSpaceIntegration() {
 		try {
 			const resIDH = await fetch('/api/v2/countries-idh-per-years');
@@ -301,11 +303,140 @@
 		}
 	}
 
+	async function loadFertilityIntegration() {
+		try {
+			const resIDH = await fetch('/api/v2/countries-idh-per-years');
+			const myData = await resIDH.json();
+			const resFert = await fetch(
+				'https://sos2526-12.onrender.com/api/v2/age-specific-fertility-rates'
+			);
+			const peerData = await resFert.json();
+
+			const seriesData = [];
+			const countries = [...new Set(peerData.map((p) => p.country_name))];
+
+			countries.forEach((cName) => {
+				// 1. Normalización básica: todo a minúsculas y sin espacios extra
+				const normalizedName = cName.toLowerCase().trim();
+
+				// 2. Buscamos el IDH comparando de forma normalizada
+				const idhEntry = myData.find((d) => d.country.toLowerCase().trim() === normalizedName);
+
+				// 3. FILTRADO ESTRICTO: Si no hay coincidencia exacta, se ignora el país
+				if (!idhEntry) {
+					return;
+				}
+
+				// 4. Si hay coincidencia, procesamos los datos de fertilidad
+				const fertEntries = peerData.filter((p) => p.country_name === cName);
+
+				if (fertEntries.length > 0) {
+					const latest = fertEntries[fertEntries.length - 1];
+					seriesData.push({
+						name: `${cName} (IDH: ${idhEntry.hdi_value})`,
+						data: [
+							{ name: 'Fertilidad 15-19', value: parseFloat(latest.fert_15_19) },
+							{ name: 'Fertilidad 20-24', value: parseFloat(latest.fert_20_24) }
+						]
+					});
+				}
+			});
+
+			// @ts-ignore
+			Highcharts.chart('chart-fertility-bubbles', {
+				chart: {
+					type: 'packedbubble',
+					height: '600px',
+					backgroundColor: 'transparent'
+				},
+				title: { text: '' },
+				tooltip: {
+					useHTML: true,
+					pointFormat: '<b>{point.name}:</b> {point.value}'
+				},
+				plotOptions: {
+					packedbubble: {
+						minSize: '30%',
+						maxSize: '120%',
+						layoutAlgorithm: {
+							splitSeries: true,
+							gravitationalConstant: 0.02,
+							friction: 0.8
+						},
+						dataLabels: {
+							enabled: true,
+							format: '{point.name}',
+							style: { color: '#333', textOutline: 'none', fontWeight: 'normal' }
+						}
+					}
+				},
+				series: seriesData
+			});
+		} catch (error) {
+			console.error('Error en Fertilidad:', error);
+		}
+	}
+
+	// INTEGRACIONES CON APIS EXTERNAS
+	async function loadEducationIntegration() {
+		try {
+			// 1. Obtener tus datos de IDH
+			const resIDH = await fetch('/api/v2/countries-idh-per-years');
+			const myData = await resIDH.json();
+
+			// 2. Obtener datos externos a través de TU PROXY
+			const resExt = await fetch('/api/v1/proxy/education-spending');
+			const response = await resExt.json();
+			const externalData = response[1]; // Datos del Banco Mundial
+
+			const finalData = [];
+
+			// 3. Lógica de INTEGRACIÓN: Cruzamos por nombre de país
+			myData.forEach((myEntry) => {
+				const match = externalData.find(
+					(ext) =>
+						ext.country.value.toLowerCase() === myEntry.country.toLowerCase() && ext.value !== null
+				);
+				if (match) {
+					finalData.push({
+						name: myEntry.country,
+						idh: myEntry.hdi_value,
+						spending: match.value
+					});
+				}
+			});
+
+			// Ordenamos por IDH para que el gráfico de área tenga sentido
+			finalData.sort((a, b) => a.idh - b.idh);
+
+			// 4. Generar el WIDGET: ApexCharts + Area
+			const options = {
+				series: [
+					{ name: 'Valor IDH', data: finalData.map((d) => d.idh) },
+					{ name: '% PIB Educación', data: finalData.map((d) => d.spending) }
+				],
+				chart: { type: 'area', height: 450, zoom: { enabled: false } },
+				dataLabels: { enabled: false },
+				stroke: { curve: 'smooth' },
+				xaxis: { categories: finalData.map((d) => d.name) },
+				yaxis: { title: { text: 'Escala Comparativa' } },
+				colors: ['#008FFB', '#FF4560']
+			};
+
+			const chart = new ApexCharts(document.querySelector('#chart-education'), options);
+			chart.render();
+		} catch (error) {
+			console.error('Error en la integración:', error);
+		}
+	}
+
 	onMount(() => {
 		loadSpaceIntegration();
 		loadSpiceIntegration();
 		loadWaterIntegration();
 		loadDisasterIntegration();
+		loadFertilityIntegration();
+		loadEducationIntegration();
 	});
 </script>
 
@@ -315,6 +446,9 @@
 	<script src="https://cdn.jsdelivr.net/npm/billboard.js/dist/billboard.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 	<script src="https://www.gstatic.com/charts/loader.js"></script>
+	<script src="https://code.highcharts.com/highcharts.js"></script>
+	<script src="https://code.highcharts.com/highcharts-more.js"></script>
+	<script src="https://code.highcharts.com/modules/exporting.js"></script>
 </svelte:head>
 
 <main>
@@ -322,18 +456,18 @@
 
 	<section class="chart-section">
 		<h3 class="chart-subtitle">
-			Integración: IDH vs Lanzamientos Globales por Año (Highchart + bar)
+			Integración: IDH vs Lanzamientos Globales por Año (Highchart + Bar)
 		</h3>
 		<div id="chart-integration-space" bind:this={chartContainer}></div>
 	</section>
 
 	<section class="chart-section">
-		<h3 class="chart-subtitle">Integración: IDH vs Especias (Billboard + radar)</h3>
+		<h3 class="chart-subtitle">Integración: IDH vs Especias (Billboard + Radar)</h3>
 		<div id="chart-radar-spice"></div>
 	</section>
 
 	<section class="chart-section">
-		<h3 class="chart-subtitle">Integración: IDH vs Acceso a Agua Urbana (Billboard + scatter)</h3>
+		<h3 class="chart-subtitle">Integración: IDH vs Acceso a Agua Urbana (Billboard + Scatter)</h3>
 		<div id="chart-water-integration"></div>
 	</section>
 
@@ -342,6 +476,16 @@
 			Integración: IDH vs Daños por desastres naturales (Google Charts + GeoChart)
 		</h3>
 		<div id="chart-map-disasters"></div>
+	</section>
+
+	<section class="chart-section">
+		<h3 class="chart-subtitle">Integración: IDH vs Fertilidad (Highcharts + Packed Bubble)</h3>
+		<div id="chart-fertility-bubbles"></div>
+	</section>
+
+	<section class="chart-section">
+		<h3 class="chart-subtitle">Integración: IDH vs Educacion (ApexCharts + Area Chart)</h3>
+		<div id="chart-education"></div>
 	</section>
 </main>
 

@@ -23,7 +23,8 @@
     "jsonwebtoken": "^9.0.3",
     "nedb": "^1.8.0",
     "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0"
+    "passport-google-oauth20": "^2.0.0",
+    "request": "^2.88.2"
   },
   "license": "ISC",
   "author": "Ricardo",

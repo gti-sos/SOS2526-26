@@ -15,8 +15,18 @@ import rfr_api1 from './src/back/index-RFR.js';
 import rfr_api2 from './src/back/index-RFR2.js';
 import sdv_api from './src/back/index-SDV.js';
 import sdv_api2 from './src/back/index-SDV2.js';
+import request from 'request';
 
 const app = express();
+
+var proxyPath = '/api/v1/proxy/education-spending';
+// URL de la API externa (Banco Mundial - Gasto en educación) 
+var remoteUrl = 'https://api.worldbank.org/v2/country/all/indicator/SE.XPD.TOTL.GD.ZS?format=json&per_page=1000';
+
+app.use(proxyPath, function(req, res) {
+    console.log('Petición redirigida vía Proxy a: ' + remoteUrl);
+    req.pipe(request(remoteUrl)).pipe(res); 
+});
 
 app.use(cors());
 app.use(express.json());
@@ -38,7 +48,6 @@ app.get('/about', (req, res) => {
 
 app.use(handler);
 
-// Añade el "0.0.0.0" para que Docker exponga el puerto hacia fuera
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
