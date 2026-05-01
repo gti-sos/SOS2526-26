@@ -1,4 +1,4 @@
-<!-- 2/2 Integraciones de SOS, 1/2 usos de SOS, 0/3 usos de API normal -> 0,8 -->
+<!-- 2/2 Integraciones de SOS, 1/2 usos de SOS, 1/3 usos de API normal -> 0,8 -->
  <!-- APIs usadas: workers-productivity, citys-stats -->
 <!-- Gráficas usadas: Bar-ECharts, Pie-ECharts, Scatter-ECharts-->
 
@@ -10,13 +10,15 @@
     let loading = $state(true);
     let errorMessage = $state('');
     
-    // Referencias para las dos gráficas
+    // Referencias para las cuatro gráficas
     let chartContainer;
     let myChart; 
     let chartContainer2;
     let myChart2;
     let chartContainer3;
     let myChart3;
+    let chartContainer4;
+    let myChart4;
 
     const REQUEST_TIMEOUT_MS = 40000;
     const API_BASE_URL = (
@@ -124,6 +126,7 @@
         const ro = new ResizeObserver(() => myChart2 && myChart2.resize());
         ro.observe(chartContainer2);
     }
+    // Procesar datos para la Gráfica 3 (SCATTER)
 function processScatterData(squadData, choleraData) {
     const countryStats = new Map();
 
@@ -162,7 +165,7 @@ function processScatterData(squadData, choleraData) {
 
     return finalData;
 }
-
+ // Grafica 3 (SCATTER)
 function initScatterChart(echarts, data) {
     if (!chartContainer3) return;
     myChart3 = echarts.init(chartContainer3);
@@ -209,31 +212,106 @@ function initScatterChart(echarts, data) {
     const ro = new ResizeObserver(() => myChart3 && myChart3.resize());
     ro.observe(chartContainer3);
 }
+ // Procesar datos para la gráfica 4 (TREE)
+function processTreeData(universities) {
+    // Creamos la raíz
+    const root = {
+        name: "World Universities",
+        children: []
+    };
+
+    const countriesMap = new Map();
+
+    universities.forEach(uni => {
+        const countryName = uni.country;
+        if (!countriesMap.has(countryName)) {
+            countriesMap.set(countryName, {
+                name: countryName,
+                children: []
+            });
+            root.children.push(countriesMap.get(countryName));
+        }
+        
+        // Añadimos la universidad al país correspondiente
+        countriesMap.get(countryName).children.push({
+            name: uni.name
+        });
+    });
+
+    return root;
+}
+ // Inicialización gráfica 4 (TREE)
+function initTreeChart(echarts, treeData) {
+    if (!chartContainer4) return;
+    myChart4 = echarts.init(chartContainer4);
+
+    const option = {
+        title: { text: 'Jerarquía de Universidades por País', left: 'center' },
+        tooltip: { trigger: 'item', triggerOn: 'mousemove' },
+        series: [
+            {
+                type: 'tree',
+                data: [treeData],
+                top: '5%',
+                left: '15%',
+                bottom: '2%',
+                right: '20%',
+                symbolSize: 7,
+                label: {
+                    position: 'left',
+                    verticalAlign: 'middle',
+                    align: 'right',
+                    fontSize: 10
+                },
+                leaves: {
+                    label: {
+                        position: 'right',
+                        verticalAlign: 'middle',
+                        align: 'left'
+                    }
+                },
+                emphasis: { focus: 'descendant' },
+                expandAndCollapse: true, // Permite clicar para cerrar/abrir ramas
+                animationDuration: 550,
+                animationDurationUpdate: 750
+            }
+        ]
+    };
+
+    myChart4.setOption(option);
+    const ro = new ResizeObserver(() => myChart4 && myChart4.resize());
+    ro.observe(chartContainer4);
+}
+
   onMount(async () => {
         if (!browser) return;
         try {
             const echarts = await import('echarts');
             
-            const [squadRes, productivityRes, citiesRes, choleraRes] = await Promise.all([
+            const [squadRes, productivityRes, citiesRes, choleraRes, uniRes] = await Promise.all([
                 loadDataset('/api/v2/fifa-squad-value-per-years'),
                 loadDataset('https://sos2526-19-integracion.onrender.com/api/v1/workers-productivity'),
                 loadDataset('https://sos2526-29.onrender.com/api/v2/citys-stats'),
-                loadDataset('https://soporte-sos.onrender.com/api/v1/cholera-stats')
+                loadDataset('https://soporte-sos.onrender.com/api/v1/cholera-stats'),
+                loadDataset('http://universities.hipolabs.com/search?country=Spain')
             ]);
 
             // 1. Procesar Gráfica 1 (Barras)
             const processedDataBar = processAndMatchData(squadRes, productivityRes);
             initChart(echarts, processedDataBar);
 
-            // 2. Procesar Gráfica 2 (Pie) - No necesita proceso previo, solo mapeo interno
+            // 2. Procesar Gráfica 2 (Pie) 
             initPieChart(echarts, citiesRes);
 
-            // 3. Procesar Gráfica 3 (Scatter) - AQUÍ ESTABA EL ERROR
+            // 3. Procesar Gráfica 3 (Scatter) 
             // Usamos la función correcta y guardamos en una variable con distinto nombre
             const scatterPoints = processScatterData(squadRes, choleraRes);
             
             // Pasamos los puntos procesados, NO el choleraRes original
             initScatterChart(echarts, scatterPoints);
+
+            const treeData = processTreeData(uniRes); // uniRes son los datos de Hipolabs
+            initTreeChart(echarts, treeData);
 
         } catch (error) {
             console.error("Error en la carga:", error);
@@ -271,9 +349,23 @@ function initScatterChart(echarts, data) {
         <h2>Integración: Valor de plantilla FIFA vs Incidencia Cólera</h2>
         <div bind:this={chartContainer3} class="chart-viewport"></div>
     </section>
+
+    <hr class="separator" />
+
+    <section class:hidden={loading || errorMessage}>
+        <h2>Uso: Universidades por País</h2>
+        <div bind:this={chartContainer4} class="tree-viewport"></div>
+    </section>
 </main>
 
 <style>
+
+    .tree-viewport {
+    width: 100% !important;
+    height: 800px !important; /* Más espacio para las ramas */
+    margin-top: 1rem;
+    display: block;
+    }
     .analytics-page {
         max-width: 1200px;
         margin: 2rem auto;
