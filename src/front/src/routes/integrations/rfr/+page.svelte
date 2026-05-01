@@ -1,5 +1,6 @@
 <!-- 1/2 Integraciones de SOS, 1/2 usos de SOS, 0/3 usos de API normal -> 0,8 -->
  <!-- APIs usadas: workers-productivity, citys-stats -->
+<!-- Gráficas usadas: Bar-ECharts, Pie-ECharts, Scatter-ECharts-->
 
 <script>
     import { onMount } from 'svelte';
@@ -14,8 +15,10 @@
     let myChart; 
     let chartContainer2;
     let myChart2;
+    let chartContainer3;
+    let myChart3;
 
-    const REQUEST_TIMEOUT_MS = 15000;
+    const REQUEST_TIMEOUT_MS = 40000;
     const API_BASE_URL = (
         (env.PUBLIC_API_URL && env.PUBLIC_API_URL.trim()) ||
         (typeof window !== 'undefined' ? window.location.origin : '')
@@ -121,24 +124,119 @@
         const ro = new ResizeObserver(() => myChart2 && myChart2.resize());
         ro.observe(chartContainer2);
     }
+function processScatterData(squadData, choleraData) {
+    const countryStats = new Map();
 
-    onMount(async () => {
+    // 1. Procesar datos de Plantillas (Eje X)
+    squadData.forEach(item => {
+        if (item.country && item.total_market_value) {
+            const country = item.country.trim();
+            if (!countryStats.has(country)) {
+                countryStats.set(country, { squadValues: [], choleraCases: [] });
+            }
+            countryStats.get(country).squadValues.push(parseFloat(item.total_market_value));
+        }
+    });
+
+    // 2. Procesar datos de Cólera (Eje Y)
+    choleraData.forEach(item => {
+        if (item.country && item.reportedCases !== undefined) {
+            const country = item.country.trim();
+            if (countryStats.has(country)) {
+                countryStats.get(country).choleraCases.push(parseFloat(item.reportedCases));
+            }
+        }
+    });
+
+    // 3. Calcular medias y filtrar países que no tengan ambos datos
+    const finalData = [];
+    countryStats.forEach((stats, country) => {
+        if (stats.squadValues.length > 0 && stats.choleraCases.length > 0) {
+            const avgSquad = stats.squadValues.reduce((a, b) => a + b, 0) / stats.squadValues.length;
+            const avgCholera = stats.choleraCases.reduce((a, b) => a + b, 0) / stats.choleraCases.length;
+            
+            // ECharts Scatter necesita: [valorX, valorY, nombrePaís]
+            finalData.push([avgSquad.toFixed(2), avgCholera.toFixed(2), country]);
+        }
+    });
+
+    return finalData;
+}
+
+function initScatterChart(echarts, data) {
+    if (!chartContainer3) return;
+    myChart3 = echarts.init(chartContainer3);
+
+    const option = {
+        title: {
+            text: 'Correlación: Riqueza Futbolística vs Incidencia Cólera',
+            subtext: 'Media histórica por país (Valores promedio)',
+            left: 'center'
+        },
+        grid: { top: '15%', left: '10%', right: '10%', bottom: '15%', containLabel: true },
+        tooltip: {
+            trigger: 'item',
+            formatter: function (params) {
+                return `<b>${params.data[2]}</b><br/>Valor Mercado: ${params.data[0]} M€<br/>Casos Cólera: ${params.data[1]}`;
+            }
+        },
+        xAxis: {
+            name: 'Media Valor Plantilla (M€)',
+            nameLocation: 'middle',
+            nameGap: 30,
+            type: 'value'
+        },
+        yAxis: {
+            name: 'Media Casos Cólera Reportados',
+            nameLocation: 'middle',
+            nameGap: 50,
+            type: 'value'
+        },
+        series: [{
+            symbolSize: 20,
+            data: data,
+            type: 'scatter', // TIPO DISTINTO: SCATTER
+            itemStyle: {
+                color: '#e67e22',
+                opacity: 0.8,
+                borderColor: '#d35400',
+                borderWidth: 1
+            }
+        }]
+    };
+
+    myChart3.setOption(option);
+    const ro = new ResizeObserver(() => myChart3 && myChart3.resize());
+    ro.observe(chartContainer3);
+}
+  onMount(async () => {
         if (!browser) return;
         try {
             const echarts = await import('echarts');
-            // IMPORTANTE: Se añade citiesRes a la desestructuración
-            const [squadRes, productivityRes, citiesRes] = await Promise.all([
+            
+            const [squadRes, productivityRes, citiesRes, choleraRes] = await Promise.all([
                 loadDataset('/api/v2/fifa-squad-value-per-years'),
                 loadDataset('https://sos2526-19-integracion.onrender.com/api/v1/workers-productivity'),
-                loadDataset('https://sos2526-29.onrender.com/api/v2/citys-stats')
+                loadDataset('https://sos2526-29.onrender.com/api/v2/citys-stats'),
+                loadDataset('https://soporte-sos.onrender.com/api/v1/cholera-stats')
             ]);
 
-            const processedData = processAndMatchData(squadRes, productivityRes);
-            
-            initChart(echarts, processedData);
+            // 1. Procesar Gráfica 1 (Barras)
+            const processedDataBar = processAndMatchData(squadRes, productivityRes);
+            initChart(echarts, processedDataBar);
+
+            // 2. Procesar Gráfica 2 (Pie) - No necesita proceso previo, solo mapeo interno
             initPieChart(echarts, citiesRes);
+
+            // 3. Procesar Gráfica 3 (Scatter) - AQUÍ ESTABA EL ERROR
+            // Usamos la función correcta y guardamos en una variable con distinto nombre
+            const scatterPoints = processScatterData(squadRes, choleraRes);
+            
+            // Pasamos los puntos procesados, NO el choleraRes original
+            initScatterChart(echarts, scatterPoints);
+
         } catch (error) {
-            console.error(error);
+            console.error("Error en la carga:", error);
             errorMessage = error.message;
         } finally {
             loading = false;
@@ -156,7 +254,7 @@
     {/if}
 
     <section class:hidden={loading || errorMessage}>
-        <h2>Integración: Mercado vs Productividad</h2>
+        <h2>Integración: Valor de plantilla FIFA vs Productividad</h2>
         <div bind:this={chartContainer} class="chart-viewport"></div>
     </section>
 
@@ -165,6 +263,13 @@
     <section class:hidden={loading || errorMessage}>
         <h2>Uso: Población Urbana 2025</h2>
         <div bind:this={chartContainer2} class="chart-viewport"></div>
+    </section>
+
+    <hr class="separator" />
+
+    <section class:hidden={loading || errorMessage}>
+        <h2>Integración: Valor de plantilla FIFA vs Incidencia Cólera</h2>
+        <div bind:this={chartContainer3} class="chart-viewport"></div>
     </section>
 </main>
 
