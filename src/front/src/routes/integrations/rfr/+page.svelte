@@ -6,6 +6,7 @@
     import { onMount } from 'svelte';
     import { browser } from '$app/environment';
     import { env } from '$env/dynamic/public';
+    import * as echarts from 'echarts';
 
     let loading = $state(true);
     let errorMessage = $state('');
