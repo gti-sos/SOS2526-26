@@ -308,7 +308,7 @@
 			const resIDH = await fetch('/api/v2/countries-idh-per-years');
 			const myData = await resIDH.json();
 			const resFert = await fetch(
-				'https://sos2526-12.onrender.com/api/v2/age-specific-fertility-rates'
+				'https://sos2526-12.onrender.com/api/v2/mid-population-ages'
 			);
 			const peerData = await resFert.json();
 
@@ -335,8 +335,8 @@
 					seriesData.push({
 						name: `${cName} (IDH: ${idhEntry.hdi_value})`,
 						data: [
-							{ name: 'Fertilidad 15-19', value: parseFloat(latest.fert_15_19) },
-							{ name: 'Fertilidad 20-24', value: parseFloat(latest.fert_20_24) }
+							{ name: 'Edad 15-19', value: parseFloat(latest.fert_15_19) },
+							{ name: 'Edad 20-24', value: parseFloat(latest.fert_20_24) }
 						]
 					});
 				}
@@ -373,7 +373,7 @@
 				series: seriesData
 			});
 		} catch (error) {
-			console.error('Error en Fertilidad:', error);
+			console.error('Error en Edad:', error);
 		}
 	}
 
@@ -679,7 +679,7 @@
 	</section>
 
 	<section class="chart-section">
-		<h3 class="chart-subtitle">Integración: IDH vs Fertilidad (Highcharts + Packed Bubble)</h3>
+		<h3 class="chart-subtitle">Integración: IDH vs Edad media (Highcharts + Packed Bubble)</h3>
 		<div id="chart-fertility-bubbles"></div>
 	</section>
 
