@@ -1,4 +1,4 @@
-<!-- 1/2 Integraciones de SOS, 1/2 usos de SOS, 0/3 usos de API normal -> 0,8 -->
+<!-- 2/2 Integraciones de SOS, 1/2 usos de SOS, 0/3 usos de API normal -> 0,8 -->
  <!-- APIs usadas: workers-productivity, citys-stats -->
 <!-- Gráficas usadas: Bar-ECharts, Pie-ECharts, Scatter-ECharts-->
 

@@ -3,6 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
+RUN npx svelte-kit sync
 
 # Añadimos la variable de la API (importante el prefijo PUBLIC_ para SvelteKit)
 ARG PUBLIC_API_URL
