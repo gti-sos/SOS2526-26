@@ -20,6 +20,8 @@
     let myChart3;
     let chartContainer4;
     let myChart4;
+    let chartContainer5;
+    let myChart5;
 
     const REQUEST_TIMEOUT_MS = 40000;
     const API_BASE_URL = (
@@ -284,16 +286,63 @@ function initTreeChart(echarts, treeData) {
     ro.observe(chartContainer4);
 }
 
+function initPokemonRadar(echarts, stats) {
+    if (!chartContainer5) return;
+    myChart5 = echarts.init(chartContainer5);
+
+    const option = {
+        title: {
+            text: 'Estadísticas Base: Garchomp',
+            left: 'center',
+            textStyle: { color: '#333' }
+        },
+        tooltip: { trigger: 'item' },
+        radar: {
+            indicator: [
+                { name: 'Puntos de Vida (HP)', max: 150 },
+                { name: 'Ataque', max: 150 },
+                { name: 'Defensa', max: 150 },
+                { name: 'At. Especial', max: 150 },
+                { name: 'Def. Especial', max: 150 },
+                { name: 'Velocidad', max: 150 }
+            ],
+            shape: 'polygon',
+            splitNumber: 5,
+            axisName: { color: '#2c3e50' },
+            splitLine: { lineStyle: { color: 'rgba(0,0,0,0.1)' } },
+            splitArea: { areaStyle: { color: ['#fff', '#f9f9f9'] } }
+        },
+        series: [{
+            name: 'Garchomp Stats',
+            type: 'radar', // TIPO EXCLUSIVO
+            data: [{
+                value: stats,
+                name: 'Garchomp',
+                itemStyle: { color: '#34495e' }, // Azul oscuro/grisáceo como Garchomp
+                areaStyle: { color: 'rgba(52, 73, 94, 0.4)' },
+                symbolSize: 8
+            }]
+        }]
+    };
+
+    myChart5.setOption(option);
+    const ro = new ResizeObserver(() => myChart5 && myChart5.resize());
+    ro.observe(chartContainer5);
+}
+
   onMount(async () => {
         if (!browser) return;
         try {
+            const echarts = await import('echarts');
+        
             
-            const [squadRes, productivityRes, citiesRes, choleraRes, uniRes] = await Promise.all([
+            const [squadRes, productivityRes, citiesRes, choleraRes, uniRes, pokeRes] = await Promise.all([
                 loadDataset('/api/v2/fifa-squad-value-per-years'),
                 loadDataset('https://sos2526-19-integracion.onrender.com/api/v1/workers-productivity'),
                 loadDataset('https://sos2526-29.onrender.com/api/v2/citys-stats'),
                 loadDataset('https://soporte-sos.onrender.com/api/v1/cholera-stats'),
-                loadDataset('http://universities.hipolabs.com/search?country=Spain')
+                loadDataset('http://universities.hipolabs.com/search?country=Spain'),
+                loadDataset('https://pokeapi.co/api/v2/pokemon/garchomp')
             ]);
 
             // 1. Procesar Gráfica 1 (Barras)
@@ -309,9 +358,13 @@ function initTreeChart(echarts, treeData) {
             
             // Pasamos los puntos procesados, NO el choleraRes original
             initScatterChart(echarts, scatterPoints);
-
+            // 4. Procesar Gráfica 4 (Tree) - Usamos los datos de Hipolabs
             const treeData = processTreeData(uniRes); // uniRes son los datos de Hipolabs
             initTreeChart(echarts, treeData);
+
+            // 5. Procesar Radar (Garchomp) - Extraemos los stats aquí mismo
+            const garchompStats = pokeRes.stats.map(s => s.base_stat);
+            initPokemonRadar(echarts, garchompStats);
 
         } catch (error) {
             console.error("Error en la carga:", error);
@@ -353,13 +406,26 @@ function initTreeChart(echarts, treeData) {
     <hr class="separator" />
 
     <section class:hidden={loading || errorMessage}>
-        <h2>Uso: Universidades por País</h2>
+        <h2>Uso API Externa: Universidades por País</h2>
         <div bind:this={chartContainer4} class="tree-viewport"></div>
+    </section>
+
+    <hr class="separator" />
+
+    <section class:hidden={loading || errorMessage}>
+        <h2>Uso API Externa: Estadísticas Garchomp</h2>
+        <div bind:this={chartContainer5} class="chart"></div>
     </section>
 </main>
 
 <style>
-
+    /* El contenedor DEBE tener altura física */
+    .chart {
+        width: 100%;
+        height: 400px; /* O el tamaño que prefieras, pero nunca 0 o auto */
+        display: block;
+        margin-bottom: 2rem;
+    }
     .tree-viewport {
     width: 100% !important;
     height: 800px !important; /* Más espacio para las ramas */
