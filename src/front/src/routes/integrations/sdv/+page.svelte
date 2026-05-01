@@ -303,77 +303,91 @@
 		}
 	}
 
-	async function loadFertilityIntegration() {
+	async function loadPopulationAgesIntegration() {
 		try {
 			const resIDH = await fetch('/api/v2/countries-idh-per-years');
 			const myData = await resIDH.json();
-			const resFert = await fetch(
-				'https://sos2526-12.onrender.com/api/v2/mid-population-ages'
-			);
-			const peerData = await resFert.json();
+
+			// API del compañero con los campos de población
+			const resPop = await fetch('https://sos2526-12.onrender.com/api/v2/mid-population-ages');
+			const peerData = await resPop.json();
 
 			const seriesData = [];
+			// Obtenemos los nombres de países únicos de la API externa
 			const countries = [...new Set(peerData.map((p) => p.country_name))];
 
 			countries.forEach((cName) => {
-				// 1. Normalización básica: todo a minúsculas y sin espacios extra
 				const normalizedName = cName.toLowerCase().trim();
 
-				// 2. Buscamos el IDH comparando de forma normalizada
+				// Buscamos coincidencia en tus datos de IDH
 				const idhEntry = myData.find((d) => d.country.toLowerCase().trim() === normalizedName);
 
-				// 3. FILTRADO ESTRICTO: Si no hay coincidencia exacta, se ignora el país
-				if (!idhEntry) {
-					return;
-				}
+				// Solo procesamos si el país existe en ambos datasets
+				if (idhEntry) {
+					const countryEntries = peerData.filter((p) => p.country_name === cName);
 
-				// 4. Si hay coincidencia, procesamos los datos de fertilidad
-				const fertEntries = peerData.filter((p) => p.country_name === cName);
+					if (countryEntries.length > 0) {
+						// Tomamos el registro más reciente
+						const latest = countryEntries[countryEntries.length - 1];
 
-				if (fertEntries.length > 0) {
-					const latest = fertEntries[fertEntries.length - 1];
-					seriesData.push({
-						name: `${cName} (IDH: ${idhEntry.hdi_value})`,
-						data: [
-							{ name: 'Edad 15-19', value: parseFloat(latest.fert_15_19) },
-							{ name: 'Edad 20-24', value: parseFloat(latest.fert_20_24) }
-						]
-					});
+						seriesData.push({
+							// El nombre del grupo incluye tu dato de IDH para la integración
+							name: `${cName} (IDH: ${idhEntry.hdi_value})`,
+							data: [
+								{ name: '0-24 años', value: latest.population_age_0 || 0 },
+								{ name: '25-49 años', value: latest.population_age_25 || 0 },
+								{ name: '50-74 años', value: latest.population_age_50 || 0 },
+								{ name: '75-99 años', value: latest.population_age_75 || 0 },
+								{ name: '100+ años', value: latest.population_age_100 || 0 }
+							]
+						});
+					}
 				}
 			});
 
 			// @ts-ignore
-			Highcharts.chart('chart-fertility-bubbles', {
-				chart: {
-					type: 'packedbubble',
-					height: '600px',
-					backgroundColor: 'transparent'
-				},
-				title: { text: '' },
-				tooltip: {
-					useHTML: true,
-					pointFormat: '<b>{point.name}:</b> {point.value}'
-				},
-				plotOptions: {
-					packedbubble: {
-						minSize: '30%',
-						maxSize: '120%',
-						layoutAlgorithm: {
-							splitSeries: true,
-							gravitationalConstant: 0.02,
-							friction: 0.8
-						},
-						dataLabels: {
-							enabled: true,
-							format: '{point.name}',
-							style: { color: '#333', textOutline: 'none', fontWeight: 'normal' }
+			if (typeof Highcharts !== 'undefined' && seriesData.length > 0) {
+				// @ts-ignore
+				Highcharts.chart('chart-fertility-bubbles', {
+					// Usamos el ID exacto de tu HTML
+					chart: {
+						type: 'packedbubble',
+						height: '600px',
+						backgroundColor: 'transparent'
+					},
+					title: { text: '' },
+					tooltip: {
+						useHTML: true,
+						pointFormat: '<b>{point.name}:</b> {point.value} personas'
+					},
+					plotOptions: {
+						packedbubble: {
+							minSize: '30%',
+							maxSize: '120%',
+							zMin: 0,
+							zMax: 10000000, // Ajuste para que las burbujas de población sean proporcionales
+							layoutAlgorithm: {
+								splitSeries: true, // Separa los países en nubes distintas
+								gravitationalConstant: 0.02,
+								friction: 0.8
+							},
+							dataLabels: {
+								enabled: true,
+								format: '{point.name}',
+								style: {
+									color: '#333',
+									textOutline: 'none',
+									fontWeight: 'normal',
+									fontSize: '10px'
+								}
+							}
 						}
-					}
-				},
-				series: seriesData
-			});
+					},
+					series: seriesData
+				});
+			}
 		} catch (error) {
-			console.error('Error en Edad:', error);
+			console.error('Error cargando integración de población:', error);
 		}
 	}
 
@@ -631,7 +645,7 @@
 		loadSpiceIntegration();
 		loadWaterIntegration();
 		loadDisasterIntegration();
-		loadFertilityIntegration();
+		loadPopulationAgesIntegration();
 		loadEducationIntegration();
 		loadWeatherDonut();
 		loadCountriesPie();
