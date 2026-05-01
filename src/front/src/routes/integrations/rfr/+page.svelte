@@ -1,4 +1,5 @@
 <!-- 1/2 Integraciones de SOS, 0/2 usos de SOS, 0/3 usos de API normal -> 0,8 -->
+ <!-- workers-productivity -->
 
 <script>
     import { onMount } from 'svelte';
@@ -7,8 +8,12 @@
 
     let loading = $state(true);
     let errorMessage = $state('');
+    
+    // Referencias para las dos gráficas
     let chartContainer;
-    let myChart; // Referencia para el objeto echarts
+    let myChart; 
+    let chartContainer2;
+    let myChart2;
 
     const REQUEST_TIMEOUT_MS = 15000;
     const API_BASE_URL = (
@@ -38,6 +43,7 @@
         return await response.json();
     }
 
+    // Lógica de matching para la Gráfica 1
     function processAndMatchData(squadData, productivityData) {
         const squadMap = new Map();
         squadData.forEach((item) => {
@@ -70,85 +76,67 @@
         };
     }
 
+    // Inicialización Gráfica 1 (BAR)
     function initChart(echarts, data) {
         if (!chartContainer) return;
-
         myChart = echarts.init(chartContainer);
-
         const option = {
-            title: {
-                text: 'Valor de Mercado vs Productividad',
-                left: 'center',
-                top: '2%'
-            },
+            title: { text: 'Valor de Mercado vs Productividad', left: 'center', top: '2%' },
             tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
             legend: { bottom: '2%' },
-            grid: {
-                left: '180',   // Espacio fijo para que "Spain 1996" no se corte
-                right: '10%',
-                top: '15%',
-                bottom: '15%',
-                containLabel: false // Usamos margen fijo para control total
-            },
-            xAxis: {
-                type: 'value',
-                name: 'M€ / Valor',
-                nameLocation: 'middle',
-                nameGap: 40,
-                axisLabel: { hideOverlap: true }
-            },
-            yAxis: {
-                type: 'category',
-                data: data.categories,
-                axisLabel: {
-                    fontSize: 12,
-                    margin: 20
-                }
-            },
+            grid: { left: '180', right: '10%', top: '15%', bottom: '15%', containLabel: false },
+            xAxis: { type: 'value', name: 'M€ / Valor', nameLocation: 'middle', nameGap: 40 },
+            yAxis: { type: 'category', data: data.categories, axisLabel: { fontSize: 12, margin: 20 } },
             series: [
-                {
-                    name: 'Valor Plantilla (M€)',
-                    type: 'bar',
-                    data: data.squadSeriesData,
-                    itemStyle: { color: '#2c3e50' },
-                    barMaxWidth: 40
-                },
-                {
-                    name: 'Productividad Laboral',
-                    type: 'bar',
-                    data: data.prodSeriesData,
-                    itemStyle: { color: '#3490dc' },
-                    barMaxWidth: 40
-                }
+                { name: 'Valor Plantilla (M€)', type: 'bar', data: data.squadSeriesData, itemStyle: { color: '#2c3e50' }, barMaxWidth: 40 },
+                { name: 'Productividad Laboral', type: 'bar', data: data.prodSeriesData, itemStyle: { color: '#3490dc' }, barMaxWidth: 40 }
             ]
         };
-
         myChart.setOption(option);
+        const ro = new ResizeObserver(() => myChart && myChart.resize());
+        ro.observe(chartContainer);
+    }
 
-        // --- SOLUCIÓN AL PROBLEMA DE COMPRESIÓN (Captura SOS23.PNG) ---
-        // Observamos cambios en el tamaño del div para redibujar la gráfica
-        const resizeObserver = new ResizeObserver(() => {
-            if (myChart) myChart.resize();
-        });
-        resizeObserver.observe(chartContainer);
-
-        // Forzado extra tras medio segundo
-        setTimeout(() => myChart.resize(), 500);
+    // Inicialización Gráfica 2 (PIE)
+    function initPieChart(echarts, rawData) {
+        if (!chartContainer2) return;
+        myChart2 = echarts.init(chartContainer2);
+        const pieData = rawData.map(item => ({
+            value: item.un_2025_population,
+            name: item.city
+        }));
+        const option = {
+            title: { text: 'Distribución de Población Urbana (2025)', subtext: 'Fuente: API /citys-stats', left: 'center' },
+            tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
+            legend: { orient: 'vertical', left: 'left', type: 'scroll' },
+            series: [{
+                name: 'Población UN',
+                type: 'pie',
+                radius: '50%',
+                data: pieData,
+                emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
+            }]
+        };
+        myChart2.setOption(option);
+        const ro = new ResizeObserver(() => myChart2 && myChart2.resize());
+        ro.observe(chartContainer2);
     }
 
     onMount(async () => {
         if (!browser) return;
         try {
             const echarts = await import('echarts');
-            const [squadRes, productivityRes] = await Promise.all([
+            // IMPORTANTE: Se añade citiesRes a la desestructuración
+            const [squadRes, productivityRes, citiesRes] = await Promise.all([
                 loadDataset('/api/v2/fifa-squad-value-per-years'),
-                loadDataset('https://sos2526-19-integracion.onrender.com/api/v1/workers-productivity')
+                loadDataset('https://sos2526-19-integracion.onrender.com/api/v1/workers-productivity'),
+                loadDataset('https://sos2526-29.onrender.com/api/v2/citys-stats')
             ]);
 
             const processedData = processAndMatchData(squadRes, productivityRes);
-            if (processedData.categories.length === 0) throw new Error('Sin datos comunes.');
-
+            
             initChart(echarts, processedData);
+            initPieChart(echarts, citiesRes);
         } catch (error) {
             console.error(error);
             errorMessage = error.message;
@@ -159,23 +147,25 @@
 </script>
 
 <main class="analytics-page">
-    <header>
-        <h1>Integración de Datos</h1>
-        <p>Visualización con <strong>Apache ECharts</strong> (Tipo: Bar).</p>
-    </header>
+    <h1>Panel de Visualización de Datos</h1>
 
     {#if loading}
-        <div class="status">Cargando y procesando...</div>
+        <div class="status">Cargando y procesando datos de múltiples APIs...</div>
     {:else if errorMessage}
         <div class="error">{errorMessage}</div>
     {/if}
 
-    <!-- Contenedor con altura forzada para evitar el colapso de SOS23.PNG -->
-    <div 
-        bind:this={chartContainer} 
-        class="chart-viewport" 
-        class:hidden={loading || errorMessage}>
-    </div>
+    <section class:hidden={loading || errorMessage}>
+        <h2>Integración: Mercado vs Productividad</h2>
+        <div bind:this={chartContainer} class="chart-viewport"></div>
+    </section>
+
+    <hr class="separator" />
+
+    <section class:hidden={loading || errorMessage}>
+        <h2>Uso: Población Urbana 2025</h2>
+        <div bind:this={chartContainer2} class="chart-viewport"></div>
+    </section>
 </main>
 
 <style>
@@ -186,20 +176,30 @@
         background: white;
         border-radius: 8px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        font-family: sans-serif;
     }
 
-    /* ESTO SOLUCIONA EL TAMAÑO */
     .chart-viewport {
         width: 100% !important;
-        height: 650px !important; /* Altura generosa */
-        min-height: 600px;
-        margin-top: 2rem;
+        height: 600px !important;
+        margin-top: 1rem;
         display: block;
     }
 
+    .separator {
+        margin: 4rem 0;
+        border: 0;
+        border-top: 1px solid #eee;
+    }
+
+    section h2 {
+        color: #34495e;
+        text-align: center;
+        margin-top: 2rem;
+    }
+
     .hidden { display: none; }
-    .error { color: #721c24; background: #f8d7da; padding: 1rem; border-radius: 4px; }
-    .status { padding: 2rem; text-align: center; color: #666; }
-    
-    h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+    .error { color: #721c24; background: #f8d7da; padding: 1rem; border-radius: 4px; margin: 1rem 0; }
+    .status { padding: 2rem; text-align: center; color: #666; font-style: italic; }
+    h1 { text-align: center; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 1rem; }
 </style>
