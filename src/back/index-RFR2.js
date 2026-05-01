@@ -81,18 +81,35 @@ export default function(app) {
     // --- 2. GET para cargar datos iniciales ---
     app.get(RFR_URL + "/loadInitialData", (req, res) => {
         const initialTeams = [
-            {"year":2026,"country":"England","squad_size":25,"total_market_value":1300,"average_market_value":56.9},
-            {"year":2026,"country":"France","squad_size":25,"total_market_value":1290,"average_market_value":55.9},
+            {"year":2025,"country":"England","squad_size":25,"total_market_value":1220,"average_market_value":48.8},
+            {"year":2026,"country":"Italy","squad_size":26,"total_market_value":827,"average_market_value":33.8},
             {"year":2026,"country":"Brazil","squad_size":26,"total_market_value":932,"average_market_value":46.3},
-            {"year":2026,"country":"Portugal","squad_size":23,"total_market_value":841,"average_market_value":47.9},
-            {"year":2026,"country":"Spain","squad_size":27,"total_market_value":1150,"average_market_value":41.5},
+            {"year":2026,"country":"Netherlands","squad_size":22,"total_market_value":808,"average_market_value":33.9},
+            {"year":2026,"country":"Belgium","squad_size":24,"total_market_value":442,"average_market_value":34.4},
             {"year":2026,"country":"Argentina","squad_size":23,"total_market_value":575,"average_market_value":39.8},
             {"year":2026,"country":"Germany","squad_size":23,"total_market_value":828,"average_market_value":40.9},
-            {"year":2026,"country":"Netherlands","squad_size":22,"total_market_value":808,"average_market_value":33.9},
-            {"year":2026,"country":"Italy","squad_size":26,"total_market_value":827,"average_market_value":33.8},
-            {"year":2026,"country":"Belgium","squad_size":24,"total_market_value":442,"average_market_value":34.4},
-            {"year":2025,"country":"England","squad_size":25,"total_market_value":1220,"average_market_value":48.8}
+            {"year":2024,"country":"Argentina","squad_size":26,"total_market_value":800,"average_market_value":30.7},
+            {"year":2025,"country":"Argentina","squad_size":26,"total_market_value":720,"average_market_value":27.7},
+            {"year":2024,"country":"Belgium","squad_size":25,"total_market_value":580,"average_market_value":23.2},
+            {"year":2025,"country":"Belgium","squad_size":25,"total_market_value":480,"average_market_value":19.2},
+            {"year":2024,"country":"Brazil","squad_size":26,"total_market_value":1270,"average_market_value":48.8},
+            {"year":2025,"country":"Brazil","squad_size":24,"total_market_value":915,"average_market_value":38.1},
+            {"year":2024,"country":"Germany","squad_size":26,"total_market_value":830,"average_market_value":31.9},
+            {"year":2025,"country":"Germany","squad_size":24,"total_market_value":850,"average_market_value":35.4},
+            {"year":2024,"country":"England","squad_size":26,"total_market_value":1520,"average_market_value":58.4},
+            {"year":2024,"country":"Spain","squad_size":26,"total_market_value":965,"average_market_value":37.1},
+            {"year":2025,"country":"Spain","squad_size":25,"total_market_value":1020,"average_market_value":40.8},
+            {"year":2024,"country":"Italy","squad_size":26,"total_market_value":705,"average_market_value":27.1},
+            {"year":2025,"country":"Italy","squad_size":26,"total_market_value":710,"average_market_value":27.3},
+            {"year":2024,"country":"Netherlands","squad_size":26,"total_market_value":815,"average_market_value":31.3},
+            {"year":2025,"country":"Netherlands","squad_size":23,"total_market_value":820,"average_market_value":35.6},
+            {"year":2024,"country":"Portugal","squad_size":26,"total_market_value":1050,"average_market_value":40.3},
+            {"year":2025,"country":"Portugal","squad_size":25,"total_market_value":980,"average_market_value":39.2},
+            {"year":2026,"country":"Spain","squad_size":27,"total_market_value":1150,"average_market_value":41.5},
+            {"year":1996,"country":"Spain","squad_size":19,"total_market_value":150,"average_market_value":7.8},
+            {"year":2026,"country":"Portugal","squad_size":23,"total_market_value":841,"average_market_value":47.9}
         ];
+
 
         db.count({}, (err, count) => {
             if (count > 0) {

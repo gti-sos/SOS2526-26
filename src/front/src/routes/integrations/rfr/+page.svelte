@@ -1,5 +1,5 @@
-<!-- 1/2 Integraciones de SOS, 0/2 usos de SOS, 0/3 usos de API normal -> 0,8 -->
- <!-- workers-productivity -->
+<!-- 1/2 Integraciones de SOS, 1/2 usos de SOS, 0/3 usos de API normal -> 0,8 -->
+ <!-- APIs usadas: workers-productivity, citys-stats -->
 
 <script>
     import { onMount } from 'svelte';
