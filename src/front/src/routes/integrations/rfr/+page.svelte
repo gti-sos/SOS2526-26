@@ -6,7 +6,7 @@
     import { onMount } from 'svelte';
     import { browser } from '$app/environment';
     import { env } from '$env/dynamic/public';
-    import * as echarts from 'echarts';
+    
 
     let loading = $state(true);
     let errorMessage = $state('');
@@ -287,7 +287,9 @@ function initTreeChart(echarts, treeData) {
   onMount(async () => {
         if (!browser) return;
         try {
-            const echarts = await import('echarts');
+            const echartsModule = await import('echarts');
+            // @ts-ignore
+            const echarts = echartsModule.default || echartsModule;
             
             const [squadRes, productivityRes, citiesRes, choleraRes, uniRes] = await Promise.all([
                 loadDataset('/api/v2/fifa-squad-value-per-years'),
