@@ -1,6 +1,7 @@
-<!-- 2/2 Integraciones de SOS, 1/2 usos de SOS, 1/3 usos de API normal -> 0,8 -->
- <!-- APIs usadas: workers-productivity, citys-stats -->
-<!-- Gráficas usadas: Bar-ECharts, Pie-ECharts, Scatter-ECharts-->
+<!-- 2/2 Integraciones de SOS, 1/2 usos de SOS, 2/3 usos de API normal -> 0,95 -->
+ <!-- APIs usadas: workers-productivity, citys-stats, cholera-stats, hipolabs-universities, pokeapi, SIGUIENTE: OpenFoodFacts -->
+<!-- Gráficas usadas: Bar-ECharts, Pie-ECharts, Scatter-ECharts, Tree-ECharts, Radar-ECharts. SIGUIENTE: TreeMap-ECharts (PROXY)-->
+<!-- Hacer el proxy con la API OpenFoodFacts -->
 
 <script>
     import { onMount } from 'svelte';
@@ -22,6 +23,10 @@
     let myChart4;
     let chartContainer5;
     let myChart5;
+    //let chartContainer6;
+    //let myChart6;
+    let chartContainer7;
+    let myChart7;
 
     const REQUEST_TIMEOUT_MS = 40000;
     const API_BASE_URL = (
@@ -329,6 +334,129 @@ function initPokemonRadar(echarts, stats) {
     const ro = new ResizeObserver(() => myChart5 && myChart5.resize());
     ro.observe(chartContainer5);
 }
+/*
+ // Función para procesar datos de alérgenos para un TreeMap (Treemap 6 - Uso API OpenFood)
+function processAllergenTreeMap(products) {
+    // Transformamos los productos en el formato que ECharts TreeMap necesita
+    return products
+        .filter(p => p.product_name && p.allergens_tags) // Solo productos con nombre y alérgenos
+        .map(p => {
+            const allergenCount = p.allergens_tags.length;
+            return {
+                name: `${p.product_name}\n(${allergenCount} alérgenos)`,
+                value: allergenCount, // El tamaño del cuadro dependerá del número de alérgenos
+                // Podemos añadir la lista de alérgenos para el tooltip
+                allergens: p.allergens_tags.map(a => a.replace('en:', '')) 
+            };
+        });
+}
+
+function initTreeMap(echarts, data) {
+    if (!chartContainer5) return;
+    myChart5 = echarts.init(chartContainer5);
+
+    const option = {
+        title: { text: 'Alérgenos por Producto (Open Food Facts)', left: 'center' },
+        tooltip: {
+            formatter: function (info) {
+                const allergens = info.data.allergens ? info.data.allergens.join(', ') : 'Ninguno';
+                return `<b>${info.name}</b><br/>Alérgenos: ${allergens}`;
+            }
+        },
+        series: [{
+            type: 'treemap',
+            data: data,
+            levels: [
+                {
+                    itemStyle: {
+                        borderColor: '#fff',
+                        borderWidth: 2,
+                        gapWidth: 1
+                    }
+                }
+            ]
+        }]
+    };
+
+    myChart6.setOption(option);
+    const ro = new ResizeObserver(() => myChart5 && myChart6.resize());
+    ro.observe(chartContainer6);
+}*/
+
+function processHeatmapData(rawData) {
+    // 1. Definimos los "cubos" o rangos
+    const years = ['<1950', '1951-1975', '1976-2000', '2001-2025'];
+    const capacities = ['0-50 MW', '51-200 MW', '201-1000 MW', '>1000 MW'];
+
+    // 2. Inicializamos la matriz de datos con ceros [x, y, valor]
+    // x: años, y: capacidad
+    let matrix = [];
+    for (let i = 0; i < years.length; i++) {
+        for (let j = 0; j < capacities.length; j++) {
+            matrix.push([i, j, 0]);
+        }
+    }
+
+    // 3. Lógica de clasificación
+    rawData.forEach(plant => {
+        let xIndex = -1;
+        let yIndex = -1;
+
+        // Clasificar Año (X)
+        if (plant.year <= 1950) xIndex = 0;
+        else if (plant.year <= 1975) xIndex = 1;
+        else if (plant.year <= 2000) xIndex = 2;
+        else xIndex = 3;
+
+        // Clasificar Capacidad (Y)
+        if (plant.capacity_mw <= 50) yIndex = 0;
+        else if (plant.capacity_mw <= 200) yIndex = 1;
+        else if (plant.capacity_mw <= 1000) yIndex = 2;
+        else yIndex = 3;
+
+        // Buscamos la celda en nuestra matriz plana y sumamos 1
+        // La fórmula para encontrar el índice en el array plano es (x * num_filas + y)
+        const cellIndex = xIndex * capacities.length + yIndex;
+        matrix[cellIndex][2]++;
+    });
+
+    return { matrix, years, capacities };
+}
+
+function initHeatmap(echarts, data) {
+    if (!chartContainer7) return;
+    myChart7 = echarts.init(chartContainer7);
+
+    const option = {
+        title: { text: 'Densidad de Plantas: Antigüedad vs Potencia', left: 'center' },
+        tooltip: { position: 'top' },
+        grid: { height: '50%', top: '15%' },
+        xAxis: { type: 'category', data: data.years, splitArea: { show: true } },
+        yAxis: { type: 'category', data: data.capacities, splitArea: { show: true } },
+        visualMap: {
+            min: 0,
+            max: 15, // Ajusta esto según cuántas plantas suelan caer en un rango
+            calculable: true,
+            orient: 'horizontal',
+            left: 'center',
+            bottom: '15%',
+            inRange: { color: ['#e0f3f8', '#0868ac'] } // De azul claro a azul oscuro
+        },
+        series: [{
+            name: 'Número de Plantas',
+            type: 'heatmap',
+            data: data.matrix,
+            label: { show: true },
+            emphasis: {
+                itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0, 0, 0, 0.5)' }
+            }
+        }]
+    };
+
+    myChart7.setOption(option);
+    const ro = new ResizeObserver(() => myChart6 && myChart7.resize());
+    ro.observe(chartContainer7);
+}
 
   onMount(async () => {
         if (!browser) return;
@@ -336,13 +464,15 @@ function initPokemonRadar(echarts, stats) {
             const echarts = await import('echarts');
         
             
-            const [squadRes, productivityRes, citiesRes, choleraRes, uniRes, pokeRes] = await Promise.all([
+            const [squadRes, productivityRes, citiesRes, choleraRes, uniRes, pokeRes, hydroRes /*foodRes*/] = await Promise.all([
                 loadDataset('/api/v2/fifa-squad-value-per-years'),
                 loadDataset('https://sos2526-19-integracion.onrender.com/api/v1/workers-productivity'),
                 loadDataset('https://sos2526-29.onrender.com/api/v2/citys-stats'),
                 loadDataset('https://soporte-sos.onrender.com/api/v1/cholera-stats'),
-                loadDataset('http://universities.hipolabs.com/search?country=Spain'),
-                loadDataset('https://pokeapi.co/api/v2/pokemon/garchomp')
+                loadDataset('https://universities.hipolabs.com/search?country=Spain'),
+                loadDataset('https://pokeapi.co/api/v2/pokemon/garchomp'),
+                //loadDataset('https://world.openfoodfacts.org/cgi/search.pl?action=process&tagtype_0=countries&tag_contains_0=contains&tag_0=spain&sort_by=unique_scans_n&page_size=24&json=1')
+                loadDataset('https://sos2526-27.onrender.com/api/v1/world-hydroelectric-plants/')
             ]);
 
             // 1. Procesar Gráfica 1 (Barras)
@@ -365,6 +495,13 @@ function initPokemonRadar(echarts, stats) {
             // 5. Procesar Radar (Garchomp) - Extraemos los stats aquí mismo
             const garchompStats = pokeRes.stats.map(s => s.base_stat);
             initPokemonRadar(echarts, garchompStats);
+            
+            // 6. Procesar TreeMap (Open Food Facts)
+           // const treeMapData = processAllergenTreeMap(foodRes.products);
+           // initTreeMap(echarts, treeMapData);
+
+           const heatmapData = processHeatmapData(hydroRes);
+           initHeatmap(echarts, heatmapData);
 
         } catch (error) {
             console.error("Error en la carga:", error);
@@ -416,19 +553,35 @@ function initPokemonRadar(echarts, stats) {
         <h2>Uso API Externa: Estadísticas Garchomp</h2>
         <div bind:this={chartContainer5} class="chart"></div>
     </section>
+
+    <hr class="separator" />
+
+    <!--<section class:hidden={loading || errorMessage}>
+        <h2>Uso API Externa: Alérgenos en Productos Alimenticios</h2>
+        <div bind:this={chartContainer6} class="chart"></div>
+    </section>-->
+
+    <hr class="separator" />
+
+    <section class:hidden={loading || errorMessage}>
+        <h2>Uso: Antiguedad vs Potencia en Plantas Hidroeléctricas</h2>
+        <div bind:this={chartContainer7} class="chart"></div>
+    </section>
+
+    <hr class="separator" />
 </main>
 
 <style>
-    /* El contenedor DEBE tener altura física */
+    
     .chart {
         width: 100%;
-        height: 400px; /* O el tamaño que prefieras, pero nunca 0 o auto */
+        height: 400px; 
         display: block;
         margin-bottom: 2rem;
     }
     .tree-viewport {
     width: 100% !important;
-    height: 800px !important; /* Más espacio para las ramas */
+    height: 800px !important; 
     margin-top: 1rem;
     display: block;
     }
