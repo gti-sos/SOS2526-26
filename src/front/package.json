@@ -33,6 +33,7 @@
 	},
 	"dependencies": {
 		"@auth0/auth0-spa-js": "^2.19.0",
+		"echarts": "^6.0.0",
 		"highcharts": "^12.6.0",
 		"leaflet": "^1.9.4"
 	}
