@@ -1,13 +1,12 @@
-<!-- 2/2 Integraciones de SOS, 1/2 usos de SOS, 2/3 usos de API normal -> 0,95 -->
+<!-- 2/2 Integraciones de SOS, 2/2 usos de SOS, 2/3 usos de API normal -> 0,95 -->
  <!-- APIs usadas: workers-productivity, citys-stats, cholera-stats, hipolabs-universities, pokeapi, SIGUIENTE: OpenFoodFacts -->
-<!-- Gráficas usadas: Bar-ECharts, Pie-ECharts, Scatter-ECharts, Tree-ECharts, Radar-ECharts. SIGUIENTE: TreeMap-ECharts (PROXY)-->
+<!-- Gráficas usadas: Bar-ECharts, Pie-ECharts, Scatter-ECharts, Tree-ECharts, Radar-ECharts, HeatMap-ECharts. SIGUIENTE: TreeMap-ECharts (PROXY)-->
 <!-- Hacer el proxy con la API OpenFoodFacts -->
 
 <script>
     import { onMount } from 'svelte';
     import { browser } from '$app/environment';
     import { env } from '$env/dynamic/public';
-   import * as echarts from 'echarts';
 
     let loading = $state(true);
     let errorMessage = $state('');
@@ -23,8 +22,8 @@
     let myChart4;
     let chartContainer5;
     let myChart5;
-    //let chartContainer6;
-    //let myChart6;
+    let chartContainer6;
+    let myChart6;
     let chartContainer7;
     let myChart7;
 
@@ -334,7 +333,7 @@ function initPokemonRadar(echarts, stats) {
     const ro = new ResizeObserver(() => myChart5 && myChart5.resize());
     ro.observe(chartContainer5);
 }
-/*
+
  // Función para procesar datos de alérgenos para un TreeMap (Treemap 6 - Uso API OpenFood)
 function processAllergenTreeMap(products) {
     // Transformamos los productos en el formato que ECharts TreeMap necesita
@@ -381,7 +380,7 @@ function initTreeMap(echarts, data) {
     myChart6.setOption(option);
     const ro = new ResizeObserver(() => myChart5 && myChart6.resize());
     ro.observe(chartContainer6);
-}*/
+}
 
 function processHeatmapData(rawData) {
     // 1. Definimos los "cubos" o rangos
@@ -464,14 +463,14 @@ function initHeatmap(echarts, data) {
             const echarts = await import('echarts');
         
             
-            const [squadRes, productivityRes, citiesRes, choleraRes, uniRes, pokeRes, hydroRes /*foodRes*/] = await Promise.all([
+            const [squadRes, productivityRes, citiesRes, choleraRes, uniRes, pokeRes, foodRes, hydroRes] = await Promise.all([
                 loadDataset('/api/v2/fifa-squad-value-per-years'),
                 loadDataset('https://sos2526-19-integracion.onrender.com/api/v1/workers-productivity'),
                 loadDataset('https://sos2526-29.onrender.com/api/v2/citys-stats'),
                 loadDataset('https://soporte-sos.onrender.com/api/v1/cholera-stats'),
-                loadDataset('https://universities.hipolabs.com/search?country=Spain'),
+                loadDataset('/api/rfr/uni-proxy?country=Spain'),
                 loadDataset('https://pokeapi.co/api/v2/pokemon/garchomp'),
-                //loadDataset('https://world.openfoodfacts.org/cgi/search.pl?action=process&tagtype_0=countries&tag_contains_0=contains&tag_0=spain&sort_by=unique_scans_n&page_size=24&json=1')
+                loadDataset('/api/rfr/food-proxy?action=process&tag_0=spain&json=1'),
                 loadDataset('https://sos2526-27.onrender.com/api/v1/world-hydroelectric-plants/')
             ]);
 
@@ -497,8 +496,8 @@ function initHeatmap(echarts, data) {
             initPokemonRadar(echarts, garchompStats);
             
             // 6. Procesar TreeMap (Open Food Facts)
-           // const treeMapData = processAllergenTreeMap(foodRes.products);
-           // initTreeMap(echarts, treeMapData);
+            const treeMapData = processAllergenTreeMap(foodRes.products);
+            initTreeMap(echarts, treeMapData);
 
            const heatmapData = processHeatmapData(hydroRes);
            initHeatmap(echarts, heatmapData);
@@ -556,10 +555,10 @@ function initHeatmap(echarts, data) {
 
     <hr class="separator" />
 
-    <!--<section class:hidden={loading || errorMessage}>
+    <section class:hidden={loading || errorMessage}>
         <h2>Uso API Externa: Alérgenos en Productos Alimenticios</h2>
         <div bind:this={chartContainer6} class="chart"></div>
-    </section>-->
+    </section>
 
     <hr class="separator" />
 
