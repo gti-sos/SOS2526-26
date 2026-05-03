@@ -71,7 +71,8 @@ export default function (app) {
     // --- 2. GET para cargar datos iniciales ---
     app.get(SDV_URL + "/loadInitialData", (req, res) => {
         const initialData = [
-            // --- ESPAÑA (Muy Alto) ---
+            { "year": 2026, "country": "españa", "hdi_value": 0.932, "hdi_rank": 26, "hdi_change": 1 },
+            { "year": 2025, "country": "españa", "hdi_value": 0.925, "hdi_rank": 27, "hdi_change": 1 },
             { "year": 2023, "country": "españa", "hdi_value": 0.918, "hdi_rank": 28, "hdi_change": 0 },
             { "year": 2022, "country": "españa", "hdi_value": 0.911, "hdi_rank": 27, "hdi_change": 1 },
             { "year": 2021, "country": "españa", "hdi_value": 0.904, "hdi_rank": 27, "hdi_change": 0 },
@@ -79,57 +80,66 @@ export default function (app) {
             { "year": 2018, "country": "españa", "hdi_value": 0.905, "hdi_rank": 26, "hdi_change": 0 },
             { "year": 2015, "country": "españa", "hdi_value": 0.895, "hdi_rank": 26, "hdi_change": 0 },
 
-            // --- ESTADOS UNIDOS (Muy Alto) ---
+            { "year": 2026, "country": "estados-unidos", "hdi_value": 0.951, "hdi_rank": 16, "hdi_change": 1 },
+            { "year": 2025, "country": "estados-unidos", "hdi_value": 0.946, "hdi_rank": 17, "hdi_change": 0 },
             { "year": 2023, "country": "estados-unidos", "hdi_value": 0.938, "hdi_rank": 17, "hdi_change": 3 },
             { "year": 2022, "country": "estados-unidos", "hdi_value": 0.927, "hdi_rank": 20, "hdi_change": 1 },
             { "year": 2021, "country": "estados-unidos", "hdi_value": 0.921, "hdi_rank": 21, "hdi_change": 0 },
             { "year": 2020, "country": "estados-unidos", "hdi_value": 0.920, "hdi_rank": 21, "hdi_change": -1 },
             { "year": 2015, "country": "estados-unidos", "hdi_value": 0.912, "hdi_rank": 15, "hdi_change": 0 },
 
-            // --- CHINA (Alto) ---
+            { "year": 2026, "country": "china", "hdi_value": 0.818, "hdi_rank": 72, "hdi_change": 3 },
+            { "year": 2025, "country": "china", "hdi_value": 0.809, "hdi_rank": 75, "hdi_change": 3 },
             { "year": 2023, "country": "china", "hdi_value": 0.797, "hdi_rank": 78, "hdi_change": -3 },
             { "year": 2022, "country": "china", "hdi_value": 0.788, "hdi_rank": 75, "hdi_change": 1 },
             { "year": 2021, "country": "china", "hdi_value": 0.768, "hdi_rank": 79, "hdi_change": 2 },
             { "year": 2018, "country": "china", "hdi_value": 0.755, "hdi_rank": 85, "hdi_change": 1 },
             { "year": 2015, "country": "china", "hdi_value": 0.733, "hdi_rank": 90, "hdi_change": 1 },
 
-            // --- FRANCIA (Muy Alto) ---
+            { "year": 2026, "country": "francia", "hdi_value": 0.930, "hdi_rank": 28, "hdi_change": -1 },
+            { "year": 2025, "country": "francia", "hdi_value": 0.927, "hdi_rank": 27, "hdi_change": -1 },
             { "year": 2023, "country": "francia", "hdi_value": 0.920, "hdi_rank": 26, "hdi_change": 2 },
             { "year": 2022, "country": "francia", "hdi_value": 0.910, "hdi_rank": 28, "hdi_change": -1 },
             { "year": 2021, "country": "francia", "hdi_value": 0.903, "hdi_rank": 28, "hdi_change": 0 },
             { "year": 2015, "country": "francia", "hdi_value": 0.890, "hdi_rank": 22, "hdi_change": 0 },
 
-            // --- JAPÓN (Muy Alto) ---
+            { "year": 2026, "country": "japón", "hdi_value": 0.938, "hdi_rank": 21, "hdi_change": 1 },
+            { "year": 2025, "country": "japón", "hdi_value": 0.932, "hdi_rank": 22, "hdi_change": 1 },
             { "year": 2023, "country": "japón", "hdi_value": 0.925, "hdi_rank": 23, "hdi_change": 1 },
             { "year": 2022, "country": "japón", "hdi_value": 0.920, "hdi_rank": 24, "hdi_change": -2 },
             { "year": 2021, "country": "japón", "hdi_value": 0.917, "hdi_rank": 22, "hdi_change": 1 },
             { "year": 2015, "country": "japón", "hdi_value": 0.905, "hdi_rank": 19, "hdi_change": 0 },
 
-            // --- INDIA (Medio) ---
+            { "year": 2026, "country": "india", "hdi_value": 0.710, "hdi_rank": 122, "hdi_change": 4 },
+            { "year": 2025, "country": "india", "hdi_value": 0.698, "hdi_rank": 126, "hdi_change": 4 },
             { "year": 2023, "country": "india", "hdi_value": 0.685, "hdi_rank": 130, "hdi_change": 4 },
             { "year": 2022, "country": "india", "hdi_value": 0.644, "hdi_rank": 134, "hdi_change": 1 },
             { "year": 2021, "country": "india", "hdi_value": 0.633, "hdi_rank": 135, "hdi_change": -1 },
             { "year": 2015, "country": "india", "hdi_value": 0.627, "hdi_rank": 130, "hdi_change": 0 },
 
-            // --- NORUEGA (Líder mundial - Muy Alto) ---
+            { "year": 2026, "country": "noruega", "hdi_value": 0.982, "hdi_rank": 1, "hdi_change": 1 },
+            { "year": 2025, "country": "noruega", "hdi_value": 0.976, "hdi_rank": 2, "hdi_change": 0 },
             { "year": 2023, "country": "noruega", "hdi_value": 0.970, "hdi_rank": 2, "hdi_change": 0 },
             { "year": 2022, "country": "noruega", "hdi_value": 0.967, "hdi_rank": 2, "hdi_change": 0 },
             { "year": 2021, "country": "noruega", "hdi_value": 0.969, "hdi_rank": 2, "hdi_change": -1 },
             { "year": 2015, "country": "noruega", "hdi_value": 0.959, "hdi_rank": 1, "hdi_change": 0 },
 
-            // --- BRASIL (Desarrollo Alto) ---
+            { "year": 2026, "country": "brasil", "hdi_value": 0.804, "hdi_rank": 79, "hdi_change": 2 },
+            { "year": 2025, "country": "brasil", "hdi_value": 0.795, "hdi_rank": 81, "hdi_change": 3 },
             { "year": 2023, "country": "brasil", "hdi_value": 0.786, "hdi_rank": 84, "hdi_change": 3 },
             { "year": 2022, "country": "brasil", "hdi_value": 0.776, "hdi_rank": 87, "hdi_change": -1 },
             { "year": 2021, "country": "brasil", "hdi_value": 0.754, "hdi_rank": 87, "hdi_change": 0 },
             { "year": 2015, "country": "brasil", "hdi_value": 0.761, "hdi_rank": 75, "hdi_change": 0 },
 
-            // --- NIGERIA (Desarrollo Bajo/Medio) ---
+            { "year": 2026, "country": "nigeria", "hdi_value": 0.565, "hdi_rank": 157, "hdi_change": 2 },
+            { "year": 2025, "country": "nigeria", "hdi_value": 0.556, "hdi_rank": 159, "hdi_change": 2 },
             { "year": 2023, "country": "nigeria", "hdi_value": 0.548, "hdi_rank": 161, "hdi_change": 2 },
             { "year": 2022, "country": "nigeria", "hdi_value": 0.540, "hdi_rank": 163, "hdi_change": 0 },
             { "year": 2021, "country": "nigeria", "hdi_value": 0.535, "hdi_rank": 163, "hdi_change": -2 },
             { "year": 2015, "country": "nigeria", "hdi_value": 0.523, "hdi_rank": 158, "hdi_change": 0 },
 
-            // --- AUSTRALIA (Oceanía - Muy Alto) ---
+            { "year": 2026, "country": "australia", "hdi_value": 0.968, "hdi_rank": 5, "hdi_change": 1 },
+            { "year": 2025, "country": "australia", "hdi_value": 0.963, "hdi_rank": 6, "hdi_change": 1 },
             { "year": 2023, "country": "australia", "hdi_value": 0.958, "hdi_rank": 7, "hdi_change": 3 },
             { "year": 2022, "country": "australia", "hdi_value": 0.952, "hdi_rank": 10, "hdi_change": -5 },
             { "year": 2021, "country": "australia", "hdi_value": 0.954, "hdi_rank": 5, "hdi_change": 3 },
