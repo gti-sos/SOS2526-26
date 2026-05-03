@@ -62,6 +62,12 @@
         </a>
     </section>
 
+    <section style="text-align: center; margin-bottom: 35px;">
+        <a href="/integrations" style="background-color: #16a34a; color: white; padding: 10px 18px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            🔗 Ver centro de integraciones
+        </a>
+    </section>
+
     <h2 style="border-bottom: 2px solid #3498db; padding-bottom: 10px;">Componentes del equipo y recursos</h2>
     
     <div style="display: flex; flex-direction: column; gap: 20px; margin-top: 20px;">
