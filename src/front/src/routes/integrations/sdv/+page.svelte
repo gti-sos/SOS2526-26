@@ -551,7 +551,6 @@
 
 	async function loadWeatherDonut() {
 		try {
-			// LLAMADA DIRECTA (Sin Proxy porque la API permite CORS)
 			const response = await fetch(
 				'https://api.open-meteo.com/v1/forecast?latitude=37.3828&longitude=-5.9731&current_weather=true'
 			);
@@ -559,26 +558,26 @@
 			const temp = data.current_weather.temperature;
 			const wind = data.current_weather.windspeed;
 
-			// Combinación Nueva: Billboard.js + Donut Chart
 			bb.generate({
 				data: {
 					columns: [
 						['Temperatura (ºC)', temp],
 						['Viento (km/h)', wind]
 					],
-					type: 'donut', // Tipo de gráfica no repetido en Billboard
-					onclick: function (d, i) {
-						console.log('onclick', d, i);
-					},
-					onover: function (d, i) {
-						console.log('onover', d, i);
-					},
-					onout: function (d, i) {
-						console.log('onout', d, i);
-					}
+					type: 'donut'
 				},
 				donut: {
-					title: 'Clima en Sevilla'
+					title: 'Clima en Sevilla',
+					label: {
+						// Esta función cambia el porcentaje por el valor real
+						format: function (value, ratio, id) {
+							if (id === 'Temperatura (ºC)') {
+								return value + ' ºC';
+							} else {
+								return value + ' km/h';
+							}
+						}
+					}
 				},
 				bindto: '#chart-weather-donut'
 			});

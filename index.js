@@ -1,12 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { handler } from './src/front/build/handler.js';
-
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Importar los 6 módulos (usando import)
 import mgn_api1 from './src/back/index-MGN.js';
@@ -72,11 +66,6 @@ sdv_api(app);
 sdv_api2(app);
 rfr_api1(app);
 rfr_api2(app);
-
-// Ruta /about 
-app.get('/about', (req, res) => {
-    res.sendFile(path.join(__dirname, "static", "about.html"));
-});
 
 app.use(handler);
 
