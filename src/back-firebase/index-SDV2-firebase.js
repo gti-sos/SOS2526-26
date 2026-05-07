@@ -2,16 +2,35 @@ import express from 'express';
 import cors from 'cors';
 import db from './db.js';
 
+/*
+ * API REST v2 sobre Firebase Firestore - Recurso "countries-idh-per-years".
+ *
+ * Es una alternativa al backend NeDB que usa Cloud Firestore como
+ * base de datos. Mantiene exactamente los mismos contratos REST que
+ * la version local (rutas, codigos de estado y formato JSON), de
+ * modo que el frontend funciona contra cualquiera de los dos sin
+ * cambios. La eleccion del motor es transparente para el cliente.
+ *
+ * Las consultas se montan con filtros .where() de Firestore y, cuando
+ * la operacion no se puede expresar (por ejemplo, regex case-insensitive
+ * en country), se completa el filtrado en memoria sobre el resultado.
+ */
+
 const app = express();
 
-// Middlewares básicos
 app.use(cors());
 app.use(express.json());
 
-// Colección en Firebase
 const COLLECTION_NAME = 'countries-idh-per-years';
 
-// Función auxiliar para validar la estructura del JSON
+/*
+ * Validador estricto del cuerpo de la peticion.
+ * Comprueba simultaneamente:
+ *   - Que el numero de claves coincide (sin campos extra).
+ *   - Que estan exactamente las claves esperadas.
+ *   - Que los tipos de cada campo son los correctos.
+ * De este modo se rechazan recursos malformados antes de tocar la BD.
+ */
 function isValidResource(body) {
     const validKeys = ["country", "year", "hdi_value", "hdi_rank", "hdi_change"];
     const bodyKeys = Object.keys(body);
@@ -34,12 +53,23 @@ function isValidResource(body) {
 
 const SDV_URL = "/api/v2/countries-idh-per-years";
 
-// --- RUTA DOCUMENTACIÓN ---
+/* Redireccion a la documentacion Postman publica de la API. */
 app.get(SDV_URL + "/docs", (req, res) => {
     res.redirect("https://documenter.getpostman.com/view/52429610/2sBXinGqPs");
 });
 
-// --- 1. GET a la colección ---
+/*
+ * GET coleccion con filtros y paginacion.
+ *
+ * Los filtros que Firestore puede traducir directamente a su query
+ * (year, hdi_value, hdi_rank, hdi_change, from, to) se aplican con
+ * .where() para aprovechar los indices del servidor. El filtro por
+ * country se hace en memoria con un regex case-insensitive porque
+ * Firestore no admite busquedas insensibles a mayusculas nativamente.
+ *
+ * La paginacion (offset/limit) tambien se aplica en memoria con slice()
+ * para mantener una semantica identica a la de la version NeDB.
+ */
 app.get(SDV_URL, async (req, res) => {
     try {
         let offset = parseInt(req.query.offset) || 0;
@@ -75,7 +105,12 @@ app.get(SDV_URL, async (req, res) => {
     }
 });
 
-// --- 2. GET para cargar datos iniciales ---
+/*
+ * Carga de datos iniciales de prueba.
+ * Solo inserta si la coleccion esta vacia. Se usa una operacion
+ * batch() de Firestore para que las 10 inserciones se confirmen
+ * en una unica operacion atomica, evitando estados intermedios.
+ */
 app.get(SDV_URL + "/loadInitialData", async (req, res) => {
     try {
         const initialData = [
@@ -110,7 +145,11 @@ app.get(SDV_URL + "/loadInitialData", async (req, res) => {
     }
 });
 
-// --- 3. POST a la colección ---
+/*
+ * POST a la coleccion: crea un nuevo recurso.
+ * Antes de insertar se comprueba que no exista ya otro documento con
+ * el mismo (country, year) para garantizar la unicidad de la clave.
+ */
 app.post(SDV_URL, async (req, res) => {
     try {
         const newData = req.body;
@@ -130,7 +169,7 @@ app.post(SDV_URL, async (req, res) => {
     }
 });
 
-// --- 4. GET a un recurso específico ---
+/* GET de un recurso concreto identificado por (country, year). */
 app.get(SDV_URL + "/:country/:year", async (req, res) => {
     try {
         const { country, year } = req.params;
@@ -146,7 +185,11 @@ app.get(SDV_URL + "/:country/:year", async (req, res) => {
     }
 });
 
-// --- 5. DELETE a la colección completa ---
+/*
+ * DELETE coleccion completa.
+ * Firestore no ofrece "borra todo en un comando", asi que se itera
+ * el snapshot y se eliminan los documentos en un unico batch atomico.
+ */
 app.delete(SDV_URL, async (req, res) => {
     try {
         const snapshot = await db.collection(COLLECTION_NAME).get();
@@ -159,7 +202,11 @@ app.delete(SDV_URL, async (req, res) => {
     }
 });
 
-// --- 6. DELETE a un recurso específico ---
+/*
+ * DELETE de un recurso concreto.
+ * Se localiza por (country, year) y, si existe, se borra (puede haber
+ * un solo documento por la unicidad garantizada en POST/PUT).
+ */
 app.delete(SDV_URL + "/:country/:year", async (req, res) => {
     try {
         const { country, year } = req.params;
@@ -179,7 +226,12 @@ app.delete(SDV_URL + "/:country/:year", async (req, res) => {
     }
 });
 
-// --- 7. PUT a un recurso específico ---
+/*
+ * PUT de un recurso concreto.
+ * Se valida la estructura del cuerpo y se exige que el (country, year)
+ * de la URL coincida con el del payload. Si existe el documento se
+ * sobrescribe con set(); si no, devuelve 404.
+ */
 app.put(SDV_URL + "/:country/:year", async (req, res) => {
     try {
         const { country, year } = req.params;
@@ -205,11 +257,19 @@ app.put(SDV_URL + "/:country/:year", async (req, res) => {
     }
 });
 
-// --- MÉTODOS NO PERMITIDOS ---
+/*
+ * Metodos no permitidos por la guia REST.
+ * POST sobre un recurso individual y PUT sobre la coleccion no tienen
+ * sentido semantico y devuelven 405.
+ */
 app.post(SDV_URL + "/:country/:year", (req, res) => res.sendStatus(405));
 app.put(SDV_URL, (req, res) => res.sendStatus(405));
 
-// --- ARRANCAR EL SERVIDOR ---
+/*
+ * Arranque del servidor independiente.
+ * Este modulo se ejecuta como microservicio separado del backend
+ * principal NeDB, escuchando en su propio puerto (3005 por defecto).
+ */
 const PORT = process.env.PORT || 3005;
 app.listen(PORT, () => {
     console.log(`\n✅ Servidor Firebase listo y escuchando en el puerto ${PORT}`);

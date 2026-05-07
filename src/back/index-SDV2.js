@@ -3,11 +3,25 @@ import express from 'express';
 import cors from 'cors';
 const app = express();
 
+/*
+ * API REST v2 - Recurso "countries-idh-per-years" (Sergio Diaz Vazquez).
+ *
+ * Esta version mejora la v1 anyadiendo:
+ *   - Busqueda por pais insensible a mayusculas/minusculas (regex).
+ *   - Filtrado por rango de anyos (parametros from y to).
+ *   - Validacion mas robusta de los identificadores en el PUT.
+ *   - Respuestas 500 explicitas ante errores de NeDB.
+ *
+ * Persistencia: NeDB embebido en fichero local (./data/idh.db).
+ * La clave logica de cada documento sigue siendo el par (country, year).
+ */
 
-// 1. Inicialización de la base de datos
 const db = new Datastore({ filename: './data/idh.db', autoload: true });
 
-// Función auxiliar para eliminar el _id de NeDB (Requisito F06)
+/*
+ * Limpia el campo interno "_id" que NeDB anyade automaticamente.
+ * Asi el cliente recibe siempre un JSON limpio y consistente.
+ */
 function cleanResource(resource) {
     if (Array.isArray(resource)) {
         return resource.map(r => {
@@ -26,33 +40,44 @@ function cleanResource(resource) {
 export default function (app) {
     const SDV_URL = "/api/v2/countries-idh-per-years";
 
-    // --- RUTA DOCUMENTACIÓN (CORREGIDA: Se añade /docs para no pisar la ruta principal) ---
+    /*
+     * Documentacion publica en Postman.
+     * Se monta bajo "/docs" para no chocar con la ruta de la coleccion,
+     * que ocuparia el mismo prefijo si se sirviera en la raiz.
+     */
     app.get(SDV_URL + "/docs", (req, res) => {
         res.redirect("https://documenter.getpostman.com/view/52429610/2sBXinGqPs");
     });
 
-    // --- 1. GET a la colección con búsquedas, filtros y paginación ---
+    /*
+     * GET coleccion con busqueda, filtros y paginacion.
+     *
+     * Filtros soportados (todos opcionales y combinables):
+     *   - country: coincidencia exacta pero case-insensitive (regex).
+     *   - from / to: rango cerrado de anyos.
+     *   - year, hdi_value, hdi_rank, hdi_change: coincidencia exacta.
+     *   - offset / limit: paginacion estandar.
+     *
+     * Si se especifica un rango (from/to) Y un anyo exacto al mismo
+     * tiempo, prevalece el rango: no sobreescribimos query.year.
+     */
     app.get(SDV_URL, (req, res) => {
         let offset = parseInt(req.query.offset) || 0;
         let limit = parseInt(req.query.limit) || 0;
 
-        // Extraemos los posibles parámetros de búsqueda de req.query
         let { country, from, to, year, hdi_value, hdi_rank, hdi_change } = req.query;
         let query = {};
 
-        // Filtro por país (Búsqueda insensible a mayúsculas/minúsculas)
         if (country) {
             query.country = { $regex: new RegExp("^" + country + "$", "i") };
         }
 
-        // Filtro por rango de años (from y to)
         if (from || to) {
             query.year = {};
             if (from) query.year.$gte = Number(from);
             if (to) query.year.$lte = Number(to);
         }
 
-        // Otros filtros exactos (si existen en la query)
         if (year && !query.year) query.year = Number(year);
         if (hdi_value) query.hdi_value = parseFloat(hdi_value);
         if (hdi_rank) query.hdi_rank = Number(hdi_rank);
@@ -68,7 +93,13 @@ export default function (app) {
         });
     });
 
-    // --- 2. GET para cargar datos iniciales ---
+    /*
+     * Carga de datos iniciales de prueba.
+     * Solo se ejecuta si la base de datos esta vacia para evitar
+     * duplicados al recargar el endpoint durante el desarrollo.
+     * Incluye 10 paises representativos cubriendo distintos rangos
+     * de IDH (alto, medio, bajo) y un rango temporal 2015-2026.
+     */
     app.get(SDV_URL + "/loadInitialData", (req, res) => {
         const initialData = [
             { "year": 2026, "country": "españa", "hdi_value": 0.932, "hdi_rank": 26, "hdi_change": 1 },
@@ -158,11 +189,15 @@ export default function (app) {
         });
     });
 
-    // --- 3. POST a la colección ---
+    /*
+     * POST a la coleccion: crea un nuevo recurso.
+     *   - 400: faltan campos obligatorios.
+     *   - 409: ya existe un recurso con la misma clave (country, year).
+     *   - 201: creado correctamente.
+     */
     app.post(SDV_URL, (req, res) => {
         const newData = req.body;
 
-        // Validación de campos requeridos
         if (!newData.country || !newData.year || newData.hdi_value === undefined ||
             newData.hdi_rank === undefined || newData.hdi_change === undefined) {
             return res.status(400).send("Faltan campos obligatorios");
@@ -170,7 +205,7 @@ export default function (app) {
 
         db.find({ country: newData.country, year: Number(newData.year) }, (err, docs) => {
             if (docs.length > 0) {
-                res.sendStatus(409); // Conflicto: Ya existe el recurso
+                res.sendStatus(409);
             } else {
                 db.insert(newData, (err, newDoc) => {
                     if (err) return res.sendStatus(500);
@@ -180,7 +215,7 @@ export default function (app) {
         });
     });
 
-    // --- 4. GET a un recurso específico ---
+    /* GET de un recurso concreto identificado por (country, year). */
     app.get(SDV_URL + "/:country/:year", (req, res) => {
         const { country, year } = req.params;
         db.findOne({ country: country, year: Number(year) }, (err, doc) => {
@@ -192,7 +227,7 @@ export default function (app) {
         });
     });
 
-    // --- 5. DELETE a la colección completa ---
+    /* DELETE coleccion completa: elimina todos los documentos. */
     app.delete(SDV_URL, (req, res) => {
         db.remove({}, { multi: true }, (err, numRemoved) => {
             if (err) return res.sendStatus(500);
@@ -200,7 +235,11 @@ export default function (app) {
         });
     });
 
-    // --- 6. DELETE a un recurso específico ---
+    /*
+     * DELETE de un recurso concreto.
+     * NeDB devuelve el numero de documentos eliminados, lo que nos
+     * permite distinguir entre "borrado" (200) y "no existia" (404).
+     */
     app.delete(SDV_URL + "/:country/:year", (req, res) => {
         const { country, year } = req.params;
         db.remove({ country: country, year: Number(year) }, {}, (err, numRemoved) => {
@@ -213,12 +252,16 @@ export default function (app) {
         });
     });
 
-    // --- 7. PUT a un recurso específico ---
+    /*
+     * PUT de un recurso concreto.
+     * Si el (country, year) del cuerpo no concuerda con el de la URL
+     * se devuelve 400: lo contrario permitiria al cliente cambiar la
+     * clave logica del recurso de forma encubierta.
+     */
     app.put(SDV_URL + "/:country/:year", (req, res) => {
         const { country, year } = req.params;
         const updatedData = req.body;
 
-        // Comprobamos que el ID de la URL coincide con el del cuerpo
         if (country !== updatedData.country || Number(year) !== Number(updatedData.year)) {
             return res.status(400).send("El país o el año no coinciden con la URL.");
         }
@@ -233,7 +276,11 @@ export default function (app) {
         });
     });
 
-    // --- MÉTODOS NO PERMITIDOS ---
+    /*
+     * Metodos no permitidos por la guia REST.
+     * POST sobre un recurso individual y PUT sobre la coleccion no
+     * tienen sentido semantico, asi que devuelven 405.
+     */
     app.post(SDV_URL + "/:country/:year", (req, res) => res.sendStatus(405));
     app.put(SDV_URL, (req, res) => res.sendStatus(405));
 };
