@@ -1,4 +1,21 @@
 <script>
+	// @ts-nocheck
+	/*
+	 * Página de integraciones MGN.
+	 *
+	 * Esta ruta cruza el recurso propio de rankings FIFA por país+año con
+	 * varias APIs externas y genera visualizaciones de integración y análisis.
+	 *
+	 * Visualizaciones principales:
+	 *   1) Densidad de población vs Score FIFA (Highcharts heatmap)
+	 *   2) Ranking FIFA vs precio medio de vino (ApexCharts treemap)
+	 *   3) Score FIFA vs meteoritos (Google Charts bubble chart)
+	 *   4) Evolución anual de pandemias (ECharts line chart)
+	 *
+	 * El cruce de datos se apoya en normalización de nombres de país,
+	 * alias manuales, ISO2/ISO3 y búsqueda de año más cercano cuando no hay
+	 * coincidencia exacta.
+	 */
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { env } from '$env/dynamic/public';
@@ -10,9 +27,15 @@
 	countries.registerLocale(enLocale);
 	countries.registerLocale(esLocale);
 
-	/** -----------------------------
-	 *  APIs
-	 *  ----------------------------- */
+	/*
+	 * APIs y constantes externas.
+	 *
+	 * MY_API_URL: API propia con rankings FIFA por país y año.
+	 * POP_DENSITIES_API: API externa de densidades de población.
+	 * WINE_API: API externa de estadísticas de vino.
+	 * METEORITES_API: API externa de meteoritos.
+	 * PANDEMICS_API: API externa de datos epidemiológicos.
+	 */
 	const MY_API_URL =
 		'https://sos2526-26.onrender.com/api/v2/national-team-rankings-per-years/';
 
@@ -59,7 +82,15 @@
 		meteorites: { commonPairs: 0, yearUsed: '' },
 	});
 
-	/** Índice país(año) para cruce robusto (nombre + año cercano) */
+	/*
+	 * Índices internos para cruzar paises del dataset externo con los datos
+	 * propios de rankings FIFA.
+	 *
+	 * myRowsByCountryNorm: filas propio indexadas por país normalizado.
+	 * myNormList / myNormSet: lista y conjunto de nombres normalizados.
+	 * enNormToMyNorm: puente de nombres EN normalizados a nombres propios.
+	 * iso3ToMyNorm / iso2ToMyNorm: puente de códigos ISO a nombres propios.
+	 */
 	let myRowsByCountryNorm = new Map();
 	let myNormList = [];
 	let myNormSet = new Set();
@@ -69,9 +100,11 @@
 
 	const YEAR_MATCH_STEPS = [0, 1, 2, 3, 5, 8, 12, 20, 30];
 
-	/** -----------------------------
-	 *  Helpers
-	 *  ----------------------------- */
+	/*
+	 * Funciones auxiliares generales.
+	 *
+	 * Normalización, carga con timeout y generación de estructuras de datos.
+	 */
 	const REQUEST_TIMEOUT_MS = 40000;
 	const API_BASE_URL = (
 		(env.PUBLIC_API_URL && env.PUBLIC_API_URL.trim()) ||
@@ -83,6 +116,9 @@
 		return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 	}
 
+	/* Normaliza nombres de pais convertidos a minúsculas, sin acentos ni
+	 * caracteres especiales, y reemplaza secuencias no alfanuméricas por espacios.
+	 */
 	function normalizeCountry(value = '') {
 		return value
 			.toString()
@@ -93,6 +129,9 @@
 			.trim();
 	}
 
+	/* Fetch simple con timeout para evitar que una API externa quede colgando
+	 * indefinidamente y bloquee el resto de la página.
+	 */
 	async function fetchWithTimeout(url) {
 		const controller = new AbortController();
 		const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -103,6 +142,9 @@
 		}
 	}
 
+	/* Carga un dataset remoto y, si está vacío, intenta inicializarlo vía
+	 * /loadInitialData para que la página pueda seguir funcionando.
+	 */
 	async function loadDataset(urlOrPath) {
 		const endpoint = toApiUrl(urlOrPath);
 		const res = await fetchWithTimeout(endpoint);
@@ -127,6 +169,10 @@
 		return await reloadRes.json();
 	}
 
+	/* Indexa los rankings propios por país y año para poder hacer cruces
+	 * robustos con datasets externos. Se normaliza el nombre del país y se
+	 * ordenan los registros por año para poder buscar el valor más cercano.
+	 */
 	function indexMyRankings(myData) {
 		myRowsByCountryNorm = new Map();
 		myNormSet = new Set();
@@ -152,6 +198,10 @@
 		myNormList = [...myNormSet];
 	}
 
+	/* Reconstruye el puente entre nombres externos y los nombres propios del
+	 * dataset. Usa la librería i18n-iso-countries para mapear EN/ES/ISO y añade
+	 * un conjunto de alias manuales para casos comunes de FIFA/dataset externo.
+	 */
 	function rebuildCountryNameBridge() {
 		enNormToMyNorm = new Map();
 		iso3ToMyNorm = new Map();
@@ -173,7 +223,9 @@
 			iso2ToMyNorm.set(String(code).toUpperCase(), esN);
 		}
 
-		/** Alias FIFA / dataset interno (clave: texto normalizado “externo”; valor: etiqueta canónica interna) */
+		/* Alias manuales para nombres externos frecuentes que no casan bien con
+		 * la normalización automática o que usan denominaciones locales.
+		 */
 		const manual = [
 			['united states', 'EEUU'],
 			['united states of america', 'EEUU'],
@@ -204,6 +256,10 @@
 		}
 	}
 
+	/* Busca una coincidencia floja entre el nombre externo normalizado y
+	 * los nombres propios ya indexados. Esto ayuda con variantes como
+	 * 'república de x' o sufijos entre paréntesis.
+	 */
 	function fuzzyMyNorm(externalNorm) {
 		if (!externalNorm) return null;
 		if (myNormSet.has(externalNorm)) return externalNorm;
@@ -214,6 +270,12 @@
 		return null;
 	}
 
+	/* Resuelve un país externo a la forma canónica interna mediante:
+	 *   1) normalización de nombre
+	 *   2) coincidencia floja
+	 *   3) código ISO3/ISO2
+	 *   4) alias manual EN
+	 */
 	function resolveExternalCountryNorm(name, record) {
 		const raw = name?.toString?.() ?? '';
 		const extNorm = normalizeCountry(raw);
@@ -241,6 +303,10 @@
 		return null;
 	}
 
+	/* Busca la fila propia de ranking más cercana por año para un país
+	 * normalizado. Primero intenta match exacto y luego acepta años cercanos
+	 * siguiendo la lista de pasos YEAR_MATCH_STEPS.
+	 */
 	function getMyRowNearest(countryNorm, year) {
 		const y = Number(year);
 		if (!countryNorm || !Number.isFinite(y)) return null;
@@ -262,6 +328,10 @@
 		return best ? { ...best, yearDiff: bestDiff } : null;
 	}
 
+	/* Funciones estadísticas de apoyo usadas por varias integraciones.
+	 * mean, variance, covariance y pearson solo se usan en este archivo
+	 * para comparar tendencias y construir métricas de correlación.
+	 */
 	function mean(nums) {
 		if (!nums.length) return NaN;
 		return nums.reduce((a, b) => a + b, 0) / nums.length;
@@ -291,6 +361,10 @@
 		return cov / Math.sqrt(vx * vy);
 	}
 
+	/* Elige el año que aparece con más frecuencia en un conjunto de pares
+	 * país-año. Se usa para seleccionar un año representativo cuando varias
+	 * integraciones tienen múltiples años disponibles.
+	 */
 	function pickMostCommonYear(pairs) {
 		// pairs: Array<{year:number}>
 		const counts = new Map();
@@ -340,6 +414,10 @@
 		return yearMap;
 	}
 
+	/* Dibuja la gráfica de pandemics usando ECharts.
+	 * Recibe los años ordenados y las series de datos con los valores
+	 * promedio para cada enfermedad.
+	 */
 	async function renderPandemicsChart(years, series) {
 		const el = document.getElementById('mgn-pandemics-chart');
 		if (!el || !window.echarts) return;
@@ -362,6 +440,9 @@
 		ro.observe(el);
 	}
 
+	/* Carga el dataset de pandemics, calcula medias anuales y construye
+	 * el resumen textual que se muestra en el panel de análisis.
+	 */
 	async function loadPandemicsVisualization() {
 		const response = await fetchWithTimeout(PANDEMICS_API);
 		if (!response.ok) throw new Error(`Error ${response.status} cargando datos de pandemics`);
@@ -427,6 +508,9 @@
 		return pairs;
 	}
 
+	/* Inicializa el heatmap de Highcharts para visualizar la densidad de
+	 * puntos en el plano score FIFA vs densidad de población.
+	 */
 	function initHighchartsHeatmap(containerId, pairs) {
 		const el = document.getElementById(containerId);
 		if (!el) return;
@@ -518,6 +602,10 @@
 	 *  Widget 2 (Wine) -> ApexCharts Treemap (CDN)
 	 *  Integración: rank/score FIFA vs precio medio vino por país-año
 	 *  ----------------------------- */
+	/* Construye las métricas de vino por país+año y las cruza con el
+	 * ranking FIFA propio. Calcula precio medio y ABV medio para luego
+	 * renderizar una treemap con tamaño=precio y color=rank.
+	 */
 	function buildWineIntegration(wineData) {
 		// agregamos vino por país-año (precio medio, abv medio)
 		const agg = new Map();
@@ -594,6 +682,9 @@
 		return { pairsCount: pairs.length, yearUsed, series };
 	}
 
+	/* Inicializa la treemap de ApexCharts con datos de precio medio del
+	 * vino y ranking FIFA por país.
+	 */
 	function initApexTreemap(containerId, treemapSeries, yearUsed) {
 		const el = document.getElementById(containerId);
 		if (!el) return;
@@ -662,6 +753,9 @@
 		return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
 	}
 
+	/* Calcula estadísticas de caja (boxplot) a partir de una lista de valores.
+	 * Se usa para análisis estadístico interno cuando se procesan distribuciones.
+	 */
 	function toBoxStats(values) {
 		const v = values.filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
 		if (!v.length) return null;
@@ -724,6 +818,10 @@
 		return { pairsCount: pairs.length, yearUsed, rows };
 	}
 
+	/* Inicializa el bubble chart de Google Charts para visualizar la masa
+	 * media de meteoritos vs score FIFA, con el tamaño del globo según el
+	 * conteo de meteoritos por país-año.
+	 */
 	function initGoogleBubble(containerId, rows, yearUsed) {
 		const el = document.getElementById(containerId);
 		if (!el) return;
@@ -763,6 +861,14 @@
 	/** -----------------------------
 	 *  Main onMount
 	 *  ----------------------------- */
+	/* Montaje principal de la página. Solo se ejecuta en el browser
+	 * porque algunas librerías de visualización no funcionan en SSR.
+	 *
+	 * 1) carga módulos de visualización necesarios.
+	 * 2) descarga datasets en paralelo.
+	 * 3) indexa y normaliza datos propios.
+	 * 4) construye cada widget y monta la gráfica correspondiente.
+	 */
 	onMount(async () => {
 		if (!browser) return;
 		try {
