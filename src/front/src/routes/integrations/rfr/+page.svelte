@@ -219,76 +219,98 @@ function initScatterChart(echarts, data) {
     const ro = new ResizeObserver(() => myChart3 && myChart3.resize());
     ro.observe(chartContainer3);
 }
- // Procesar datos para la gráfica 4 (TREE)
-function processTreeData(universities) {
-    // Creamos la raíz
-    const root = {
-        name: "World Universities",
-        children: []
-    };
 
-    const countriesMap = new Map();
+function processRickAndMortyTree(results) {
+    const root = { name: "Multiverso", children: [] };
+    const dimensionsMap = {};
 
-    universities.forEach(uni => {
-        const countryName = uni.country;
-        if (!countriesMap.has(countryName)) {
-            countriesMap.set(countryName, {
-                name: countryName,
-                children: []
-            });
-            root.children.push(countriesMap.get(countryName));
-        }
+    results.forEach(loc => {
+        const dimName = loc.dimension || "Unknown Dimension";
         
-        // Añadimos la universidad al país correspondiente
-        countriesMap.get(countryName).children.push({
-            name: uni.name
+        if (!dimensionsMap[dimName]) {
+            dimensionsMap[dimName] = { name: dimName, children: [] };
+            root.children.push(dimensionsMap[dimName]);
+        }
+
+        // Añadimos el planeta o lugar a la dimensión
+        dimensionsMap[dimName].children.push({
+            name: loc.name
         });
     });
 
     return root;
 }
- // Inicialización gráfica 4 (TREE)
-function initTreeChart(echarts, treeData) {
-    if (!chartContainer4) return;
-    myChart4 = echarts.init(chartContainer4);
 
-    const option = {
-        title: { text: 'Jerarquía de Universidades por País', left: 'center' },
-        tooltip: { trigger: 'item', triggerOn: 'mousemove' },
-        series: [
-            {
-                type: 'tree',
-                data: [treeData],
-                top: '5%',
-                left: '15%',
-                bottom: '2%',
-                right: '20%',
-                symbolSize: 7,
-                label: {
-                    position: 'left',
-                    verticalAlign: 'middle',
-                    align: 'right',
-                    fontSize: 10
-                },
-                leaves: {
+// Inicialización gráfica 4 (TREE - Rick and Morty dimensions)
+    function initTreeChart(echarts, treeData) {
+        if (!chartContainer4) return;
+        myChart4 = echarts.init(chartContainer4);
+
+        const option = {
+            title: { 
+                text: 'Jerarquía de Dimensiones y Lugares en Rick y Morty', 
+                subtext: 'Fuente: API /proxy/dimensions',
+                left: 'center',
+                top: '2%'
+            },
+            tooltip: { 
+                trigger: 'item', 
+                triggerOn: 'mousemove',
+                formatter: '{b}' // Muestra el nombre del nodo al pasar el ratón
+            },
+            series: [
+                {
+                    type: 'tree',
+                    data: [treeData],
+                    top: '8%',
+                    left: '12%',   
+                    bottom: '2%',
+                    right: '25%',  
+                    symbolSize: 10,
+                    itemStyle: {
+                        color: '#c23531', 
+                        borderColor: '#911'
+                    },
                     label: {
-                        position: 'right',
+                        position: 'left',
                         verticalAlign: 'middle',
-                        align: 'left'
-                    }
-                },
-                emphasis: { focus: 'descendant' },
-                expandAndCollapse: true, // Permite clicar para cerrar/abrir ramas
-                animationDuration: 550,
-                animationDurationUpdate: 750
-            }
-        ]
-    };
+                        align: 'right',
+                        fontSize: 11,
+                        fontWeight: 'bold'
+                    },
+                    leaves: {
+                        label: {
+                            position: 'right',
+                            verticalAlign: 'middle',
+                            align: 'left',
+                            fontWeight: 'normal'
+                        }
+                    },
+                    emphasis: { 
+                        focus: 'descendant',
+                        itemStyle: {
+                            color: '#ff4d4f',
+                            shadowBlur: 10
+                        }
+                    },
+                    
+                    expandAndCollapse: true, 
+                    initialTreeDepth: 1, 
+                    animationDuration: 550,
+                    animationDurationUpdate: 750
+                }
+            ]
+        };
 
-    myChart4.setOption(option);
-    const ro = new ResizeObserver(() => myChart4 && myChart4.resize());
-    ro.observe(chartContainer4);
-}
+        myChart4.setOption(option);
+
+        // Resize automático
+        const ro = new ResizeObserver(() => {
+            if (myChart4) myChart4.resize();
+        });
+        ro.observe(chartContainer4);
+    }
+ 
 
 function initPokemonRadar(echarts, stats) {
     if (!chartContainer5) return;
@@ -334,53 +356,40 @@ function initPokemonRadar(echarts, stats) {
     ro.observe(chartContainer5);
 }
 
- // Función para procesar datos de alérgenos para un TreeMap (Treemap 6 - Uso API OpenFood)
-function processAllergenTreeMap(products) {
-    // Transformamos los productos en el formato que ECharts TreeMap necesita
-    return products
-        .filter(p => p.product_name && p.allergens_tags) // Solo productos con nombre y alérgenos
-        .map(p => {
-            const allergenCount = p.allergens_tags.length;
-            return {
-                name: `${p.product_name}\n(${allergenCount} alérgenos)`,
-                value: allergenCount, // El tamaño del cuadro dependerá del número de alérgenos
-                // Podemos añadir la lista de alérgenos para el tooltip
-                allergens: p.allergens_tags.map(a => a.replace('en:', '')) 
-            };
-        });
-}
+// Procesar datos para TreeMap de Frutas
+    function processFruitData(fruits) {
+        return fruits.map(fruit => ({
+          name: fruit.name, // Nombre de la fruta
+          value: fruit.nutritions.sugar,
+        }));
+    }
 
-function initTreeMap(echarts, data) {
-    if (!chartContainer5) return;
-    myChart5 = echarts.init(chartContainer5);
-
-    const option = {
-        title: { text: 'Alérgenos por Producto (Open Food Facts)', left: 'center' },
-        tooltip: {
-            formatter: function (info) {
-                const allergens = info.data.allergens ? info.data.allergens.join(', ') : 'Ninguno';
-                return `<b>${info.name}</b><br/>Alérgenos: ${allergens}`;
-            }
-        },
-        series: [{
-            type: 'treemap',
-            data: data,
-            levels: [
-                {
+    // Inicializar TreeMap de Frutas
+    function initFruitTreeMap(echarts, data) {
+        if (!chartContainer6) return;
+        myChart6 = echarts.init(chartContainer6);
+        const option = {
+            title: { text: 'Concentración de Azúcar por Fruta', left: 'center' },
+            tooltip: { 
+            // 'info.name' es el nombre, 'info.value' son las calorías
+            formatter: (info) => `<b>${info.name}</b><br/>Azúcar: ${info.value}g`
+            },
+            series: [{
+                type: 'treemap',
+                data: data,
+                levels: [{
                     itemStyle: {
-                        borderColor: '#fff',
                         borderWidth: 2,
+                        borderColor: '#fff',
                         gapWidth: 1
                     }
-                }
-            ]
-        }]
-    };
-
-    myChart6.setOption(option);
-    const ro = new ResizeObserver(() => myChart5 && myChart6.resize());
-    ro.observe(chartContainer6);
-}
+                }]
+            }]
+        };
+        myChart6.setOption(option);
+        const ro = new ResizeObserver(() => myChart6 && myChart6.resize());
+        ro.observe(chartContainer6);
+    }
 
 function processHeatmapData(rawData) {
     // 1. Definimos los "cubos" o rangos
@@ -462,15 +471,21 @@ function initHeatmap(echarts, data) {
         try {
             const echarts = await import('echarts');
         
-            
-            const [squadRes, productivityRes, citiesRes, choleraRes, uniRes, pokeRes, foodRes, hydroRes] = await Promise.all([
+            await Promise.all([
+            fetch('/api/v2/fifa-squad-value-per-years/loadInitialData', { method: 'POST' }).catch(() => {}),
+            fetch('https://sos2526-19-integracion.onrender.com/api/v1/workers-productivity/loadInitialData').catch(() => {}),
+            fetch('https://sos2526-29.onrender.com/api/v2/citys-stats/loadInitialData').catch(() => {}),
+            fetch('https://soporte-sos.onrender.com/api/v1/cholera-stats/loadInitialData').catch(() => {}),
+            fetch('https://sos2526-27.onrender.com/api/v1/world-hydroelectric-plants/loadInitialData').catch(() => {})
+        ]);
+            const [squadRes, productivityRes, citiesRes, choleraRes, dimensionsRes, pokeRes, fruitRes, hydroRes] = await Promise.all([
                 loadDataset('/api/v2/fifa-squad-value-per-years'),
                 loadDataset('https://sos2526-19-integracion.onrender.com/api/v1/workers-productivity'),
                 loadDataset('https://sos2526-29.onrender.com/api/v2/citys-stats'),
                 loadDataset('https://soporte-sos.onrender.com/api/v1/cholera-stats'),
-                loadDataset('/api/v1/proxy/uni?country=Spain'),
+                loadDataset('/api/v1/proxy/dimensions'),
                 loadDataset('https://pokeapi.co/api/v2/pokemon/garchomp'),
-                loadDataset('/api/v1/proxy/food-products?action=process&tag_0=spain&json=1'),
+                loadDataset('/api/v1/proxy/fruits'),
                 loadDataset('https://sos2526-27.onrender.com/api/v1/world-hydroelectric-plants/')
             ]);
 
@@ -488,19 +503,20 @@ function initHeatmap(echarts, data) {
             // Pasamos los puntos procesados, NO el choleraRes original
             initScatterChart(echarts, scatterPoints);
             // 4. Procesar Gráfica 4 (Tree) - Usamos los datos de Hipolabs
-            const treeData = processTreeData(uniRes); // uniRes son los datos de Hipolabs
+            const treeData = processRickAndMortyTree(dimensionsRes); // dimensionsRes son los datos de las dimensiones y planetas
             initTreeChart(echarts, treeData);
 
             // 5. Procesar Radar (Garchomp) - Extraemos los stats aquí mismo
             const garchompStats = pokeRes.stats.map(s => s.base_stat);
             initPokemonRadar(echarts, garchompStats);
             
-            // 6. Procesar TreeMap (Open Food Facts)
-            const treeMapData = processAllergenTreeMap(foodRes.products);
-            initTreeMap(echarts, treeMapData);
+            const fruitData = processFruitData(fruitRes);
+            initFruitTreeMap(echarts, fruitData);
 
-           const heatmapData = processHeatmapData(hydroRes);
-           initHeatmap(echarts, heatmapData);
+            const heatmapData = processHeatmapData(hydroRes);
+            initHeatmap(echarts, heatmapData);
+
+            
 
         } catch (error) {
             console.error("Error en la carga:", error);
@@ -542,7 +558,7 @@ function initHeatmap(echarts, data) {
     <hr class="separator" />
 
     <section class:hidden={loading || errorMessage}>
-        <h2>Uso API Externa: Universidades por País</h2>
+        <h2>Uso API Externa: Jerarquía de Dimensiones de Rick y Morty</h2>
         <div bind:this={chartContainer4} class="tree-viewport"></div>
     </section>
 
@@ -556,7 +572,7 @@ function initHeatmap(echarts, data) {
     <hr class="separator" />
 
     <section class:hidden={loading || errorMessage}>
-        <h2>Uso API Externa: Alérgenos en Productos Alimenticios</h2>
+        <h2>Uso API Externa: Azúcares en Frutas (TreeMap)</h2>
         <div bind:this={chartContainer6} class="chart"></div>
     </section>
 

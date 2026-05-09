@@ -36,8 +36,6 @@ var proxyPath = '/api/v1/proxy/education-spending';
 const worldBankCountries = ['ESP', 'USA', 'CHN', 'FRA', 'JPN', 'IND', 'NOR', 'BRA', 'NGA', 'AUS'];
 const worldBankIndicator = 'SE.XPD.TOTL.GD.ZS';
 const worldBankBaseUrl = `https://api.worldbank.org/v2/country/all/indicator/${worldBankIndicator}`;
-var foodProxyPath = '/api/v1/proxy/food-products';
-const foodApiBaseUrl = 'https://world.openfoodfacts.org/cgi/search.pl';
 var uniProxyPath = '/api/v1/proxy/uni';
 const uniApiBaseUrl = 'https://universities.hipolabs.com/search';
 
@@ -98,56 +96,24 @@ app.get(proxyPath, async function(req, res) {
     }
 });
 
-app.get(foodProxyPath, async function(req, res) {
+app.get('/api/v1/proxy/dimensions', async (req, res) => {
     try {
-       
-        const queryString = req.url.split('?')[1] || '';
-        const targetUrl = `${foodApiBaseUrl}?${queryString}`;
-
-        console.log('Petición redirigida vía Proxy a: ' + targetUrl);
-
-      
-        const resp = await fetch(targetUrl);
-        
-        if (!resp.ok) {
-            return res.status(resp.status).send(`Error consultando Open Food Facts: ${resp.status}`);
-        }
-
-       
-        const payload = await resp.json();
-        
-       
-        let products = Array.isArray(payload?.products) ? payload.products : [];
-
-        
-        return res.status(200).json({
-            count: products.length,
-            page: payload.page || 1,
-            products: products
-        });
-
+        // Obtenemos las localizaciones (Dimensiones y Planetas)
+        const response = await fetch('https://rickandmortyapi.com/api/location');
+        const data = await response.json();
+        res.json(data.results);
     } catch (error) {
-        console.error('Error en proxy de comida:', error);
-        return res.status(500).json({ error: 'Error en proxy de comida' });
+        res.status(500).json({ error: 'Error en la API de Rick y Morty' });
     }
 });
 
-// --- PROXY UNIVERSIDADES (Estilo Banco Mundial) ---
-app.get('/api/v1/proxy/universities', async (req, res) => {
+app.get('/api/v1/proxy/fruits', async (req, res) => {
     try {
-        const country = req.query.country || 'Spain';
-        const url = `https://universities.hipolabs.com/search?country=${country}`;
-        
-        const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
-        if (!response.ok) throw new Error('API Externa Saturada');
-        
+        const response = await fetch('https://www.fruityvice.com/api/fruit/all');
         const data = await response.json();
         res.json(data);
-    } catch (e) {
-        // Si la API falla, devolvemos un array vacío en lugar de un error 500/503
-        // Así tu gráfica no se rompe, simplemente sale vacía.
-        console.log("Fallo en Uni-Proxy, devolviendo vacío para evitar error 503");
-        res.status(200).json([]); 
+    } catch (error) {
+        res.status(500).json({ error: 'Fallo al conectar con Fruityvice' });
     }
 });
 // ---------------------------------------------------------------------------
