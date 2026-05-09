@@ -60,6 +60,8 @@ export default function(app) {
     app.get(RFR_URL, (req, res) => {
     const { from, to, country, min_squad, max_value } = req.query;
     let query = {};
+    let offset = parseInt(req.query.offset) || 0;
+    let limit = parseInt(req.query.limit) || 10;
 
     // Filtro por país (exacto, ignorando mayúsculas/minúsculas)
     if (country) {
@@ -73,10 +75,18 @@ export default function(app) {
         if (to) query.year.$lte = Number(to);
     }
 
-    db.find(query).exec((err, docs) => {
-        if (err) return res.sendStatus(500);
-        res.status(200).json(docs.map(d => cleanResource(d)));
-    }); 
+   db.find({})
+      .sort({ name: 1 }) // Es importante ordenar para que la paginación sea consistente
+      .skip(offset)
+      .limit(limit)
+      .exec((err, docs) => {
+          if (err) {
+              res.status(500).json({ error: "Error consultando la base de datos" });
+          } else {
+              // 3. Devolver los datos (JSON)
+              res.status(200).json(docs);
+          }}
+        );
 });
     // --- 2. GET para cargar datos iniciales ---
     app.get(RFR_URL + "/loadInitialData", (req, res) => {
