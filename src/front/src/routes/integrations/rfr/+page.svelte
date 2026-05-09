@@ -468,9 +468,9 @@ function initHeatmap(echarts, data) {
                 loadDataset('https://sos2526-19-integracion.onrender.com/api/v1/workers-productivity'),
                 loadDataset('https://sos2526-29.onrender.com/api/v2/citys-stats'),
                 loadDataset('https://soporte-sos.onrender.com/api/v1/cholera-stats'),
-                loadDataset('/api/rfr/uni-proxy?country=Spain'),
+                loadDataset('/api/v1/proxy/uni?country=Spain'),
                 loadDataset('https://pokeapi.co/api/v2/pokemon/garchomp'),
-                loadDataset('/api/rfr/food-proxy?action=process&tag_0=spain&json=1'),
+                loadDataset('/api/v1/proxy/food-products?action=process&tag_0=spain&json=1'),
                 loadDataset('https://sos2526-27.onrender.com/api/v1/world-hydroelectric-plants/')
             ]);
 
