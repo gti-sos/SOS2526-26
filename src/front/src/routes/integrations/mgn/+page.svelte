@@ -11,6 +11,7 @@
 	 *   2) Ranking FIFA vs precio medio de vino (ApexCharts treemap)
 	 *   3) Score FIFA vs meteoritos (Google Charts bubble chart)
 	 *   4) Evolución anual de pandemias (ECharts line chart)
+	 *   5) Cantidad de importación por item alimenticio (Chart.js bar chart)
 	 *
 	 * El cruce de datos se apoya en normalización de nombres de país,
 	 * alias manuales, ISO2/ISO3 y búsqueda de año más cercano cuando no hay
@@ -43,6 +44,8 @@
 	const WINE_API = 'https://sos2526-29.onrender.com/api/v1/wine-stats';
 	const METEORITES_API = 'https://meteorite-landings-tvcf.onrender.com/api/v2/meteorite-landings';
 	const PANDEMICS_API = 'https://sos2526-10.onrender.com/api/v2/pandemics';
+
+	const FOOD_API = 'https://sos2526-18.onrender.com/api/v2/food-supply-utilization-accounts';
 
 	const DISEASE_KEYS = [
 		'yaws',
@@ -440,13 +443,12 @@
 		ro.observe(el);
 	}
 
-	/* Carga el dataset de pandemics, calcula medias anuales y construye
+	/* Carga el dataset de pandemics a través de loadDataset(), calcula medias anuales y construye
 	 * el resumen textual que se muestra en el panel de análisis.
 	 */
 	async function loadPandemicsVisualization() {
-		const response = await fetchWithTimeout(PANDEMICS_API);
-		if (!response.ok) throw new Error(`Error ${response.status} cargando datos de pandemics`);
-		const data = await response.json();
+		const raw = await loadDataset(PANDEMICS_API);
+		const data = Array.isArray(raw) ? raw : raw?.data || [];
 		if (!Array.isArray(data) || !data.length) throw new Error('La API de pandemics no devolvió datos válidos');
 
 		const yearMap = computeAveragesByYear(data);
@@ -482,7 +484,84 @@
 		await renderPandemicsChart(sortedYears, chartSeries);
 	}
 
-	/** === Fin Funciones para Pandemics === */
+	/** -----------------------------
+	 *  Widget 5 (Food Supply) -> Chart.js Bar Chart
+	 *  Visualización: suma de import quantity por item alimenticio
+	 *  ----------------------------- */
+	function buildFoodVisualization(foodData) {
+		const agg = new Map(); // key item -> sumImport
+		for (const f of foodData) {
+			if (!f?.item) continue;
+			const importQty = Number(f.import_quantity_tonnes);
+			if (!Number.isFinite(importQty)) continue;
+			const item = f.item;
+			if (!agg.has(item)) agg.set(item, 0);
+			agg.set(item, agg.get(item) + importQty);
+		}
+
+		const items = [...agg.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10); // top 10
+
+		const data = {
+			labels: items.map(([item]) => item),
+			datasets: [{
+				label: 'Import Quantity (tonnes)',
+				data: items.map(([, qty]) => qty),
+				backgroundColor: 'rgba(255, 99, 132, 0.5)',
+				borderColor: 'rgba(255, 99, 132, 1)',
+				borderWidth: 1
+			}]
+		};
+
+		return { data };
+	}
+
+	/* Inicializa el bar chart de Chart.js para visualizar suma de import quantity por item alimenticio.
+	 */
+	function initChartJSBar(containerId, chartData) {
+		const el = document.getElementById(containerId);
+		if (!el) return;
+		if (!window.Chart) {
+			el.innerHTML = '<div class="status">Chart.js todavía no cargó.</div>';
+			return;
+		}
+		if (!chartData?.labels?.length) {
+			el.innerHTML = '<div class="status">No hay datos suficientes para la visualización de alimentos.</div>';
+			return;
+		}
+
+		new window.Chart(el, {
+			type: 'bar',
+			data: chartData,
+			options: {
+				indexAxis: 'y', // horizontal bar chart
+				responsive: true,
+				plugins: {
+					title: {
+						display: true,
+						text: 'Top 10 Items por Cantidad de Importación (tonnes)'
+					},
+					legend: {
+						display: false
+					}
+				},
+				scales: {
+					x: {
+						beginAtZero: true,
+						title: {
+							display: true,
+							text: 'Import Quantity (tonnes)'
+						}
+					},
+					y: {
+						title: {
+							display: true,
+							text: 'Items Alimenticios'
+						}
+					}
+				}
+			}
+		});
+	}
 
 	/** -----------------------------
 	 *  Widget 1 (Population densities) -> Highcharts Heatmap
@@ -887,17 +966,19 @@
 			window.echarts = echarts;
 
 			// Highcharts heatmap module debe cargarse solo en browser (SSR rompe si se evalúa en Node)
-			const [myRaw, popRaw, wineRaw, meteoritesRaw] = await Promise.all([
+			const [myRaw, popRaw, wineRaw, meteoritesRaw, foodRaw] = await Promise.all([
 				loadDataset(MY_API_URL),
 				loadDataset(POP_DENSITIES_API),
 				loadDataset(WINE_API),
-				loadDataset(METEORITES_API)
+				loadDataset(METEORITES_API),
+				loadDataset(FOOD_API)
 			]);
 
 			const myData = Array.isArray(myRaw) ? myRaw : myRaw?.data || [];
 			const popData = Array.isArray(popRaw) ? popRaw : popRaw?.data || [];
 			const wineData = Array.isArray(wineRaw) ? wineRaw : wineRaw?.data || [];
 			const meteoritesData = Array.isArray(meteoritesRaw) ? meteoritesRaw : meteoritesRaw?.data || [];
+			const foodData = Array.isArray(foodRaw) ? foodRaw : foodRaw?.data || [];
 
 			indexMyRankings(myData);
 			rebuildCountryNameBridge();
@@ -923,6 +1004,10 @@
 
 			// Widget 4 (Pandemics Visualization)
 			await loadPandemicsVisualization();
+
+			// Widget 5 (Food Supply)
+			const food = buildFoodVisualization(foodData);
+			initChartJSBar('mgn-chart-food-bar', food.data);
 		} catch (e) {
 			console.error(e);
 			errorMessage = e?.message || 'Error cargando integraciones';
@@ -936,10 +1021,11 @@
 	<!-- CDNs usados solo en esta página (como hacen tus compañeros) -->
 	<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 	<script src="https://www.gstatic.com/charts/loader.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </svelte:head>
 
 <main class="page">
-	<h1>Integraciones MGN (estadística + 4 APIs externas)</h1>
+	<h1>Integraciones MGN (estadística + 5 APIs externas)</h1>
 
 	{#if loading}
 		<div class="status">Cargando datasets y calculando integraciones...</div>
@@ -980,19 +1066,11 @@
 	</section>
 
 	<section class:hidden={loading || errorMessage} class="card">
-		<h2>4) Evolución anual de enfermedades (ECharts + Líneas)</h2>
+		<h2>5) Cantidad de Importación por Item Alimenticio (Chart.js + Bar Chart)</h2>
 		<p class="desc">
-			Esta visualización muestra tendencias globales del dataset de pandemics. Se calcula la media anual por 
-			enfermedad y se destacan las enfermedades con mayor carga. No se mezcla con la API propia de rankings, 
-			es un análisis independiente de datos epidemiológicos.
+			Visualización independiente de la API de suministro de alimentos. Muestra la suma de cantidad de importación por item alimenticio, ordenado de mayor a menor, para los top 10 items.
 		</p>
-		<p class="meta">{summaryTitle}</p>
-		<div id="mgn-pandemics-chart" class="chart"></div>
-		<div class="panel">
-			<strong>Inferencias clave</strong>
-			<p>{summaryText}</p>
-			<p>Las principales enfermedades en el conjunto de datos son {topDiseases.map(getPrettyName).join(', ')}.</p>
-		</div>
+		<div id="mgn-chart-food-bar" class="chart"></div>
 	</section>
 
 </main>
