@@ -10,7 +10,7 @@
 	 *   1) Densidad de población vs Score FIFA (Highcharts heatmap)
 	 *   2) Ranking FIFA vs precio medio de vino (ApexCharts treemap)
 	 *   3) Meteoritos por País (Google Charts bar chart)
-	 *   4) Evolución anual de pandemias (ECharts line chart)
+	 *   4) Evolución anual de pandemias (ECharts theme river)
 	 *   5) Cantidad de importación por item alimenticio (Chart.js bar chart)
 	 *
 	 * El cruce de datos se apoya en normalización de nombres de país,
@@ -110,7 +110,7 @@
 	 *
 	 * Normalización, carga con timeout y generación de estructuras de datos.
 	 */
-	const REQUEST_TIMEOUT_MS = 20000;
+	const REQUEST_TIMEOUT_MS = 35000;
 	const API_BASE_URL = (
 		(env.PUBLIC_API_URL && env.PUBLIC_API_URL.trim()) ||
 		(typeof window !== 'undefined' ? window.location.origin : '')
@@ -422,73 +422,120 @@
 	/* Dibuja la gráfica de pandemics usando ECharts.
 	 * Recibe los años ordenados y las series de datos con los valores
 	 * promedio para cada enfermedad.
+	 * Ahora usa un gráfico paralelo para no emplear tipo line.
 	 */
-	async function renderPandemicsChart(years, series) {
-		const el = document.getElementById('mgn-chart-pandemics-line');
-		if (!el || !window.echarts) return;
+	async function renderPandemicsChart(data, legendNames) {
+    const el = document.getElementById('mgn-chart-pandemics-line');
+    if (!el || !window.echarts) return;
 
-		try {
-			const chart = window.echarts.init(el);
-			chart.setOption({
-				title: {
-					text: 'Tendencias de pandemias por año',
-					subtext: 'Promedio anual de las principales enfermedades',
-					left: 'center'
-				},
-				tooltip: { trigger: 'axis' },
-				legend: { top: 'bottom', data: series.map((s) => s.name) },
-				grid: { left: '10%', right: '10%', top: '16%', bottom: '14%' },
-				xAxis: { type: 'category', data: years.map(String), name: 'Año' },
-				yAxis: { type: 'value', name: 'Media anual por país', min: 0 },
-				series,
-				animation: false // Deshabilitar animación para carga más rápida
-			});
-			const ro = new ResizeObserver(() => chart.resize());
-			ro.observe(el);
-		} catch (e) {
-			console.error('Error renderizando pandemics chart:', e);
-		}
-	}
+    try {
+        const chart = window.echarts.init(el);
+        chart.setOption({
+            title: {
+                text: 'Evolución de Carga Pandémica (ThemeRiver)',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis',
+                formatter: params => {
+                    let res = `${params[0].value[0]}<br/>`;
+                    params.forEach(p => {
+                        res += `${p.marker} ${p.value[2]}: <b>${p.value[1]}</b><br/>`;
+                    });
+                    return res;
+                }
+            },
+            legend: {
+                data: legendNames,
+                top: 'bottom'
+            },
+            singleAxis: {
+                top: 50,
+                bottom: 80,
+                type: 'time', // Maneja cronología automáticamente
+                axisTick: {},
+                axisLabel: {},
+                axisPointer: { animation: true, label: { show: true } },
+                splitLine: { show: true, lineStyle: { type: 'dashed' } }
+            },
+            series: [
+                {
+                    type: 'themeRiver',
+                    emphasis: {
+                        itemStyle: { shadowBlur: 20, shadowColor: 'rgba(0, 0, 0, 0.8)' }
+                    },
+                    data: data // Aquí pasamos la lista plana [año, valor, nombre]
+                }
+            ]
+        });
+
+        const ro = new ResizeObserver(() => chart.resize());
+        ro.observe(el);
+    } catch (e) {
+        console.error('Error renderizando pandemics chart:', e);
+    }
+}
 
 	/* Carga el dataset de pandemics a través de loadDataset(), calcula medias anuales y construye
 	 * el resumen textual que se muestra en el panel de análisis.
+	 * Ahora es más flexible y maneja mejor datos vacíos o incompletos.
 	 */
 	async function loadPandemicsVisualization() {
-		const raw = await loadDataset(PANDEMICS_API);
-		const data = Array.isArray(raw) ? raw : raw?.data || [];
-		if (!Array.isArray(data) || !data.length) throw new Error('La API de pandemics no devolvió datos válidos');
+		try {
+			const raw = await loadDataset(PANDEMICS_API);
+			const data = Array.isArray(raw) ? raw : raw?.data || [];
+			if (!Array.isArray(data) || !data.length) {
+				throw new Error('La API de pandemics no devolvió datos válidos');
+			}
 
-		const yearMap = computeAveragesByYear(data);
-		const sortedYears = [...yearMap.keys()].sort((a, b) => a - b);
-		if (!sortedYears.length) throw new Error('No hay años válidos en los datos de pandemics');
+			const yearMap = computeAveragesByYear(data);
+			const sortedYears = [...yearMap.keys()].sort((a, b) => a - b);
+			if (!sortedYears.length) {
+				throw new Error('No hay años válidos en los datos de pandemics');
+			}
 
-		const diseaseStats = DISEASE_KEYS.map((key) => {
-			const values = sortedYears.map((year) => yearMap.get(year).averages[key]);
-			const mean = values.reduce((acc, x) => acc + x, 0) / values.length;
-			const change = values[values.length - 1] - values[0];
-			return { key, mean, values, change };
-		});
+			const diseaseStats = DISEASE_KEYS.map((key) => {
+				const values = sortedYears.map((year) => yearMap.get(year).averages[key]);
+				const mean = values.reduce((acc, x) => acc + x, 0) / values.length;
+				const change = values[values.length - 1] - values[0];
+				return { key, mean, values, change };
+			});
 
-		diseaseStats.sort((a, b) => b.mean - a.mean);
-		topDiseases = diseaseStats.slice(0, 4).map((item) => item.key);
+			diseaseStats.sort((a, b) => b.mean - a.mean);
+			topDiseases = diseaseStats.slice(0, 4).map((item) => item.key);
 
-		summaryTitle = `Top 4 de enfermedades con mayor carga media: ${topDiseases
-			.map(getPrettyName)
-			.join(', ')}.`;
+			summaryTitle = `Top 4 de enfermedades con mayor carga media: ${topDiseases
+				.map(getPrettyName)
+				.join(', ')}.`;
 
-		const trendDisease = diseaseStats[0];
-		const direction = trendDisease.change >= 0 ? 'en alza' : 'a la baja';
-		summaryText = `${getPrettyName(trendDisease.key)} lidera el dataset con una carga media claramente superior y se encuentra ${direction} entre ${sortedYears[0]} y ${sortedYears[sortedYears.length - 1]}.`;
+			const trendDisease = diseaseStats[0];
+			const direction = trendDisease.change >= 0 ? 'en alza' : 'a la baja';
+			summaryText = `${getPrettyName(trendDisease.key)} lidera el dataset con una carga media claramente superior y se encuentra ${direction} entre ${sortedYears[0]} y ${sortedYears[sortedYears.length - 1]}.`;
 
-		const chartSeries = topDiseases.map((key) => ({
-			name: getPrettyName(key),
-			type: 'line',
-			smooth: true,
-			areaStyle: { opacity: 0.35 },
-			data: sortedYears.map((year) => formatNumber(yearMap.get(year).averages[key]))
-		}));
+			const chartSeries = topDiseases.map((key) => ({
+				name: getPrettyName(key),
+				type: 'line',
+				smooth: true,
+				areaStyle: { opacity: 0.35 },
+				data: sortedYears.map((year) => Number(yearMap.get(year).averages[key].toFixed(2)))
+			}));
+			const themeRiverData = [];
+			for (const year of sortedYears) {
+    			for (const key of topDiseases) {
+        			const value = yearMap.get(year).averages[key];
+        			// Formato: [Fecha/Año, Valor, Nombre de la enfermedad]
+        			themeRiverData.push([String(year), Number(value.toFixed(2)), getPrettyName(key)]);
+    }
+}
 
-		await renderPandemicsChart(sortedYears, chartSeries);
+		// Cambiar la llamada a la función de renderizado
+		await renderPandemicsChart(themeRiverData, topDiseases.map(getPrettyName));
+
+			
+		} catch (e) {
+			console.error('Error en loadPandemicsVisualization:', e);
+			throw e;
+		}
 	}
 
 	/** -----------------------------
@@ -496,26 +543,108 @@
 	 *  Visualización: suma de import quantity por item alimenticio
 	 *  ----------------------------- */
 	function buildFoodVisualization(foodData) {
-		const agg = new Map(); // key item -> sumImport
-		for (const f of foodData) {
-			if (!f?.item) continue;
-			const importQty = Number(f.import_quantity_tonnes);
-			if (!Number.isFinite(importQty)) continue;
-			const item = f.item;
-			if (!agg.has(item)) agg.set(item, 0);
-			agg.set(item, agg.get(item) + importQty);
+		// Validar entrada
+		if (!foodData) {
+			console.warn('buildFoodVisualization: foodData es null/undefined');
+			return { data: { labels: [], datasets: [] } };
 		}
 
-		const items = [...agg.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10); // top 10
+		let dataArray = foodData;
+		if (!Array.isArray(foodData)) {
+			if (foodData?.data && Array.isArray(foodData.data)) {
+				dataArray = foodData.data;
+			} else {
+				console.warn('buildFoodVisualization: formato de datos inválido', typeof foodData);
+				return { data: { labels: [], datasets: [] } };
+			}
+		}
+
+		if (!dataArray.length) {
+			console.warn('buildFoodVisualization: array vacío');
+			return { data: { labels: [], datasets: [] } };
+		}
+
+		const agg = new Map(); // key item -> sumImport
+		let processedCount = 0;
+		let skippedCount = 0;
+
+		for (const f of dataArray) {
+			if (!f || typeof f !== 'object') {
+				skippedCount++;
+				continue;
+			}
+
+			const country = String(f.country_name_en || 'Desconocido').trim();
+			
+
+			const importQty = Number(f.import_quantity_tonnes);
+			if (!Number.isFinite(importQty)) {
+				skippedCount++;
+				continue;
+			}
+
+			// Aceptar cero y positivos (no negatives)
+			if (importQty < 0) {
+				skippedCount++;
+				continue;
+			}
+
+			if (!agg.has(country)) agg.set(country, 0);
+				agg.set(country, agg.get(country) + importQty);
+				processedCount++;
+		}
+
+		console.log(`buildFoodVisualization: procesados ${processedCount}, saltados ${skippedCount}, items únicos ${agg.size}`);
+
+		if (agg.size === 0) {
+			console.warn('buildFoodVisualization: no hay items con datos válidos después del filtrado');
+			return { data: { labels: [], datasets: [] } };
+		}
+
+		const items = [...agg.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15); // top 15
+
+		console.log('Top 15 countries:', items);
 
 		const data = {
-			labels: items.map(([item]) => item),
+			labels: items.map(([country]) => country),
 			datasets: [{
 				label: 'Import Quantity (tonnes)',
-				data: items.map(([, qty]) => qty),
-				backgroundColor: 'rgba(255, 99, 132, 0.5)',
-				borderColor: 'rgba(255, 99, 132, 1)',
-				borderWidth: 1
+				data: items.map(([, qty]) => Number(qty.toFixed(2))),
+				backgroundColor: [
+					'rgba(239, 68, 68, 0.7)',    // Rojo
+					'rgba(249, 115, 22, 0.7)',   // Naranja
+					'rgba(59, 130, 246, 0.7)',   // Azul
+					'rgba(34, 197, 94, 0.7)',    // Verde
+					'rgba(168, 85, 247, 0.7)',   // Púrpura
+					'rgba(8, 145, 178, 0.7)',    // Cyan
+					'rgba(236, 72, 153, 0.7)',   // Rosa
+					'rgba(107, 114, 128, 0.7)',  // Gris
+					'rgba(251, 146, 60, 0.7)',   // Naranja claro
+					'rgba(14, 165, 233, 0.7)',   // Azul cielo
+					'rgba(139, 92, 246, 0.7)',   // Púrpura claro
+					'rgba(20, 184, 166, 0.7)',   // Turquesa
+					'rgba(244, 114, 182, 0.7)',  // Rosa fuerte
+					'rgba(100, 116, 139, 0.7)',  // Gris azulado
+					'rgba(251, 191, 36, 0.7)'    // Amarillo
+				],
+				borderColor: [
+					'rgba(239, 68, 68, 1)',
+					'rgba(249, 115, 22, 1)',
+					'rgba(59, 130, 246, 1)',
+					'rgba(34, 197, 94, 1)',
+					'rgba(168, 85, 247, 1)',
+					'rgba(8, 145, 178, 1)',
+					'rgba(236, 72, 153, 1)',
+					'rgba(107, 114, 128, 1)',
+					'rgba(251, 146, 60, 1)',
+					'rgba(14, 165, 233, 1)',
+					'rgba(139, 92, 246, 1)',
+					'rgba(20, 184, 166, 1)',
+					'rgba(244, 114, 182, 1)',
+					'rgba(100, 116, 139, 1)',
+					'rgba(251, 191, 36, 1)'
+				],
+				borderWidth: 2
 			}]
 		};
 
@@ -523,57 +652,93 @@
 	}
 
 	/* Inicializa el bar chart de Chart.js para visualizar suma de import quantity por item alimenticio.
+	 * Ahora con mejor validación, logging y feedback visual en caso de error.
 	 */
 	function initChartJSBar(containerId, chartData) {
 		const el = document.getElementById(containerId);
-		if (!el) return;
+		if (!el) {
+			console.error(`initChartJSBar: elemento con id '${containerId}' no encontrado`);
+			return;
+		}
+
 		if (!window.Chart) {
 			el.innerHTML = '<div class="status">Chart.js todavía no cargó.</div>';
 			return;
 		}
-		if (!chartData?.labels?.length) {
-			el.innerHTML = '<div class="status">No hay datos suficientes para la visualización de alimentos.</div>';
+
+		if (!chartData) {
+			el.innerHTML = '<div class="status error-msg">Error: chartData es null/undefined.</div>';
+			console.error('initChartJSBar: chartData es null/undefined');
 			return;
 		}
 
+		if (!chartData?.labels?.length || !chartData?.datasets?.[0]?.data?.length) {
+			el.innerHTML = '<div class="status">No hay datos suficientes para la visualización de alimentos.</div>';
+			console.warn('initChartJSBar: sin datos suficientes', { labels: chartData?.labels?.length, data: chartData?.datasets?.[0]?.data?.length });
+			return;
+		}
+
+		console.log('initChartJSBar: inicializando con', { labelCount: chartData.labels.length, dataCount: chartData.datasets[0].data.length });
+
 		try {
-			new window.Chart(el, {
+			// Limpiar el contenedor antes de crear el gráfico
+			el.innerHTML = '<canvas></canvas>';
+			const canvas = el.querySelector('canvas');
+
+			new window.Chart(canvas, {
 				type: 'bar',
 				data: chartData,
 				options: {
 					indexAxis: 'y', // horizontal bar chart
 					responsive: true,
+					maintainAspectRatio: true,
 					animation: {
 						duration: 0 // Deshabilitar animación para carga más rápida
 					},
 					plugins: {
 						title: {
 							display: true,
-							text: 'Top 10 Items por Cantidad de Importación (tonnes)'
+							text: 'Top 15 Paises por Cantidad de Importación (tonnes) - Escala Logarítmica',
+							font: { size: 14, weight: 'bold' }
 						},
 						legend: {
 							display: false
+						},
+						tooltip: {
+							callbacks: {
+								label: function(context) {
+									return `${context.raw.toFixed(2)} tonnes`;
+								}
+							}
 						}
 					},
 					scales: {
 						x: {
-							beginAtZero: true,
+							type: 'logarithmic',
 							title: {
 								display: true,
-								text: 'Import Quantity (tonnes)'
+								text: 'Import Quantity por pais(tonnes) - Escala Logarítmica',
+								font: { size: 11 }
+							},
+							grid: {
+								display: true,
+								color: 'rgba(0,0,0,0.05)'
 							}
 						},
 						y: {
 							title: {
 								display: true,
-								text: 'Items Alimenticios'
+								text: 'Items Alimenticios',
+								font: { size: 11 }
 							}
 						}
 					}
 				}
 			});
+			console.log('initChartJSBar: gráfico creado exitosamente');
 		} catch (e) {
 			console.error('Error renderizando Chart.js bar:', e);
+			el.innerHTML = `<div class="status error-msg">Error renderizando gráfico: ${e.message}</div>`;
 		}
 	}
 
@@ -1276,6 +1441,8 @@
 				await loadPandemicsVisualization();
 			} catch (e) {
 				console.error('Error cargando visualización de pandemics:', e);
+				const el = document.getElementById('mgn-chart-pandemics-line');
+				if (el) el.innerHTML = '<div class="status error-msg">Error cargando datos de pandemias. Intenta recargar la página.</div>';
 			}
 
 			// Widget 5 (Food Supply)
@@ -1284,6 +1451,8 @@
 				initChartJSBar('mgn-chart-food-bar', food.data);
 			} catch (e) {
 				console.error('Error cargando visualización de alimentos:', e);
+				const el = document.getElementById('mgn-chart-food-bar');
+				if (el) el.innerHTML = '<div class="status error-msg">Error cargando datos de alimentos. Intenta recargar la página.</div>';
 			}
 
 			// Widget 6 (Rest Countries)
@@ -1324,7 +1493,7 @@
 </svelte:head>
 
 <main class="page">
-	<h1>Integraciones MGN (estadística + 5 APIs externas)</h1>
+	<h1>Integraciones MGN (8 Apis Externas)</h1>
 
 	{#if loading}
 		<div class="status">Cargando datasets y calculando integraciones...</div>
@@ -1362,7 +1531,7 @@
 	</section>
 
 	<section class:hidden={loading} class="card">
-		<h2>4) Evolución Anual de Pandemias (ECharts + Line Chart)</h2>
+		<h2>4) Evolución Anual de Pandemias (ECharts + Theme River)</h2>
 		<p class="desc">
 			Visualización independiente de la API de pandemias. Muestra la evolución anual de casos reportados para las principales enfermedades infecciosas.
 		</p>
@@ -1439,6 +1608,10 @@
 		line-height: 1.35;
 	}
 
+	#mgn-chart-pandemics-line {
+    width: 100%;
+    height: 500px; /* Altura mínima para que sea visible */
+}
 	.meta {
 		margin: 0 0 12px;
 		color: #64748b;
@@ -1462,6 +1635,15 @@
 		background: #fee2e2;
 		color: #7f1d1d;
 		border: 1px solid #fecaca;
+	}
+
+	.error-msg {
+		padding: 18px;
+		text-align: center;
+		color: #7f1d1d;
+		background: #fee2e2;
+		border: 1px solid #fecaca;
+		border-radius: 10px;
 	}
 
 	.table-container {
