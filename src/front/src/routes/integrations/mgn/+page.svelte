@@ -47,7 +47,9 @@
 
 	const FOOD_API = 'https://sos2526-18.onrender.com/api/v2/food-supply-utilization-accounts';
 	const REST_COUNTRIES_API = 'https://restcountries.com/v3.1/name';
-
+	const OPEN_METEO_API = 'https://api.open-meteo.com/v1/forecast';
+	// Llamamos a nuestro propio backend, que hará de intermediario
+    const CRYPTO_API = '/api/v1/proxy/crypto';
 	const DISEASE_KEYS = [
 		'yaws',
 		'polio',
@@ -582,8 +584,12 @@
 	async function buildRestCountriesTable(myData) {
 		const tableData = [];
 		
-		// Solo procesar los top 20 países ordenados por rank para que sea más rápido
-		const topCountries = myData.sort((a, b) => (a.rank || 999) - (b.rank || 999)).slice(0, 20);
+		// Solo procesar los top 50 países ordenados por rank para que sea más rápido
+		// Filtrar solo el año 2026 para evitar países duplicados y tomar el top 50
+        const topCountries = myData
+            .filter(item => Number(item.year) === 2026)
+            .sort((a, b) => (a.rank || 999) - (b.rank || 999))
+            .slice(0, 50);
 
 		for (const my of topCountries) {
 			if (!my?.country || !my?.rank) continue;
@@ -663,6 +669,115 @@
 
 		el.innerHTML = html;
 	}
+
+	/** =============================
+     *  Widget 7 (Weather) -> HTML Table
+     *  Integración: Coordenadas de capital (RestCountries) + Temperatura (Open-Meteo) + FIFA Rank
+     *  ============================= */
+    async function buildWeatherTable(myData) {
+        const tableData = [];
+        
+        // Tomamos el top 50 para no hacer demasiadas peticiones seguidas
+        // Filtrar solo el año 2026 para evitar países duplicados y tomar el top 50	
+        const topCountries = myData
+            .filter(item => Number(item.year) === 2026)
+            .sort((a, b) => (a.rank || 999) - (b.rank || 999))
+            .slice(0, 50);
+
+        for (const my of topCountries) {
+            if (!my?.country || !my?.rank) continue;
+
+            try {
+                // 1. Obtener la capital y sus coordenadas desde Rest Countries
+                const countryRes = await fetchWithTimeout(`${REST_COUNTRIES_API}/${encodeURIComponent(my.country)}`);
+                if (!countryRes.ok) continue;
+
+                const countryList = await countryRes.json();
+                if (!Array.isArray(countryList) || !countryList.length) continue;
+
+                const countryData = countryList[0];
+                const capital = countryData?.capital?.[0] || 'N/A';
+                const flag = countryData?.flag || '🏳️';
+                
+                // Usamos las coordenadas de la capital si existen, si no las del país
+                const latlng = countryData?.capitalInfo?.latlng || countryData?.latlng;
+
+                let temp = 'N/A';
+
+                // 2. Si tenemos coordenadas, llamamos a Open-Meteo
+                if (latlng && latlng.length === 2) {
+                    const [lat, lon] = latlng;
+                    const weatherRes = await fetchWithTimeout(`${OPEN_METEO_API}?latitude=${lat}&longitude=${lon}&current_weather=true`);
+                    
+                    if (weatherRes.ok) {
+                        const weatherData = await weatherRes.json();
+                        const t = weatherData.current_weather?.temperature;
+                        let icon = '⛅'; // por defecto templado/nublado
+                        if (t >= 25) icon = '☀️'; // calor
+                        else if (t <= 10) icon = '❄️'; // frío
+                        
+                        temp = `${t}°C ${icon}`;
+                    }
+                }
+
+                tableData.push({
+                    country: my.country,
+                    flag,
+                    rank: my.rank,
+                    capital,
+                    temp: temp 
+                });
+            } catch (e) {
+                console.warn(`Error fetching weather data for ${my.country}:`, e);
+            }
+        }
+
+        return tableData;
+    }
+
+    function initWeatherTable(containerId, tableData) {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+
+        if (!tableData || tableData.length === 0) {
+            el.innerHTML = '<div class="status">No hay datos de clima disponibles.</div>';
+            return;
+        }
+
+        // Reutilizamos las clases CSS de la tabla anterior para que quede idéntica
+        let html = `
+            <table class="countries-table">
+                <thead>
+                    <tr>
+                        <th>Bandera</th>
+                        <th>País</th>
+                        <th>Rank FIFA</th>
+                        <th>Capital</th>
+                        <th style="text-align: right;">Temperatura Actual</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        for (const row of tableData) {
+            html += `
+                <tr>
+                    <td class="flag-cell">${row.flag}</td>
+                    <td>${row.country}</td>
+                    <td class="rank-cell">${row.rank}</td>
+                    <td>${row.capital}</td>
+                    <td class="score-cell">${row.temp}</td>
+                </tr>
+            `;
+        }
+
+        html += `
+                </tbody>
+            </table>
+        `;
+
+        el.innerHTML = html;
+    }
 
 	/** =============================
 	 *  Widget 1 (Population densities) -> Highcharts Heatmap
@@ -999,6 +1114,84 @@
 			chart.draw(data, options);
 		});
 	}
+	/** =============================
+     *  Widget 8 (Crypto) -> Chart.js Polar Area
+     *  Visualización: Precio de las 7 principales Criptomonedas (Independiente)
+     *  ============================= */
+   async function loadCryptoVisualization() {
+        try {
+            const res = await fetchWithTimeout(CRYPTO_API);
+            if (!res.ok) throw new Error(`Error fetching crypto: ${res.status}`);
+            
+            const data = await res.json();
+
+            // 1. Calculamos la capitalización total sumando el market_cap de las 7 monedas
+            const totalMarketCap = data.reduce((sum, coin) => sum + Number(coin.market_cap), 0);
+
+            // 2. Extraemos los nombres y calculamos el porcentaje (%) de cada una sobre el total
+            const labels = data.map(coin => coin.name);
+            const percentages = data.map(coin => ((Number(coin.market_cap) / totalMarketCap) * 100).toFixed(2));
+
+            const chartData = {
+                labels: labels,
+                datasets: [{
+                    label: 'Dominancia en el Top 7 (%)',
+                    data: percentages,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',   // Rojo/Rosa
+                        'rgba(54, 162, 235, 0.6)',   // Azul
+                        'rgba(255, 206, 86, 0.6)',   // Amarillo
+                        'rgba(75, 192, 192, 0.6)',   // Verde agua
+                        'rgba(153, 102, 255, 0.6)',  // Morado
+                        'rgba(255, 159, 64, 0.6)',   // Naranja
+                        'rgba(199, 199, 199, 0.6)'   // Gris
+                    ],
+                    borderWidth: 1
+                }]
+            };
+
+            initChartJSPolar('mgn-chart-crypto', chartData);
+        } catch (e) {
+            console.error('Error en Widget 8 (Crypto):', e);
+            const el = document.getElementById('mgn-chart-crypto-container');
+            if (el) el.innerHTML = '<div class="status">Error cargando datos de criptomonedas.</div>';
+        }
+    }
+
+    function initChartJSPolar(containerId, chartData) {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        if (!window.Chart) {
+            const container = document.getElementById('mgn-chart-crypto-container');
+            if(container) container.innerHTML = '<div class="status">Chart.js todavía no cargó.</div>';
+            return;
+        }
+
+        new window.Chart(el, {
+            type: 'polarArea',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, 
+                animation: { duration: 0 },
+                plugins: {
+                    legend: { position: 'right' },
+                    title: { 
+                        display: true, 
+                        text: 'Dominancia por Capitalización de Mercado (%) - Top 7' 
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label}: ${context.raw}%`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
 
 	/** -----------------------------
 	 *  Main onMount
@@ -1101,6 +1294,20 @@
 				console.error('Error cargando tabla de países:', e);
 				document.getElementById('mgn-chart-rest-countries').innerHTML = '<div class="status">Error cargando datos de países.</div>';
 			}
+			// Widget 7 (Weather)
+            try {
+                const weatherData = await buildWeatherTable(myData);
+                initWeatherTable('mgn-chart-weather', weatherData);
+            } catch (e) {
+                console.error('Error cargando tabla de clima:', e);
+                document.getElementById('mgn-chart-weather').innerHTML = '<div class="status">Error cargando datos de clima.</div>';
+            }
+			// Widget 8 (Crypto)
+            try {
+                await loadCryptoVisualization();
+            } catch (e) {
+                console.error('Error cargando visualización de criptomonedas:', e);
+            }
 		} catch (e) {
 			console.error('Error general en carga de datos:', e);
 		} finally {
@@ -1177,6 +1384,23 @@
 		</p>
 		<div id="mgn-chart-rest-countries" class="table-container"></div>
 	</section>
+
+	<section class:hidden={loading} class="card">
+        <h2>7) Clima actual en la Capital vs Ranking FIFA (Open-Meteo API)</h2>
+        <p class="desc">
+            Doble integración externa: cruzamos el top 20 de nuestro ranking FIFA con la API de <b>Rest Countries</b> para obtener la capital y sus coordenadas, y consultamos la API de <b>Open-Meteo</b> para mostrar la temperatura en tiempo real.
+        </p>
+        <div id="mgn-chart-weather" class="table-container"></div>
+    </section>
+	<section class:hidden={loading} class="card">
+        <h2>8) Top 7 Criptomonedas (Chart.js + Polar Area)</h2>
+        <p class="desc">
+            Visualización de datos 100% independiente usando la API pública de <b>CoinCap</b>. Se extraen las 7 criptomonedas con mayor capitalización de mercado y se grafica su precio en tiempo real (USD) utilizando un formato <b>Polar Area</b>.
+        </p>
+        <div id="mgn-chart-crypto-container" style="position: relative; height: 450px; width: 100%;">
+            <canvas id="mgn-chart-crypto"></canvas>
+        </div>
+    </section>
 
 </main>
 

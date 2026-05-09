@@ -116,6 +116,24 @@ app.get('/api/v1/proxy/fruits', async (req, res) => {
         res.status(500).json({ error: 'Fallo al conectar con Fruityvice' });
     }
 });
+app.get('/api/v1/proxy/crypto', async (req, res) => {
+    try {
+        // La URL de CoinGecko pidiendo el top 7
+        const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=7&page=1&sparkline=false';
+        console.log('Petición redirigida vía Proxy a: CoinGecko');
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+            return res.status(response.status).json({ error: `Error de CoinGecko: ${response.status}` });
+        }
+        
+        const data = await response.json();
+        res.json(data);
+    } catch (error) {
+        console.error('Error en proxy de crypto:', error);
+        res.status(500).json({ error: 'Fallo al conectar con CoinGecko' });
+    }
+});
 // ---------------------------------------------------------------------------
 //  Middlewares globales
 // ---------------------------------------------------------------------------
