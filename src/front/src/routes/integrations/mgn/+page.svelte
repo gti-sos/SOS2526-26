@@ -1,4 +1,21 @@
 <script>
+	// @ts-nocheck
+	/*
+	 * Página de integraciones MGN.
+	 *
+	 * Esta ruta cruza el recurso propio de rankings FIFA por país+año con
+	 * varias APIs externas y genera visualizaciones de integración y análisis.
+	 *
+	 * Visualizaciones principales:
+	 *   1) Densidad de población vs Score FIFA (Highcharts heatmap)
+	 *   2) Ranking FIFA vs precio medio de vino (ApexCharts treemap)
+	 *   3) Score FIFA vs meteoritos (Google Charts bubble chart)
+	 *   4) Evolución anual de pandemias (ECharts line chart)
+	 *
+	 * El cruce de datos se apoya en normalización de nombres de país,
+	 * alias manuales, ISO2/ISO3 y búsqueda de año más cercano cuando no hay
+	 * coincidencia exacta.
+	 */
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { env } from '$env/dynamic/public';
@@ -10,32 +27,70 @@
 	countries.registerLocale(enLocale);
 	countries.registerLocale(esLocale);
 
-	/** -----------------------------
-	 *  APIs
-	 *  ----------------------------- */
+	/*
+	 * APIs y constantes externas.
+	 *
+	 * MY_API_URL: API propia con rankings FIFA por país y año.
+	 * POP_DENSITIES_API: API externa de densidades de población.
+	 * WINE_API: API externa de estadísticas de vino.
+	 * METEORITES_API: API externa de meteoritos.
+	 * PANDEMICS_API: API externa de datos epidemiológicos.
+	 */
 	const MY_API_URL =
 		'https://sos2526-26.onrender.com/api/v2/national-team-rankings-per-years/';
 
 	const POP_DENSITIES_API = 'https://sos2526-15-1.onrender.com/api/v1/population-densities';
 	const WINE_API = 'https://sos2526-29.onrender.com/api/v1/wine-stats';
-	const PANDEMICS_API = 'https://sos2526-10.onrender.com/api/v2/pandemics';
 	const METEORITES_API = 'https://meteorite-landings-tvcf.onrender.com/api/v2/meteorite-landings';
-	const WATER_API = 'https://sos2526-27.onrender.com/api/v1/drinking-water-services';
+	const PANDEMICS_API = 'https://sos2526-10.onrender.com/api/v2/pandemics';
+
+	const DISEASE_KEYS = [
+		'yaws',
+		'polio',
+		'guinea_worm',
+		'rabies',
+		'malaria',
+		'hiv_aids',
+		'tuberculosis',
+		'smallpox',
+		'cholera'
+	];
+	const DISEASE_LABELS = {
+		yaws: 'Yaws',
+		polio: 'Polio',
+		guinea_worm: 'Guinea Worm',
+		rabies: 'Rabies',
+		malaria: 'Malaria',
+		hiv_aids: 'HIV/AIDS',
+		tuberculosis: 'Tuberculosis',
+		smallpox: 'Smallpox',
+		cholera: 'Cholera'
+	};
+	
 
 	/** -----------------------------
 	 *  UI state
 	 *  ----------------------------- */
 	let loading = $state(true);
 	let errorMessage = $state('');
+	let summaryTitle = $state('');
+	let summaryText = $state('');
+	let topDiseases = $state([]);
 	let stats = $state({
 		pop: { commonPairs: 0, yearRange: '' },
 		wine: { commonPairs: 0, yearUsed: '' },
-		pandemics: { commonPairs: 0, yearRange: '' },
 		meteorites: { commonPairs: 0, yearUsed: '' },
-		water: { commonPairs: 0, yearUsed: '' }
 	});
 
-	/** Índice país(año) para cruce robusto (nombre + año cercano) */
+	/*
+	 * Índices internos para cruzar paises del dataset externo con los datos
+	 * propios de rankings FIFA.
+	 *
+	 * myRowsByCountryNorm: filas propio indexadas por país normalizado.
+	 * myNormList / myNormSet: lista y conjunto de nombres normalizados.
+	 * enNormToMyNorm: puente de nombres EN normalizados a nombres propios.
+	 * iso3ToMyNorm / iso2ToMyNorm: puente de códigos ISO a nombres propios.
+	 */
 	let myRowsByCountryNorm = new Map();
 	let myNormList = [];
 	let myNormSet = new Set();
@@ -45,9 +100,11 @@
 
 	const YEAR_MATCH_STEPS = [0, 1, 2, 3, 5, 8, 12, 20, 30];
 
-	/** -----------------------------
-	 *  Helpers
-	 *  ----------------------------- */
+	/*
+	 * Funciones auxiliares generales.
+	 *
+	 * Normalización, carga con timeout y generación de estructuras de datos.
+	 */
 	const REQUEST_TIMEOUT_MS = 40000;
 	const API_BASE_URL = (
 		(env.PUBLIC_API_URL && env.PUBLIC_API_URL.trim()) ||
@@ -59,6 +116,9 @@
 		return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 	}
 
+	/* Normaliza nombres de pais convertidos a minúsculas, sin acentos ni
+	 * caracteres especiales, y reemplaza secuencias no alfanuméricas por espacios.
+	 */
 	function normalizeCountry(value = '') {
 		return value
 			.toString()
@@ -69,6 +129,9 @@
 			.trim();
 	}
 
+	/* Fetch simple con timeout para evitar que una API externa quede colgando
+	 * indefinidamente y bloquee el resto de la página.
+	 */
 	async function fetchWithTimeout(url) {
 		const controller = new AbortController();
 		const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -79,13 +142,37 @@
 		}
 	}
 
+	/* Carga un dataset remoto y, si está vacío, intenta inicializarlo vía
+	 * /loadInitialData para que la página pueda seguir funcionando.
+	 */
 	async function loadDataset(urlOrPath) {
 		const endpoint = toApiUrl(urlOrPath);
 		const res = await fetchWithTimeout(endpoint);
 		if (!res.ok) throw new Error(`Error ${res.status} cargando ${endpoint}`);
-		return await res.json();
+
+		const data = await res.json();
+		const hasData = Array.isArray(data)
+			? data.length > 0
+			: data && Array.isArray(data.data)
+			? data.data.length > 0
+			: Boolean(data && Object.keys(data).length);
+
+		if (hasData) return data;
+
+		const initEndpoint = `${endpoint.replace(/\/$/, '')}/loadInitialData`;
+		const initRes = await fetchWithTimeout(initEndpoint);
+		if (!initRes.ok)
+			throw new Error(`Error ${initRes.status} inicializando datos en ${initEndpoint}`);
+
+		const reloadRes = await fetchWithTimeout(endpoint);
+		if (!reloadRes.ok) throw new Error(`Error ${reloadRes.status} cargando ${endpoint}`);
+		return await reloadRes.json();
 	}
 
+	/* Indexa los rankings propios por país y año para poder hacer cruces
+	 * robustos con datasets externos. Se normaliza el nombre del país y se
+	 * ordenan los registros por año para poder buscar el valor más cercano.
+	 */
 	function indexMyRankings(myData) {
 		myRowsByCountryNorm = new Map();
 		myNormSet = new Set();
@@ -111,6 +198,10 @@
 		myNormList = [...myNormSet];
 	}
 
+	/* Reconstruye el puente entre nombres externos y los nombres propios del
+	 * dataset. Usa la librería i18n-iso-countries para mapear EN/ES/ISO y añade
+	 * un conjunto de alias manuales para casos comunes de FIFA/dataset externo.
+	 */
 	function rebuildCountryNameBridge() {
 		enNormToMyNorm = new Map();
 		iso3ToMyNorm = new Map();
@@ -132,7 +223,9 @@
 			iso2ToMyNorm.set(String(code).toUpperCase(), esN);
 		}
 
-		/** Alias FIFA / dataset interno (clave: texto normalizado “externo”; valor: etiqueta canónica interna) */
+		/* Alias manuales para nombres externos frecuentes que no casan bien con
+		 * la normalización automática o que usan denominaciones locales.
+		 */
 		const manual = [
 			['united states', 'EEUU'],
 			['united states of america', 'EEUU'],
@@ -163,6 +256,10 @@
 		}
 	}
 
+	/* Busca una coincidencia floja entre el nombre externo normalizado y
+	 * los nombres propios ya indexados. Esto ayuda con variantes como
+	 * 'república de x' o sufijos entre paréntesis.
+	 */
 	function fuzzyMyNorm(externalNorm) {
 		if (!externalNorm) return null;
 		if (myNormSet.has(externalNorm)) return externalNorm;
@@ -173,6 +270,12 @@
 		return null;
 	}
 
+	/* Resuelve un país externo a la forma canónica interna mediante:
+	 *   1) normalización de nombre
+	 *   2) coincidencia floja
+	 *   3) código ISO3/ISO2
+	 *   4) alias manual EN
+	 */
 	function resolveExternalCountryNorm(name, record) {
 		const raw = name?.toString?.() ?? '';
 		const extNorm = normalizeCountry(raw);
@@ -200,6 +303,10 @@
 		return null;
 	}
 
+	/* Busca la fila propia de ranking más cercana por año para un país
+	 * normalizado. Primero intenta match exacto y luego acepta años cercanos
+	 * siguiendo la lista de pasos YEAR_MATCH_STEPS.
+	 */
 	function getMyRowNearest(countryNorm, year) {
 		const y = Number(year);
 		if (!countryNorm || !Number.isFinite(y)) return null;
@@ -221,6 +328,10 @@
 		return best ? { ...best, yearDiff: bestDiff } : null;
 	}
 
+	/* Funciones estadísticas de apoyo usadas por varias integraciones.
+	 * mean, variance, covariance y pearson solo se usan en este archivo
+	 * para comparar tendencias y construir métricas de correlación.
+	 */
 	function mean(nums) {
 		if (!nums.length) return NaN;
 		return nums.reduce((a, b) => a + b, 0) / nums.length;
@@ -250,6 +361,10 @@
 		return cov / Math.sqrt(vx * vy);
 	}
 
+	/* Elige el año que aparece con más frecuencia en un conjunto de pares
+	 * país-año. Se usa para seleccionar un año representativo cuando varias
+	 * integraciones tienen múltiples años disponibles.
+	 */
 	function pickMostCommonYear(pairs) {
 		// pairs: Array<{year:number}>
 		const counts = new Map();
@@ -264,6 +379,110 @@
 		}
 		return best?.year ?? null;
 	}
+
+	/** === Funciones para Visualización de Pandemics === */
+	function getPrettyName(key) {
+		return DISEASE_LABELS[key] || key;
+	}
+
+	function formatNumber(value) {
+		return Number.isFinite(value) ? value.toFixed(1) : '0.0';
+	}
+
+	function computeAveragesByYear(records) {
+		const yearMap = new Map();
+		for (const record of records) {
+			const year = Number(record?.year);
+			if (!Number.isFinite(year)) continue;
+			if (!yearMap.has(year)) {
+				yearMap.set(year, {
+					count: 0,
+					sums: Object.fromEntries(DISEASE_KEYS.map((key) => [key, 0]))
+				});
+			}
+			const yearEntry = yearMap.get(year);
+			yearEntry.count += 1;
+			for (const key of DISEASE_KEYS) {
+				yearEntry.sums[key] += Number(record?.[key] ?? 0);
+			}
+		}
+		for (const [year, entry] of yearMap.entries()) {
+			entry.averages = Object.fromEntries(
+				DISEASE_KEYS.map((key) => [key, entry.count ? entry.sums[key] / entry.count : 0])
+			);
+		}
+		return yearMap;
+	}
+
+	/* Dibuja la gráfica de pandemics usando ECharts.
+	 * Recibe los años ordenados y las series de datos con los valores
+	 * promedio para cada enfermedad.
+	 */
+	async function renderPandemicsChart(years, series) {
+		const el = document.getElementById('mgn-pandemics-chart');
+		if (!el || !window.echarts) return;
+
+		const chart = window.echarts.init(el);
+		chart.setOption({
+			title: {
+				text: 'Tendencias de pandemias por año',
+				subtext: 'Promedio anual de las principales enfermedades',
+				left: 'center'
+			},
+			tooltip: { trigger: 'axis' },
+			legend: { top: 'bottom', data: series.map((s) => s.name) },
+			grid: { left: '10%', right: '10%', top: '16%', bottom: '14%' },
+			xAxis: { type: 'category', data: years.map(String), name: 'Año' },
+			yAxis: { type: 'value', name: 'Media anual por país', min: 0 },
+			series
+		});
+		const ro = new ResizeObserver(() => chart.resize());
+		ro.observe(el);
+	}
+
+	/* Carga el dataset de pandemics, calcula medias anuales y construye
+	 * el resumen textual que se muestra en el panel de análisis.
+	 */
+	async function loadPandemicsVisualization() {
+		const response = await fetchWithTimeout(PANDEMICS_API);
+		if (!response.ok) throw new Error(`Error ${response.status} cargando datos de pandemics`);
+		const data = await response.json();
+		if (!Array.isArray(data) || !data.length) throw new Error('La API de pandemics no devolvió datos válidos');
+
+		const yearMap = computeAveragesByYear(data);
+		const sortedYears = [...yearMap.keys()].sort((a, b) => a - b);
+		if (!sortedYears.length) throw new Error('No hay años válidos en los datos de pandemics');
+
+		const diseaseStats = DISEASE_KEYS.map((key) => {
+			const values = sortedYears.map((year) => yearMap.get(year).averages[key]);
+			const mean = values.reduce((acc, x) => acc + x, 0) / values.length;
+			const change = values[values.length - 1] - values[0];
+			return { key, mean, values, change };
+		});
+
+		diseaseStats.sort((a, b) => b.mean - a.mean);
+		topDiseases = diseaseStats.slice(0, 4).map((item) => item.key);
+
+		summaryTitle = `Top 4 de enfermedades con mayor carga media: ${topDiseases
+			.map(getPrettyName)
+			.join(', ')}.`;
+
+		const trendDisease = diseaseStats[0];
+		const direction = trendDisease.change >= 0 ? 'en alza' : 'a la baja';
+		summaryText = `${getPrettyName(trendDisease.key)} lidera el dataset con una carga media claramente superior y se encuentra ${direction} entre ${sortedYears[0]} y ${sortedYears[sortedYears.length - 1]}.`;
+
+		const chartSeries = topDiseases.map((key) => ({
+			name: getPrettyName(key),
+			type: 'line',
+			smooth: true,
+			areaStyle: { opacity: 0.35 },
+			data: sortedYears.map((year) => formatNumber(yearMap.get(year).averages[key]))
+		}));
+
+		await renderPandemicsChart(sortedYears, chartSeries);
+	}
+
+	/** === Fin Funciones para Pandemics === */
 
 	/** -----------------------------
 	 *  Widget 1 (Population densities) -> Highcharts Heatmap
@@ -289,6 +508,9 @@
 		return pairs;
 	}
 
+	/* Inicializa el heatmap de Highcharts para visualizar la densidad de
+	 * puntos en el plano score FIFA vs densidad de población.
+	 */
 	function initHighchartsHeatmap(containerId, pairs) {
 		const el = document.getElementById(containerId);
 		if (!el) return;
@@ -380,6 +602,10 @@
 	 *  Widget 2 (Wine) -> ApexCharts Treemap (CDN)
 	 *  Integración: rank/score FIFA vs precio medio vino por país-año
 	 *  ----------------------------- */
+	/* Construye las métricas de vino por país+año y las cruza con el
+	 * ranking FIFA propio. Calcula precio medio y ABV medio para luego
+	 * renderizar una treemap con tamaño=precio y color=rank.
+	 */
 	function buildWineIntegration(wineData) {
 		// agregamos vino por país-año (precio medio, abv medio)
 		const agg = new Map();
@@ -456,6 +682,9 @@
 		return { pairsCount: pairs.length, yearUsed, series };
 	}
 
+	/* Inicializa la treemap de ApexCharts con datos de precio medio del
+	 * vino y ranking FIFA por país.
+	 */
 	function initApexTreemap(containerId, treemapSeries, yearUsed) {
 		const el = document.getElementById(containerId);
 		if (!el) return;
@@ -515,79 +744,6 @@
 		chart.render();
 	}
 
-	/** -----------------------------
-	 *  Widget 3 (Pandemics) -> ECharts Boxplot
-	 *  Integración: distribución de “carga” (suma enfermedades) por grupos de rank FIFA
-	 *  ----------------------------- */
-	function buildPandemicsIntegration(pandemicsData) {
-		const nonCountryLabels = new Set(
-			[
-				'world',
-				'oecd countries',
-				'europe',
-				'asia',
-				'africa',
-				'americas',
-				'oceania',
-				'high income',
-				'low income',
-				'middle income',
-				'european union',
-				'g20',
-				'g7'
-			].map((s) => normalizeCountry(s))
-		);
-
-		const diseaseKeys = [
-			'yaws',
-			'polio',
-			'guinea_worm',
-			'rabies',
-			'malaria',
-			'hiv_aids',
-			'tuberculosis',
-			'smallpox',
-			'cholera'
-		];
-
-		const pairs = [];
-		for (const p of pandemicsData) {
-			const entity = p?.entity ?? p?.country ?? p?.name;
-			if (!entity || p?.year == null) continue;
-			const cNorm = resolveExternalCountryNorm(entity, p);
-			if (!cNorm) continue;
-			if (nonCountryLabels.has(normalizeCountry(entity))) continue;
-			const mine = getMyRowNearest(cNorm, p.year);
-			if (!mine || !Number.isFinite(mine.rank)) continue;
-			let total = 0;
-			for (const dk of diseaseKeys) {
-				const v = Number(p?.[dk] ?? 0);
-				total += Number.isFinite(v) ? v : 0;
-			}
-			pairs.push({ ...mine, total, year: Number(p.year) });
-		}
-
-		// bucket por rank (top/mid/low)
-		const buckets = {
-			'Rank 1–30': [],
-			'Rank 31–80': [],
-			'Rank 81+': []
-		};
-		for (const it of pairs) {
-			if (it.rank <= 30) buckets['Rank 1–30'].push(it.total);
-			else if (it.rank <= 80) buckets['Rank 31–80'].push(it.total);
-			else buckets['Rank 81+'].push(it.total);
-		}
-
-		const yearMin = pairs.length ? Math.min(...pairs.map((p) => p.year)) : null;
-		const yearMax = pairs.length ? Math.max(...pairs.map((p) => p.year)) : null;
-		return {
-			pairsCount: pairs.length,
-			yearRange: yearMin != null && yearMax != null ? `${yearMin}–${yearMax}` : '',
-			buckets
-		};
-	}
-
 	function quantile(sorted, q) {
 		if (!sorted.length) return NaN;
 		const pos = (sorted.length - 1) * q;
@@ -597,6 +753,9 @@
 		return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
 	}
 
+	/* Calcula estadísticas de caja (boxplot) a partir de una lista de valores.
+	 * Se usa para análisis estadístico interno cuando se procesan distribuciones.
+	 */
 	function toBoxStats(values) {
 		const v = values.filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
 		if (!v.length) return null;
@@ -607,50 +766,6 @@
 		const low = v.find((x) => x >= q1 - 1.5 * iqr) ?? v[0];
 		const high = [...v].reverse().find((x) => x <= q3 + 1.5 * iqr) ?? v[v.length - 1];
 		return { low, q1, q2, q3, high };
-	}
-
-	function initEChartsBoxplot(containerId, buckets) {
-		const el = document.getElementById(containerId);
-		if (!el) return;
-		if (!window.echarts) {
-			el.innerHTML = '<div class="status">ECharts todavía no cargó.</div>';
-			return;
-		}
-
-		const categories = Object.keys(buckets);
-		const boxData = categories.map((k) => {
-			const st = toBoxStats(buckets[k]);
-			return st ? [st.low, st.q1, st.q2, st.q3, st.high] : [0, 0, 0, 0, 0];
-		});
-
-		const hasAny = categories.some((k) => (buckets[k] || []).length > 0);
-		if (!hasAny) {
-			el.innerHTML = '<div class="status">No hay cruces país-año suficientes.</div>';
-			return;
-		}
-
-		const chart = window.echarts.init(el);
-		chart.setOption({
-			title: {
-				text: 'Pandemias (suma) vs grupos de ranking FIFA',
-				subtext: 'Boxplot: min “sin outliers”, Q1, mediana, Q3, max “sin outliers”',
-				left: 'center'
-			},
-			tooltip: { trigger: 'item' },
-			grid: { left: '8%', right: '5%', top: '18%', bottom: '12%' },
-			xAxis: { type: 'category', data: categories, name: 'Grupo por rank FIFA' },
-			yAxis: { type: 'value', name: 'Suma de enfermedades (0/1 por enfermedad)' },
-			series: [
-				{
-					name: 'Distribución',
-					type: 'boxplot',
-					data: boxData,
-					itemStyle: { color: '#6366f1', borderColor: '#312e81' }
-				}
-			]
-		});
-		const ro = new ResizeObserver(() => chart.resize());
-		ro.observe(el);
 	}
 
 	/** -----------------------------
@@ -703,6 +818,10 @@
 		return { pairsCount: pairs.length, yearUsed, rows };
 	}
 
+	/* Inicializa el bubble chart de Google Charts para visualizar la masa
+	 * media de meteoritos vs score FIFA, con el tamaño del globo según el
+	 * conteo de meteoritos por país-año.
+	 */
 	function initGoogleBubble(containerId, rows, yearUsed) {
 		const el = document.getElementById(containerId);
 		if (!el) return;
@@ -740,74 +859,16 @@
 	}
 
 	/** -----------------------------
-	 *  Widget 5 (Drinking water) -> c3.js Gauge (CDN)
-	 *  Integración: correlación Pearson entre Score FIFA y log(pob. urbana con agua)
-	 *  ----------------------------- */
-	function buildWaterCorrelation(waterData) {
-		const pairs = [];
-		for (const w of waterData) {
-			const entity = w?.entity ?? w?.country;
-			if (!entity || w?.year == null) continue;
-			const value = Number(w.wat_bas_pop_residence_urban);
-			if (!Number.isFinite(value) || value <= 0) continue;
-			const cNorm = resolveExternalCountryNorm(entity, w);
-			if (!cNorm) continue;
-			const mine = getMyRowNearest(cNorm, w.year);
-			if (!mine || !Number.isFinite(mine.score)) continue;
-			pairs.push({ score: mine.score, water: value, year: Number(w.year), country: mine.country });
-		}
-
-		const yearUsed = pickMostCommonYear(pairs);
-		const filtered = yearUsed == null ? pairs : pairs.filter((p) => p.year === yearUsed);
-
-		const xs = filtered.map((p) => p.score);
-		const ys = filtered.map((p) => Math.log10(p.water)); // estabiliza escala (estadística pura)
-		const r = pearson(xs, ys);
-
-		return { pairsCount: pairs.length, yearUsed, r };
-	}
-
-	function initC3Gauge(containerId, r) {
-		const el = document.getElementById(containerId);
-		if (!el) return;
-		if (!window.c3) {
-			el.innerHTML = '<div class="status">c3.js todavía no cargó.</div>';
-			return;
-		}
-		if (!Number.isFinite(r)) {
-			el.innerHTML = '<div class="status">No hay cruces suficientes para calcular correlación.</div>';
-			return;
-		}
-
-		// c3 gauge trabaja “cómodo” en 0..100
-		const gaugeValue = ((r + 1) / 2) * 100;
-		el.innerHTML = '';
-		window.c3.generate({
-			bindto: `#${containerId}`,
-			data: {
-				columns: [['Correlación (Pearson)', Number(gaugeValue.toFixed(2))]],
-				type: 'gauge'
-			},
-			gauge: {
-				label: {
-					format: function (value) {
-						return `r = ${r.toFixed(3)}`;
-					}
-				},
-				min: 0,
-				max: 100
-			},
-			color: {
-				pattern: ['#dc2626', '#f59e0b', '#16a34a'],
-				threshold: { values: [35, 65, 100] }
-			},
-			size: { height: 300 }
-		});
-	}
-
-	/** -----------------------------
 	 *  Main onMount
 	 *  ----------------------------- */
+	/* Montaje principal de la página. Solo se ejecuta en el browser
+	 * porque algunas librerías de visualización no funcionan en SSR.
+	 *
+	 * 1) carga módulos de visualización necesarios.
+	 * 2) descarga datasets en paralelo.
+	 * 3) indexa y normaliza datos propios.
+	 * 4) construye cada widget y monta la gráfica correspondiente.
+	 */
 	onMount(async () => {
 		if (!browser) return;
 		try {
@@ -820,26 +881,23 @@
 			if (typeof heatmapModule === 'function') heatmapModule(Highcharts);
 			else console.warn('[mgn] heatmap module no cargado (export inesperado)', heatmapMod);
 
-			// ECharts en window para evitar SSR issues (pero viene como dep)
+			// ECharts para visualización de pandemics
 			// eslint-disable-next-line no-undef
 			const echarts = await import('echarts');
 			window.echarts = echarts;
 
-			const [myRaw, popRaw, wineRaw, pandemicsRaw, meteoritesRaw, waterRaw] = await Promise.all([
+			// Highcharts heatmap module debe cargarse solo en browser (SSR rompe si se evalúa en Node)
+			const [myRaw, popRaw, wineRaw, meteoritesRaw] = await Promise.all([
 				loadDataset(MY_API_URL),
 				loadDataset(POP_DENSITIES_API),
 				loadDataset(WINE_API),
-				loadDataset(PANDEMICS_API),
-				loadDataset(METEORITES_API),
-				loadDataset(WATER_API)
+				loadDataset(METEORITES_API)
 			]);
 
 			const myData = Array.isArray(myRaw) ? myRaw : myRaw?.data || [];
 			const popData = Array.isArray(popRaw) ? popRaw : popRaw?.data || [];
 			const wineData = Array.isArray(wineRaw) ? wineRaw : wineRaw?.data || [];
-			const pandemicsData = Array.isArray(pandemicsRaw) ? pandemicsRaw : pandemicsRaw?.data || [];
 			const meteoritesData = Array.isArray(meteoritesRaw) ? meteoritesRaw : meteoritesRaw?.data || [];
-			const waterData = Array.isArray(waterRaw) ? waterRaw : waterRaw?.data || [];
 
 			indexMyRankings(myData);
 			rebuildCountryNameBridge();
@@ -858,22 +916,13 @@
 			initApexTreemap('mgn-chart-wine-treemap', wine.series, wine.yearUsed);
 
 			// Widget 3
-			const pan = buildPandemicsIntegration(pandemicsData);
-			stats.pandemics.commonPairs = pan.pairsCount;
-			stats.pandemics.yearRange = pan.yearRange;
-			initEChartsBoxplot('mgn-chart-pandemics-boxplot', pan.buckets);
-
-			// Widget 4
 			const met = buildMeteoritesIntegration(meteoritesData);
 			stats.meteorites.commonPairs = met.pairsCount;
 			stats.meteorites.yearUsed = met.yearUsed ? String(met.yearUsed) : '';
 			initGoogleBubble('mgn-chart-meteorites-bubble', met.rows, met.yearUsed);
 
-			// Widget 5
-			const water = buildWaterCorrelation(waterData);
-			stats.water.commonPairs = water.pairsCount;
-			stats.water.yearUsed = water.yearUsed ? String(water.yearUsed) : '';
-			initC3Gauge('mgn-chart-water-gauge', water.r);
+			// Widget 4 (Pandemics Visualization)
+			await loadPandemicsVisualization();
 		} catch (e) {
 			console.error(e);
 			errorMessage = e?.message || 'Error cargando integraciones';
@@ -885,16 +934,12 @@
 
 <svelte:head>
 	<!-- CDNs usados solo en esta página (como hacen tus compañeros) -->
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/c3/c3.min.css" />
-	<script src="https://cdn.jsdelivr.net/npm/d3@5/dist/d3.min.js"></script>
-	<script src="https://cdn.jsdelivr.net/npm/c3/c3.min.js"></script>
-
 	<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 	<script src="https://www.gstatic.com/charts/loader.js"></script>
 </svelte:head>
 
 <main class="page">
-	<h1>Integraciones MGN (estadística + 5 APIs externas)</h1>
+	<h1>Integraciones MGN (estadística + 4 APIs externas)</h1>
 
 	{#if loading}
 		<div class="status">Cargando datasets y calculando integraciones...</div>
@@ -925,18 +970,7 @@
 	</section>
 
 	<section class:hidden={loading || errorMessage} class="card">
-		<h2>3) “Carga” de pandemias vs grupos de ranking (ECharts + Boxplot)</h2>
-		<p class="desc">
-			Cruce por <b>país</b> (ISO + traducción EN→ES cuando hace falta) y <b>año</b> (exacto o cercano). Para cada
-			registro sumo los indicadores por enfermedad (la API devuelve magnitudes; aquí la suma sirve como “carga”
-			agregada) y agrupo por ranking FIFA (1–30, 31–80, 81+). El <b>boxplot</b> muestra dispersión entre países.
-		</p>
-		<p class="meta">Cruces: {stats.pandemics.commonPairs} · Rango años: {stats.pandemics.yearRange}</p>
-		<div id="mgn-chart-pandemics-boxplot" class="chart"></div>
-	</section>
-
-	<section class:hidden={loading || errorMessage} class="card">
-		<h2>4) Score FIFA vs meteoritos (Google Charts + BubbleChart)</h2>
+		<h2>3) Score FIFA vs meteoritos (Google Charts + BubbleChart)</h2>
 		<p class="desc">
 			Agrego meteoritos por <b>país+año</b>: conteo y masa media, alineando país (EN/ES) y año (exacto o cercano).
 			Cruzo con tu <b>score</b> y pinto una <b>bubble chart</b> (x=masa media, y=score, tamaño=conteo).
@@ -946,15 +980,21 @@
 	</section>
 
 	<section class:hidden={loading || errorMessage} class="card">
-		<h2>5) Correlación score vs agua urbana (c3.js + Gauge)</h2>
+		<h2>4) Evolución anual de enfermedades (ECharts + Líneas)</h2>
 		<p class="desc">
-			Cruce por <b>país</b> (traducción + ISO) y <b>año</b> (exacto o cercano). Calculo la
-			<b>correlación de Pearson</b> entre score FIFA y <b>log10(población urbana con agua)</b> para el año con
-			más cruces. Se muestra en un <b>gauge</b>.
+			Esta visualización muestra tendencias globales del dataset de pandemics. Se calcula la media anual por 
+			enfermedad y se destacan las enfermedades con mayor carga. No se mezcla con la API propia de rankings, 
+			es un análisis independiente de datos epidemiológicos.
 		</p>
-		<p class="meta">Cruces: {stats.water.commonPairs} · Año usado: {stats.water.yearUsed}</p>
-		<div id="mgn-chart-water-gauge" class="chart gauge"></div>
+		<p class="meta">{summaryTitle}</p>
+		<div id="mgn-pandemics-chart" class="chart"></div>
+		<div class="panel">
+			<strong>Inferencias clave</strong>
+			<p>{summaryText}</p>
+			<p>Las principales enfermedades en el conjunto de datos son {topDiseases.map(getPrettyName).join(', ')}.</p>
+		</div>
 	</section>
+
 </main>
 
 <style>
@@ -1003,10 +1043,6 @@
 		min-height: 520px;
 	}
 
-	.gauge {
-		min-height: 320px;
-	}
-
 	.status {
 		padding: 18px;
 		text-align: center;
@@ -1023,6 +1059,20 @@
 
 	.hidden {
 		display: none;
+	}
+
+	.panel {
+		margin-top: 20px;
+		padding: 16px;
+		background: #f8fafc;
+		border: 1px solid #e2e8f0;
+		border-radius: 12px;
+	}
+
+	.panel p {
+		margin: 8px 0;
+		color: #475569;
+		line-height: 1.5;
 	}
 
 	:global(.apex-tooltip) {

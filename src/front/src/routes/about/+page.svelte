@@ -16,7 +16,7 @@
 		{
 			name: 'Sergio Diaz Vazquez',
 			initials: 'SDV',
-			videoUrl: 'https://www.youtube.com/watch?v=qJfSgwLu5JM'
+			videoUrl: 'https://youtu.be/iXb__hMuZCc'
 		}
 	];
 
