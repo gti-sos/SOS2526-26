@@ -9,7 +9,7 @@
 	 * Visualizaciones principales:
 	 *   1) Densidad de población vs Score FIFA (Highcharts heatmap)
 	 *   2) Ranking FIFA vs precio medio de vino (ApexCharts treemap)
-	 *   3) Score FIFA vs meteoritos (Google Charts bubble chart)
+	 *   3) Meteoritos por País (Google Charts bar chart)
 	 *   4) Evolución anual de pandemias (ECharts line chart)
 	 *   5) Cantidad de importación por item alimenticio (Chart.js bar chart)
 	 *
@@ -46,6 +46,7 @@
 	const PANDEMICS_API = 'https://sos2526-10.onrender.com/api/v2/pandemics';
 
 	const FOOD_API = 'https://sos2526-18.onrender.com/api/v2/food-supply-utilization-accounts';
+	const REST_COUNTRIES_API = 'https://restcountries.com/v3.1/name';
 
 	const DISEASE_KEYS = [
 		'yaws',
@@ -75,14 +76,13 @@
 	 *  UI state
 	 *  ----------------------------- */
 	let loading = $state(true);
-	let errorMessage = $state('');
 	let summaryTitle = $state('');
 	let summaryText = $state('');
 	let topDiseases = $state([]);
+	let countriesDataTable = $state([]);
 	let stats = $state({
 		pop: { commonPairs: 0, yearRange: '' },
 		wine: { commonPairs: 0, yearUsed: '' },
-		meteorites: { commonPairs: 0, yearUsed: '' },
 	});
 
 	/*
@@ -108,7 +108,7 @@
 	 *
 	 * Normalización, carga con timeout y generación de estructuras de datos.
 	 */
-	const REQUEST_TIMEOUT_MS = 40000;
+	const REQUEST_TIMEOUT_MS = 20000;
 	const API_BASE_URL = (
 		(env.PUBLIC_API_URL && env.PUBLIC_API_URL.trim()) ||
 		(typeof window !== 'undefined' ? window.location.origin : '')
@@ -422,25 +422,30 @@
 	 * promedio para cada enfermedad.
 	 */
 	async function renderPandemicsChart(years, series) {
-		const el = document.getElementById('mgn-pandemics-chart');
+		const el = document.getElementById('mgn-chart-pandemics-line');
 		if (!el || !window.echarts) return;
 
-		const chart = window.echarts.init(el);
-		chart.setOption({
-			title: {
-				text: 'Tendencias de pandemias por año',
-				subtext: 'Promedio anual de las principales enfermedades',
-				left: 'center'
-			},
-			tooltip: { trigger: 'axis' },
-			legend: { top: 'bottom', data: series.map((s) => s.name) },
-			grid: { left: '10%', right: '10%', top: '16%', bottom: '14%' },
-			xAxis: { type: 'category', data: years.map(String), name: 'Año' },
-			yAxis: { type: 'value', name: 'Media anual por país', min: 0 },
-			series
-		});
-		const ro = new ResizeObserver(() => chart.resize());
-		ro.observe(el);
+		try {
+			const chart = window.echarts.init(el);
+			chart.setOption({
+				title: {
+					text: 'Tendencias de pandemias por año',
+					subtext: 'Promedio anual de las principales enfermedades',
+					left: 'center'
+				},
+				tooltip: { trigger: 'axis' },
+				legend: { top: 'bottom', data: series.map((s) => s.name) },
+				grid: { left: '10%', right: '10%', top: '16%', bottom: '14%' },
+				xAxis: { type: 'category', data: years.map(String), name: 'Año' },
+				yAxis: { type: 'value', name: 'Media anual por país', min: 0 },
+				series,
+				animation: false // Deshabilitar animación para carga más rápida
+			});
+			const ro = new ResizeObserver(() => chart.resize());
+			ro.observe(el);
+		} catch (e) {
+			console.error('Error renderizando pandemics chart:', e);
+		}
 	}
 
 	/* Carga el dataset de pandemics a través de loadDataset(), calcula medias anuales y construye
@@ -529,44 +534,140 @@
 			return;
 		}
 
-		new window.Chart(el, {
-			type: 'bar',
-			data: chartData,
-			options: {
-				indexAxis: 'y', // horizontal bar chart
-				responsive: true,
-				plugins: {
-					title: {
-						display: true,
-						text: 'Top 10 Items por Cantidad de Importación (tonnes)'
+		try {
+			new window.Chart(el, {
+				type: 'bar',
+				data: chartData,
+				options: {
+					indexAxis: 'y', // horizontal bar chart
+					responsive: true,
+					animation: {
+						duration: 0 // Deshabilitar animación para carga más rápida
 					},
-					legend: {
-						display: false
-					}
-				},
-				scales: {
-					x: {
-						beginAtZero: true,
+					plugins: {
 						title: {
 							display: true,
-							text: 'Import Quantity (tonnes)'
+							text: 'Top 10 Items por Cantidad de Importación (tonnes)'
+						},
+						legend: {
+							display: false
 						}
 					},
-					y: {
-						title: {
-							display: true,
-							text: 'Items Alimenticios'
+					scales: {
+						x: {
+							beginAtZero: true,
+							title: {
+								display: true,
+								text: 'Import Quantity (tonnes)'
+							}
+						},
+						y: {
+							title: {
+								display: true,
+								text: 'Items Alimenticios'
+							}
 						}
 					}
 				}
-			}
-		});
+			});
+		} catch (e) {
+			console.error('Error renderizando Chart.js bar:', e);
+		}
 	}
 
-	/** -----------------------------
+	/** =============================
+	 *  Widget 6 (Rest Countries) -> HTML Table
+	 *  Integración: bandera, población, región y ranking FIFA
+	 *  ============================= */
+	async function buildRestCountriesTable(myData) {
+		const tableData = [];
+		
+		// Solo procesar los top 20 países ordenados por rank para que sea más rápido
+		const topCountries = myData.sort((a, b) => (a.rank || 999) - (b.rank || 999)).slice(0, 20);
+
+		for (const my of topCountries) {
+			if (!my?.country || !my?.rank) continue;
+
+			try {
+				const endpoint = `${REST_COUNTRIES_API}/${encodeURIComponent(my.country)}`;
+				const res = await fetchWithTimeout(endpoint);
+				if (!res.ok) continue;
+
+				const countryList = await res.json();
+				if (!Array.isArray(countryList) || !countryList.length) continue;
+
+				const countryData = countryList[0];
+				const flag = countryData?.flag || '🏳️';
+				const population = countryData?.population || 'N/A';
+				const region = countryData?.region || 'N/A';
+				const name = countryData?.name?.common || my.country;
+
+				tableData.push({
+					country: my.country,
+					name,
+					flag,
+					rank: my.rank,
+					score: my.score,
+					population,
+					region
+				});
+			} catch (e) {
+				console.warn(`Error fetching data for ${my.country}:`, e);
+			}
+		}
+
+		return tableData;
+	}
+
+	function initRestCountriesTable(containerId, tableData) {
+		const el = document.getElementById(containerId);
+		if (!el) return;
+
+		if (!tableData || tableData.length === 0) {
+			el.innerHTML = '<div class="status">No hay datos disponibles.</div>';
+			return;
+		}
+
+		let html = `
+			<table class="countries-table">
+				<thead>
+					<tr>
+						<th>Bandera</th>
+						<th>País</th>
+						<th>Rank FIFA</th>
+						<th>Score FIFA</th>
+						<th>Población</th>
+						<th>Región</th>
+					</tr>
+				</thead>
+				<tbody>
+		`;
+
+		for (const row of tableData) {
+			html += `
+				<tr>
+					<td class="flag-cell">${row.flag}</td>
+					<td>${row.name}</td>
+					<td class="rank-cell">${row.rank}</td>
+					<td class="score-cell">${row.score?.toFixed(2) || 'N/A'}</td>
+					<td class="population-cell">${Number(row.population).toLocaleString()}</td>
+					<td>${row.region}</td>
+				</tr>
+			`;
+		}
+
+		html += `
+				</tbody>
+			</table>
+		`;
+
+		el.innerHTML = html;
+	}
+
+	/** =============================
 	 *  Widget 1 (Population densities) -> Highcharts Heatmap
 	 *  Integración: score FIFA vs density (bins) para país-año comunes
-	 *  ----------------------------- */
+	 *  ============================= */
 	function buildScoreDensityPairs(popData) {
 		const pairs = [];
 		for (const p of popData) {
@@ -848,60 +949,26 @@
 	}
 
 	/** -----------------------------
-	 *  Widget 4 (Meteorites) -> Google Charts BubbleChart (CDN)
-	 *  Integración: score FIFA vs masa media meteoritos por país-año, tamaño=conteo
+	 *  Widget 4 (Meteorites) -> Google Charts Bar Chart (CDN)
+	 *  Visualización: conteo de meteoritos por país para los primeros 100 registros
 	 *  ----------------------------- */
 	function buildMeteoritesIntegration(meteoritesData) {
-		const agg = new Map(); // key countryNorm-year -> {count,sumMass,year,cNorm}
-		for (const m of meteoritesData) {
+		const first100 = meteoritesData.slice(0, 100);
+		const countByCountry = new Map();
+		for (const m of first100) {
 			const country = m?.country;
-			if (!country || country.toLowerCase() === 'unknown' || m?.year == null) continue;
-			const year = Number(m.year);
-			const mass = Number(m.mass);
-			if (!Number.isFinite(year) || !Number.isFinite(mass)) continue;
-			const cNorm = resolveExternalCountryNorm(country, m);
-			if (!cNorm) continue;
-			const k = `${cNorm}_${year}`;
-			if (!agg.has(k)) agg.set(k, { count: 0, sumMass: 0, year, cNorm });
-			const a = agg.get(k);
-			a.count += 1;
-			a.sumMass += mass;
+			if (!country || country.toLowerCase() === 'unknown') continue;
+			countByCountry.set(country, (countByCountry.get(country) || 0) + 1);
 		}
-
-		const pairs = [];
-		for (const [k, a] of agg.entries()) {
-			const parts = k.split('_');
-			const yearFromKey = Number(parts.at(-1));
-			const cNorm = parts.length > 1 ? parts.slice(0, -1).join('_') : '';
-			if (!cNorm || !Number.isFinite(yearFromKey)) continue;
-			const mine = getMyRowNearest(cNorm, a.year);
-			if (!mine || !Number.isFinite(mine.score)) continue;
-			pairs.push({
-				country: mine.country,
-				year: a.year,
-				score: mine.score,
-				count: a.count,
-				avgMass: a.sumMass / a.count
-			});
-		}
-
-		const yearUsed = pickMostCommonYear(pairs);
-		const filtered = yearUsed == null ? pairs : pairs.filter((p) => p.year === yearUsed);
-
-		// reducimos a top 30 por count para legibilidad
-		const rows = filtered
-			.sort((a, b) => b.count - a.count)
-			.slice(0, 30)
-			.map((p) => [p.country, p.avgMass, p.score, p.count, `${p.country} (${p.count})`]);
-
-		return { pairsCount: pairs.length, yearUsed, rows };
+		const sorted = [...countByCountry.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20); // top 20
+		const rows = sorted.map(([country, count]) => [country, count]);
+		return { rows };
 	}
 
-	/* Inicializa el bubble chart de Google Charts para visualizar la masa
-	 * media de meteoritos vs score FIFA, con el tamaño del globo según el
-	 * conteo de meteoritos por país-año.
+	/* Inicializa el bar chart de Google Charts para visualizar el conteo
+	 * de meteoritos por país para los primeros 100 registros.
 	 */
-	function initGoogleBubble(containerId, rows, yearUsed) {
+	function initGoogleBar(containerId, rows) {
 		const el = document.getElementById(containerId);
 		if (!el) return;
 		if (!window.google?.charts) {
@@ -909,7 +976,7 @@
 			return;
 		}
 		if (!rows?.length) {
-			el.innerHTML = '<div class="status">No hay cruces país-año suficientes.</div>';
+			el.innerHTML = '<div class="status">No hay datos suficientes.</div>';
 			return;
 		}
 
@@ -917,22 +984,18 @@
 		window.google.charts.setOnLoadCallback(() => {
 			const data = new window.google.visualization.DataTable();
 			data.addColumn('string', 'País');
-			data.addColumn('number', 'Masa media meteoritos');
-			data.addColumn('number', 'Score FIFA');
-			data.addColumn('number', 'Conteo meteoritos');
-			data.addColumn('string', 'Etiqueta');
+			data.addColumn('number', 'Conteo');
 			data.addRows(rows);
 
 			const options = {
-				title: `Score FIFA vs masa media de meteoritos${yearUsed ? ` (año ${yearUsed})` : ''}`,
-				hAxis: { title: 'Masa media meteoritos (g)', logScale: true },
-				vAxis: { title: 'Score FIFA' },
-				bubble: { textStyle: { fontSize: 11 } },
+				title: 'Conteo de meteoritos por país (primeros 100 registros)',
+				hAxis: { title: 'País' },
+				vAxis: { title: 'Conteo' },
 				legend: { position: 'none' },
 				chartArea: { left: '10%', top: '12%', width: '80%', height: '70%' }
 			};
 
-			const chart = new window.google.visualization.BubbleChart(el);
+			const chart = new window.google.visualization.ColumnChart(el);
 			chart.draw(data, options);
 		});
 	}
@@ -965,7 +1028,7 @@
 			const echarts = await import('echarts');
 			window.echarts = echarts;
 
-			// Highcharts heatmap module debe cargarse solo en browser (SSR rompe si se evalúa en Node)
+			// Cargar datasets en paralelo
 			const [myRaw, popRaw, wineRaw, meteoritesRaw, foodRaw] = await Promise.all([
 				loadDataset(MY_API_URL),
 				loadDataset(POP_DENSITIES_API),
@@ -984,33 +1047,62 @@
 			rebuildCountryNameBridge();
 
 			// Widget 1
-			const popPairs = buildScoreDensityPairs(popData);
-			const popYears = popPairs.map((p) => p.year);
-			stats.pop.commonPairs = popPairs.length;
-			stats.pop.yearRange = popYears.length ? `${Math.min(...popYears)}–${Math.max(...popYears)}` : '';
-			initHighchartsHeatmap('mgn-chart-pop-heatmap', popPairs);
+			try {
+				const popPairs = buildScoreDensityPairs(popData);
+				const popYears = popPairs.map((p) => p.year);
+				stats.pop.commonPairs = popPairs.length;
+				stats.pop.yearRange = popYears.length ? `${Math.min(...popYears)}–${Math.max(...popYears)}` : '';
+				initHighchartsHeatmap('mgn-chart-pop-heatmap', popPairs);
+			} catch (e) {
+				console.error('Error en widget 1 (población):', e);
+				document.getElementById('mgn-chart-pop-heatmap').innerHTML = '<div class="status">Error cargando datos de población.</div>';
+			}
 
 			// Widget 2
-			const wine = buildWineIntegration(wineData);
-			stats.wine.commonPairs = wine.pairsCount;
-			stats.wine.yearUsed = wine.yearUsed ? String(wine.yearUsed) : '';
-			initApexTreemap('mgn-chart-wine-treemap', wine.series, wine.yearUsed);
+			try {
+				const wine = buildWineIntegration(wineData);
+				stats.wine.commonPairs = wine.pairsCount;
+				stats.wine.yearUsed = wine.yearUsed ? String(wine.yearUsed) : '';
+				initApexTreemap('mgn-chart-wine-treemap', wine.series, wine.yearUsed);
+			} catch (e) {
+				console.error('Error en widget 2 (vino):', e);
+				document.getElementById('mgn-chart-wine-treemap').innerHTML = '<div class="status">Error cargando datos de vino.</div>';
+			}
 
 			// Widget 3
-			const met = buildMeteoritesIntegration(meteoritesData);
-			stats.meteorites.commonPairs = met.pairsCount;
-			stats.meteorites.yearUsed = met.yearUsed ? String(met.yearUsed) : '';
-			initGoogleBubble('mgn-chart-meteorites-bubble', met.rows, met.yearUsed);
+			try {
+				const met = buildMeteoritesIntegration(meteoritesData);
+				initGoogleBar('mgn-chart-meteorites-bubble', met.rows);
+			} catch (e) {
+				console.error('Error en widget 3 (meteoritos):', e);
+				document.getElementById('mgn-chart-meteorites-bubble').innerHTML = '<div class="status">Error cargando datos de meteoritos.</div>';
+			}
 
 			// Widget 4 (Pandemics Visualization)
-			await loadPandemicsVisualization();
+			try {
+				await loadPandemicsVisualization();
+			} catch (e) {
+				console.error('Error cargando visualización de pandemics:', e);
+			}
 
 			// Widget 5 (Food Supply)
-			const food = buildFoodVisualization(foodData);
-			initChartJSBar('mgn-chart-food-bar', food.data);
+			try {
+				const food = buildFoodVisualization(foodData);
+				initChartJSBar('mgn-chart-food-bar', food.data);
+			} catch (e) {
+				console.error('Error cargando visualización de alimentos:', e);
+			}
+
+			// Widget 6 (Rest Countries)
+			try {
+				const tableData = await buildRestCountriesTable(myData);
+				initRestCountriesTable('mgn-chart-rest-countries', tableData);
+			} catch (e) {
+				console.error('Error cargando tabla de países:', e);
+				document.getElementById('mgn-chart-rest-countries').innerHTML = '<div class="status">Error cargando datos de países.</div>';
+			}
 		} catch (e) {
-			console.error(e);
-			errorMessage = e?.message || 'Error cargando integraciones';
+			console.error('Error general en carga de datos:', e);
 		} finally {
 			loading = false;
 		}
@@ -1029,11 +1121,9 @@
 
 	{#if loading}
 		<div class="status">Cargando datasets y calculando integraciones...</div>
-	{:else if errorMessage}
-		<div class="error">{errorMessage}</div>
 	{/if}
 
-	<section class:hidden={loading || errorMessage} class="card">
+	<section class:hidden={loading} class="card">
 		<h2>1) Densidad de población vs Score FIFA (Highcharts + Heatmap)</h2>
 		<p class="desc">
 			Integración por <b>país</b> alineando nombres (ES/EN + ISO cuando existe) y por <b>año</b> (match exacto
@@ -1044,7 +1134,7 @@
 		<div id="mgn-chart-pop-heatmap" class="chart"></div>
 	</section>
 
-	<section class:hidden={loading || errorMessage} class="card">
+	<section class:hidden={loading} class="card">
 		<h2>2) Ranking FIFA vs precio medio de vino (ApexCharts + Treemap)</h2>
 		<p class="desc">
 			Agrego la API de vino a <b>precio medio por país+año</b> (y nº de vinos) y lo cruzo con tu
@@ -1055,22 +1145,37 @@
 		<div id="mgn-chart-wine-treemap" class="chart"></div>
 	</section>
 
-	<section class:hidden={loading || errorMessage} class="card">
-		<h2>3) Score FIFA vs meteoritos (Google Charts + BubbleChart)</h2>
+	<section class:hidden={loading} class="card">
+		<h2>3) Meteoritos por País (Google Charts + BarChart)</h2>
 		<p class="desc">
-			Agrego meteoritos por <b>país+año</b>: conteo y masa media, alineando país (EN/ES) y año (exacto o cercano).
-			Cruzo con tu <b>score</b> y pinto una <b>bubble chart</b> (x=masa media, y=score, tamaño=conteo).
+			Visualización del conteo de meteoritos por país, tomando los primeros 100 registros de la API externa.
+			Se muestra un gráfico de barras con los países y su cantidad de meteoritos.
 		</p>
-		<p class="meta">Cruces: {stats.meteorites.commonPairs} · Año usado: {stats.meteorites.yearUsed}</p>
 		<div id="mgn-chart-meteorites-bubble" class="chart"></div>
 	</section>
 
-	<section class:hidden={loading || errorMessage} class="card">
+	<section class:hidden={loading} class="card">
+		<h2>4) Evolución Anual de Pandemias (ECharts + Line Chart)</h2>
+		<p class="desc">
+			Visualización independiente de la API de pandemias. Muestra la evolución anual de casos reportados para las principales enfermedades infecciosas.
+		</p>
+		<div id="mgn-chart-pandemics-line" class="chart"></div>
+	</section>
+
+	<section class:hidden={loading} class="card">
 		<h2>5) Cantidad de Importación por Item Alimenticio (Chart.js + Bar Chart)</h2>
 		<p class="desc">
 			Visualización independiente de la API de suministro de alimentos. Muestra la suma de cantidad de importación por item alimenticio, ordenado de mayor a menor, para los top 10 items.
 		</p>
 		<div id="mgn-chart-food-bar" class="chart"></div>
+	</section>
+
+	<section class:hidden={loading} class="card">
+		<h2>6) Información de Países (Rest Countries API)</h2>
+		<p class="desc">
+			Datos geográficos y demográficos de cada país: bandera, población, región y su ranking actual en la FIFA.
+		</p>
+		<div id="mgn-chart-rest-countries" class="table-container"></div>
 	</section>
 
 </main>
@@ -1133,6 +1238,64 @@
 		background: #fee2e2;
 		color: #7f1d1d;
 		border: 1px solid #fecaca;
+	}
+
+	.table-container {
+		width: 100%;
+		overflow-x: auto;
+	}
+
+	.countries-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.95rem;
+	}
+
+	.countries-table thead {
+		background: #f1f5f9;
+		font-weight: 600;
+		color: #1f2937;
+	}
+
+	.countries-table th {
+		padding: 12px 8px;
+		text-align: left;
+		border-bottom: 2px solid #cbd5e1;
+	}
+
+	.countries-table td {
+		padding: 10px 8px;
+		border-bottom: 1px solid #e2e8f0;
+	}
+
+	.countries-table tbody tr:hover {
+		background: #f8fafc;
+	}
+
+	.flag-cell {
+		font-size: 1.5rem;
+		text-align: center;
+	}
+
+	.rank-cell,
+	.score-cell,
+	.population-cell {
+		text-align: right;
+		font-family: 'Courier New', monospace;
+	}
+
+	.rank-cell {
+		color: #0f766e;
+		font-weight: 500;
+	}
+
+	.score-cell {
+		color: #1e40af;
+		font-weight: 500;
+	}
+
+	.population-cell {
+		color: #64748b;
 	}
 
 	.hidden {

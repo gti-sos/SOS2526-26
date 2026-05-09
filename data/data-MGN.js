@@ -15211,7 +15211,7 @@ const cleanedData = rawData
   });
 
 const fileContent = `export const countriesData = ${JSON.stringify(cleanedData, null, 2)};`;
-
+/*
 console.log(rawData.length);
-console.log(cleanedData.length);
+console.log(cleanedData.length);*/
 export default cleanedData;
