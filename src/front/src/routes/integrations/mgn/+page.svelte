@@ -234,6 +234,7 @@
 		 */
 		const manual = [
 			['united states', 'EEUU'],
+			['spain', 'España'],
 			['united states of america', 'EEUU'],
 			['usa', 'EEUU'],
 			['u s a', 'EEUU'],
@@ -1068,54 +1069,60 @@
 	 * renderizar una treemap con tamaño=precio y color=rank.
 	 */
 	function buildWineIntegration(wineData) {
-		// Agrupamos vinos por año (precio medio)
-		const agg = new Map();
-		for (const w of wineData) {
-			if (w?.year == null) continue;
-			const price = Number(w.price);
-			if (!Number.isFinite(price)) continue;
-			const year = Number(w.year);
-			if (!agg.has(year)) agg.set(year, { sumPrice: 0, n: 0 });
-			const a = agg.get(year);
-			a.sumPrice += price;
-			a.n += 1;
-		}
+    const targetCountry = 'España';
+    const targetNorm = normalizeCountry(targetCountry); // "espana"
+    
+    // 1. Agrupamos vinos por año solo si corresponden a nuestro país objetivo
+    const agg = new Map();
+    for (const w of wineData) {
+        if (w?.year == null) continue;
+        
+        // Resolvemos el país del vino ("spain" -> "espana")
+        const wineCountryNorm = resolveExternalCountryNorm(w.country, w);
+        if (wineCountryNorm !== targetNorm) continue; 
 
-		const pairs = [];
-		for (const [year, a] of agg.entries()) {
-			const avgPrice = a.sumPrice / a.n;
-			// Obtenemos ranking FIFA de España para ese año
-			const spainRow = getMyRowNearest('España', year);
-			if (!spainRow || !Number.isFinite(spainRow.rank) || !Number.isFinite(spainRow.score)) continue;
-			pairs.push({
-				year: year,
-				avgPrice: avgPrice,
-				rank: spainRow.rank,
-				score: spainRow.score,
-				wines: a.n
-			});
-		}
+        const price = Number(w.price);
+        if (!Number.isFinite(price)) continue;
+        
+        const year = Number(w.year);
+        if (!agg.has(year)) agg.set(year, { sumPrice: 0, n: 0 });
+        const a = agg.get(year);
+        a.sumPrice += price;
+        a.n += 1;
+    }
 
-		// No necesitamos yearUsed ya que mostramos todos los años
-		const yearUsed = null; // o podemos calcular el más común si queremos
+    const pairs = [];
+    for (const [year, a] of agg.entries()) {
+        const avgPrice = a.sumPrice / a.n;
+        
+        // 2. Buscamos el ranking usando el nombre normalizado para evitar fallos de tildes
+        const spainRow = getMyRowNearest(targetNorm, year);
+        
+        if (!spainRow || !Number.isFinite(spainRow.rank)) continue;
+        
+        pairs.push({
+            year: year,
+            avgPrice: avgPrice,
+            rank: spainRow.rank,
+            score: spainRow.score,
+            wines: a.n
+        });
+    }
 
-		// Treemap por año: tamaño = precio medio, color = rank (mejor rank => más verde)
-		const series = [
-			{
-				data: pairs
-					.map((p) => ({
-						x: `${p.year}`,
-						y: Number(p.avgPrice.toFixed(2)),
-						rank: p.rank,
-						score: p.score,
-						wines: p.wines
-					}))
-					.sort((a, b) => a.year - b.year) // ordenar por año
-			}
-		];
+    const series = [{
+        data: pairs
+            .map((p) => ({
+                x: `${p.year}`,
+                y: Number(p.avgPrice.toFixed(2)),
+                rank: p.rank,
+                score: p.score,
+                wines: p.wines
+            }))
+            .sort((a, b) => Number(a.x) - Number(b.x))
+    }];
 
-		return { pairsCount: pairs.length, yearUsed, series };
-	}
+    return { pairsCount: pairs.length, yearUsed: null, series };
+}
 
 	/* Inicializa la treemap de ApexCharts con datos de precio medio del
 	 * vino y ranking FIFA por país.
