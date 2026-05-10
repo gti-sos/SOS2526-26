@@ -48,6 +48,7 @@
 	const FOOD_API = 'https://sos2526-18.onrender.com/api/v2/food-supply-utilization-accounts';
 	const REST_COUNTRIES_API = 'https://restcountries.com/v3.1/name';
 	const OPEN_METEO_API = 'https://api.open-meteo.com/v1/forecast';
+	const HOLIDAYS_API = 'https://date.nager.at/api/v3/PublicHolidays/2026/';
 	// Llamamos a nuestro propio backend, que hará de intermediario
     const CRYPTO_API = '/api/v1/proxy/crypto';
     const MAX_CRYPTO_ITEMS = 7;
@@ -514,13 +515,7 @@
 			const direction = trendDisease.change >= 0 ? 'en alza' : 'a la baja';
 			summaryText = `${getPrettyName(trendDisease.key)} lidera el dataset con una carga media claramente superior y se encuentra ${direction} entre ${sortedYears[0]} y ${sortedYears[sortedYears.length - 1]}.`;
 
-			const chartSeries = topDiseases.map((key) => ({
-				name: getPrettyName(key),
-				type: 'line',
-				smooth: true,
-				areaStyle: { opacity: 0.35 },
-				data: sortedYears.map((year) => Number(yearMap.get(year).averages[key].toFixed(2)))
-			}));
+			
 			const themeRiverData = [];
 			for (const year of sortedYears) {
     			for (const key of topDiseases) {
@@ -1323,7 +1318,7 @@
         }
     }
 
-    function initChartJSPolar(containerId, chartData) {
+    async function initChartJSPolar(containerId, chartData) {
         const el = document.getElementById(containerId);
         if (!el) return;
         if (!window.Chart) {
@@ -1356,6 +1351,89 @@
             }
         });
     }
+	async function loadHolidaysIntegration(myData) {
+    try {
+        const top5 = myData
+            .filter(item => Number(item.year) === 2026)
+            .sort((a, b) => (a.rank || 999) - (b.rank || 999))
+            .slice(0, 8); // Ampliamos a los 8 mejores para que el gráfico se vea más lleno
+
+        const bubbleSeries = [];
+
+        for (const country of top5) {
+            const rawName = country.country.split('(')[0].trim();
+            let code = countries.getAlpha2Code(rawName, 'es') || countries.getAlpha2Code(rawName, 'en');
+
+            // Mapeo manual para casos especiales
+            const manualMap = { "EEUU": "US", "Rusia": "RU", "Corea": "KR", "Inglaterra": "GB", "Argentina": "AR" };
+            if (!code) code = manualMap[rawName];
+
+            if (code) {
+                try {
+                    const res = await fetch(`${HOLIDAYS_API}${code}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        bubbleSeries.push({
+                            name: country.country,
+                            data: [[
+                                Number(country.rank),
+                                data.length,
+                                Math.floor(Number(country.score) / 20)
+                            ]]
+                        });
+                    }
+                } catch (fetchErr) {
+                    console.warn(`Error en festivos para ${rawName}`, fetchErr);
+                }
+            }
+        }
+
+        if (bubbleSeries.length > 0) {
+            initApexBubble('mgn-chart-holidays', bubbleSeries);
+        } else {
+            const el = document.getElementById('mgn-chart-holidays');
+            if (el) el.innerHTML = '<div class="status">No se encontraron datos de festivos para estos países.</div>';
+        }
+    } catch (e) {
+        console.error('Error en Widget 9:', e);
+    }
+}
+
+function initApexBubble(containerId, series) {
+    const el = document.getElementById(containerId);
+    if (!el || !window.ApexCharts) return;
+
+    el.innerHTML = '';
+    const options = {
+        series: series,
+        chart: { height: 450, type: 'bubble', toolbar: { show: true } },
+        dataLabels: { enabled: false },
+        fill: { opacity: 0.8 },
+        title: { text: 'Relación: Ranking FIFA vs Festivos (Tamaño = Score)' },
+        xaxis: {
+            tickAmount: 12,
+            type: 'numeric',
+            title: { text: 'Puesto en Ranking FIFA' },
+            reversed: true
+        },
+        yaxis: { title: { text: 'Número de Festivos Nacionales' } },
+        tooltip: {
+            custom: function({ series, seriesIndex, dataPointIndex, w }) {
+                const data = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
+                return `<div class="apex-tooltip" style="padding:10px;">
+                    <b>${w.globals.seriesNames[seriesIndex]}</b><br/>
+                    Ranking: ${data[0]}<br/>
+                    Festivos: ${data[1]}<br/>
+                    Score: ${(data[2] * 20).toFixed(0)}
+                </div>`;
+            }
+        }
+    };
+
+    const chart = new window.ApexCharts(el, options);
+    chart.render();
+}
+
     
 
 	/** -----------------------------
@@ -1393,6 +1471,7 @@
 				loadDataset(WINE_API),
 				loadDataset(METEORITES_API),
 				loadDataset(FOOD_API)
+				
 			]);
 
 			const myData = Array.isArray(myRaw) ? myRaw : myRaw?.data || [];
@@ -1403,6 +1482,7 @@
 
 			indexMyRankings(myData);
 			rebuildCountryNameBridge();
+			
 
 			// Widget 1
 			try {
@@ -1477,6 +1557,12 @@
             } catch (e) {
                 console.error('Error cargando visualización de criptomonedas:', e);
             }
+			// Widget 9 (Universidades)
+			try {
+    			await loadHolidaysIntegration(myData);
+			} catch (e) {
+    			console.error('Error cargando widget 9:', e);
+			}
 		} catch (e) {
 			console.error('Error general en carga de datos:', e);
 		} finally {
@@ -1493,7 +1579,7 @@
 </svelte:head>
 
 <main class="page">
-	<h1>Integraciones MGN (8 Apis Externas)</h1>
+	<h1>Integraciones MGN (9 Apis Externas)</h1>
 
 	{#if loading}
 		<div class="status">Cargando datasets y calculando integraciones...</div>
@@ -1572,6 +1658,15 @@
         </div>
     </section>
 
+	<section class:hidden={loading} class="card">
+    <h2>9) Correlación: Éxito Futbolístico vs Ocio (ApexCharts + Bubble Chart)</h2>
+    <p class="desc">
+        ¿Afecta el número de festivos al rendimiento? Analizamos la posición en el <b>Ranking FIFA</b> (Eje X) frente al 
+        <b>número de festivos en 2026</b> (Eje Y). El tamaño de la burbuja representa el <b>Score FIFA</b> total del país.
+    </p>
+    <div id="mgn-chart-holidays" style="width: 100%; min-height: 450px;"></div>
+</section>
+
 </main>
 
 <style>
@@ -1617,6 +1712,13 @@
 		min-height: 580px;
 		height: 580px;
 	}
+	/* Busca donde tengas los estilos de los charts y añade esto */
+#mgn-chart-holidays {
+    width: 100%;
+    min-height: 400px;
+    height: 400px; /* Forzamos la altura */
+    display: block;
+}
 	.meta {
 		margin: 0 0 12px;
 		color: #64748b;
