@@ -10,8 +10,7 @@
 		{
 			name: 'Ricardo Fernandez Rodriguez-Navas',
 			initials: 'RFR',
-			// TODO RFR: pega aqui la URL publica del video (YouTube o similar).
-			videoUrl: ''
+			videoUrl: 'https://drive.google.com/file/d/1yTiXwdUkstwKsdK0mu6k9_n00UNiXIWB/view?usp=sharing'
 		},
 		{
 			name: 'Sergio Diaz Vazquez',
