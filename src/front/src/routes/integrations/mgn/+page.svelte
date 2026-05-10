@@ -1124,7 +1124,7 @@
     return { pairsCount: pairs.length, yearUsed: null, series };
 }
 
-	/* Inicializa la treemap de ApexCharts con datos de precio medio del
+	/* Inicializa el treemap de ApexCharts con datos de precio medio del
 	 * vino y ranking FIFA por país.
 	 */
 	function initApexTreemap(containerId, treemapSeries, yearUsed) {
