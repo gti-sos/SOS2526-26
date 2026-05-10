@@ -1277,7 +1277,7 @@
         try {
             const res = await fetchWithTimeout(CRYPTO_API);
             if (res.status === 429) {
-                throw new Error('CoinGecko rate limit alcanzado (429). Intenta de nuevo más tarde.');
+                throw new Error('CoinPaprika rate limit alcanzado (429). Intenta de nuevo más tarde.');
             }
             if (!res.ok) throw new Error(`Error fetching crypto: ${res.status}`);
 
@@ -1285,10 +1285,20 @@
             const coins = Array.isArray(data) ? data.slice(0, MAX_CRYPTO_ITEMS) : [];
             if (!coins.length) throw new Error('No se recibieron datos de criptomonedas.');
 
-            const totalMarketCap = coins.reduce((sum, coin) => sum + Number(coin.market_cap || 0), 0);
-            const labels = coins.map(coin => coin.name || 'Desconocido');
+            const getMarketCap = (coin) => {
+                return Number(
+                    coin.market_cap ||
+                    coin.marketCapUsd ||
+                    coin.quotes?.USD?.market_cap ||
+                    coin.quotes?.USD?.market_cap_usd ||
+                    0
+                );
+            };
+
+            const totalMarketCap = coins.reduce((sum, coin) => sum + getMarketCap(coin), 0);
+            const labels = coins.map(coin => coin.name || coin.symbol || 'Desconocido');
             const percentages = coins.map(coin => {
-                const marketCap = Number(coin.market_cap || 0);
+                const marketCap = getMarketCap(coin);
                 return totalMarketCap ? Number(((marketCap / totalMarketCap) * 100).toFixed(2)) : 0;
             });
 

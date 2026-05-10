@@ -132,22 +132,23 @@ app.get('/api/v1/proxy/crypto', async (req, res) => {
             return res.status(200).json(cryptoCache.data);
         }
 
-        // La URL de CoinGecko pidiendo el top 7
-        const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=7&page=1&sparkline=false';
-        console.log('Petición redirigida vía Proxy a: CoinGecko');
+        // La URL de CoinPaprika pidiendo el top 7 de criptomonedas
+        const url = 'https://api.coinpaprika.com/v1/tickers?limit=7';
+        console.log('Petición redirigida vía Proxy a: CoinPaprika');
 
-        const response = await fetch(url);
+        const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
         if (!response.ok) {
-            const errorBody = await response.json().catch(() => ({ error: `CoinGecko returned ${response.status}` }));
+            const errorBody = await response.json().catch(() => ({ error: `CoinPaprika returned ${response.status}` }));
             if (response.status === 429 && cryptoCache.data) {
-                console.warn('CoinGecko rate limit alcanzado; usando caché local');
+                console.warn('CoinPaprika rate limit alcanzado; usando caché local');
                 res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
                 return res.status(200).json(cryptoCache.data);
             }
-            return res.status(response.status).json({ error: errorBody.error || `Error de CoinGecko: ${response.status}` });
+            return res.status(response.status).json({ error: errorBody.error || `Error de CoinPaprika: ${response.status}` });
         }
 
-        const data = await response.json();
+        const raw = await response.json();
+        const data = Array.isArray(raw) ? raw : [];
         cryptoCache = {
             expiresAt: Date.now() + CRYPTO_CACHE_TTL,
             data,
@@ -158,11 +159,11 @@ app.get('/api/v1/proxy/crypto', async (req, res) => {
     } catch (error) {
         console.error('Error en proxy de crypto:', error);
         if (cryptoCache.data) {
-            console.warn('Usando caché local por fallo en CoinGecko');
+            console.warn('Usando caché local por fallo en CoinPaprika');
             res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
             return res.status(200).json(cryptoCache.data);
         }
-        res.status(500).json({ error: 'Fallo al conectar con CoinGecko' });
+        res.status(500).json({ error: 'Fallo al conectar con CoinPaprika' });
     }
 });
 // ---------------------------------------------------------------------------
