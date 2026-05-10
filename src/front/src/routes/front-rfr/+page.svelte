@@ -14,6 +14,8 @@
     let rankings = $state([]);
     let message = $state("");
     let messageColor = $state("black");
+    let offset = $state(0); 
+    const LIMIT = 10;
 
     // Campos para el formulario (Incluimos la variación)
     let newRanking = $state({
@@ -95,78 +97,49 @@
 
     onMount(getData);
 
-// ... tus otros estados ...
-    let search = $state({
-        from: "",
-        to: "",
-        country: ""
-    });
-
-    async function handleSearch() {
-        const query = new URLSearchParams();
-        if (search.from) query.append("from", search.from);
-        if (search.to) query.append("to", search.to);
-        if (search.country) query.append("country", search.country);
-
-         try {
-        const res = await fetch(`${API}?${query.toString()}`);
-
-        if (res.status === 404) {
-            // Manejo específico si el servidor devuelve 404
-            rankings = []; // Limpiamos la tabla
-            showMessage("No existe ningún recurso para esos filtros", true);
-            return;
-        }
-
-        if (res.ok) {
-            const data = await res.json();
-            rankings = data;
-            if (data.length === 0) {
-                showMessage("No existe ningún recurso para esos filtros", true);
-            }
-        } else {
-            showMessage("Error al realizar la búsqueda", true);
-        }
-    } catch (error) {
-        console.error(error);
-        showMessage("Error de conexión con el servidor", true);
-    }
-        
-        }
-        
 
     function resetSearch() {
         search = { from: "", to: "", country: "" };
         getData(); // Recarga la lista completa
     }
 
-    let offset = $state(0);
-    const LIMIT = 10;
-    let datosPaginados = $state([]);
 
-    async function fetchData() {
-        try {
-            // Construimos la URL con los parámetros de paginación
-            const response = await fetch(`${API}?limit=${LIMIT}&offset=${offset}`);
-            if (response.ok) {
-                datosPaginados = await response.json();
-            }
-        } catch (e) {
-            console.error("Error cargando página", e);
-        }
+    let search = $state({
+        from: "", to: "",
+        country: "",
+        squad_size_min: "", squad_size_max: "",
+        total_value_min: "", total_value_max: "",
+        avg_value_min: "", avg_value_max: ""
+    });
+
+    async function handleSearch() {
+        const params = new URLSearchParams();
+        
+        // Solo añadimos a la URL lo que el usuario haya escrito
+        Object.keys(search).forEach(key => {
+            if (search[key] !== "") params.append(key, search[key]);
+        });
+
+        params.append("limit", 10);
+        params.append("offset", offset);
+
+        const res = await fetch(`${API}?${params.toString()}`);
+        if (res.ok) rankings = await res.json();
     }
 
-    function paginaSiguiente() {
+
+function nextPage() {
         offset += LIMIT;
-        fetchData();
+        handleSearch();
     }
 
-    function paginaAnterior() {
+    function prevPage() {
         if (offset >= LIMIT) {
             offset -= LIMIT;
-            fetchData();
+            handleSearch();
         }
     }
+
 </script>
 
 <h1>Gestión de Valor de Mercado de Selecciones Nacionales</h1>
@@ -190,15 +163,33 @@
         Añadir Registro
     </button>
     
-    <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; background: #f4f4f4;">
-      <strong>Buscar: </strong>
-      <input name="filter-country" type="text" placeholder="País" bind:value={search.country} />
-      <input name="filter-from" type="number" placeholder="Desde (año)" bind:value={search.from} />
-      <input name="filter-to" type="number" placeholder="Hasta (año)" bind:value={search.to} />
-    
-      <button name="filter-button" onclick={handleSearch}>Filtrar</button>
-      <button onclick={resetSearch}>Limpiar</button>
+    <div class="filter-grid">
+    <div class="filter-group">
+        <input type="text" placeholder="País" bind:value={search.country} />
+        <input type="number" placeholder="Año desde" bind:value={search.from} />
+        <input type="number" placeholder="Año hasta" bind:value={search.to} />
     </div>
+
+    <div class="filter-group">
+        <label>Plantilla:</label>
+        <input type="number" placeholder="Min" bind:value={search.squad_size_min} />
+        <input type="number" placeholder="Max" bind:value={search.squad_size_max} />
+    </div>
+
+    <div class="filter-group">
+        <label>Valor Total:</label>
+        <input type="number" placeholder="Min M€" bind:value={search.total_value_min} />
+        <input type="number" placeholder="Max M€" bind:value={search.total_value_max} />
+    </div>
+
+    <div class="filter-group">
+       <label>Valor Promedio:</label>
+       <input type="number" step="0.1" placeholder="Min M€" bind:value={search.avg_value_min} />
+       <input type="number" step="0.1" placeholder="Max M€" bind:value={search.avg_value_max} />
+    </div>
+
+    <button onclick={() => { offset = 0; handleSearch(); }}>🔍 Aplicar Filtros Avanzados</button>
+</div>
 </section>
 
 <hr style="margin: 30px 0;" />
@@ -238,16 +229,10 @@
 <div style="margin-top: 20px; display: flex; gap: 10px;">
     <button onclick={loadInitialData} style="background-color: #3498db; color: white; border: none; padding: 10px;">Actualizar Lista</button>
     <button onclick={deleteAll} style="background-color: #c0392b; color: white; border: none; padding: 10px;">BORRAR TODO</button>
-    <div class="pagination-controls">
-    <button onclick={paginaAnterior} disabled={offset === 0} style="background-color: #3498db; color: white; border: none; padding: 10px;">
-        Anterior
-    </button>
-    
-    <span>Mostrando registros desde el {offset + 1} al {offset + 11}</span>
-    
-    <button onclick={paginaSiguiente} disabled={datosPaginados.length > 0 && datosPaginados.length < LIMIT} style="background-color: #3498db; color: white; border: none; padding: 10px;">
-        Siguiente
-    </button>
+    <div class="pagination">
+    <button onclick={prevPage} disabled={offset === 0}>Anterior</button>
+    <span>Página actual: {(offset / LIMIT) + 1}</span>
+    <button onclick={nextPage} disabled={rankings.length < LIMIT}>Siguiente</button>
 </div>
 </div>
 

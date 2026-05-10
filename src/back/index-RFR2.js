@@ -57,37 +57,52 @@ export default function(app) {
     });
 
     // 1 --- GET a la colección con búsqueda y filtros ---
-    app.get(RFR_URL, (req, res) => {
-    const { from, to, country, min_squad, max_value } = req.query;
+app.get(RFR_URL, (req, res) => {
+    const { 
+        from, to, country, 
+        squad_size_min, squad_size_max, 
+        total_value_min, total_value_max,
+        avg_value_min, avg_value_max,
+        limit, offset 
+    } = req.query;
+    
     let query = {};
-    let offset = parseInt(req.query.offset) || 0;
-    let limit = parseInt(req.query.limit) || 10;
 
-    // Filtro por país (exacto, ignorando mayúsculas/minúsculas)
+    // 1. Filtro de País
     if (country) {
         query.country = { $regex: new RegExp("^" + country + "$", "i") };
     }
 
-    // Filtro por rango de años (ej: ?from=2020&to=2026)
+    // 2. Filtro de Rango de Años (Ya lo tenías)
     if (from || to) {
         query.year = {};
         if (from) query.year.$gte = Number(from);
         if (to) query.year.$lte = Number(to);
     }
 
-   db.find({})
-      .sort({ name: 1 }) // Es importante ordenar para que la paginación sea consistente
-      .skip(offset)
-      .limit(limit)
-      .exec((err, docs) => {
-          if (err) {
-              res.status(500).json({ error: "Error consultando la base de datos" });
-          } else {
-              // 3. Devolver los datos (JSON)
-              res.status(200).json(docs);
-          }}
-        );
+    // 3. Filtros de Rangos Numéricos (Implementación Genérica)
+    const applyRange = (field, min, max) => {
+        if (min || max) {
+            query[field] = {};
+            if (min) query[field].$gte = Number(min);
+            if (max) query[field].$lte = Number(max);
+        }
+    };
+
+    applyRange('squad_size', squad_size_min, squad_size_max);
+    applyRange('total_market_value', total_value_min, total_value_max);
+    applyRange('average_market_value', avg_value_min, avg_value_max);
+
+    // 4. Paginación
+    const L = parseInt(limit) || 10;
+    const O = parseInt(offset) || 0;
+
+    db.find(query).skip(O).limit(L).exec((err, docs) => {
+        if (err) return res.status(500).json({ error: "Error en la BD" });
+        res.status(200).json(docs);
+    });
 });
+
     // --- 2. GET para cargar datos iniciales ---
     app.get(RFR_URL + "/loadInitialData", (req, res) => {
         const initialTeams = [
