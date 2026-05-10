@@ -39,6 +39,13 @@ const worldBankBaseUrl = `https://api.worldbank.org/v2/country/all/indicator/${w
 var uniProxyPath = '/api/v1/proxy/uni';
 const uniApiBaseUrl = 'https://universities.hipolabs.com/search';
 
+let cryptoCache = {
+    expiresAt: 0,
+    data: null,
+    status: 500
+};
+const CRYPTO_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
 // Endpoint proxy: el frontend llama aquí en lugar de a la API del Banco Mundial
 // directamente, lo cual evita restricciones CORS y permite cachear/filtrar la
 // respuesta antes de devolverla.
@@ -118,19 +125,43 @@ app.get('/api/v1/proxy/fruits', async (req, res) => {
 });
 app.get('/api/v1/proxy/crypto', async (req, res) => {
     try {
+        const now = Date.now();
+        if (cryptoCache.data && now < cryptoCache.expiresAt) {
+            console.log('Crypto proxy: sirviendo datos desde caché local');
+            res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+            return res.status(200).json(cryptoCache.data);
+        }
+
         // La URL de CoinGecko pidiendo el top 7
         const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=7&page=1&sparkline=false';
         console.log('Petición redirigida vía Proxy a: CoinGecko');
-        
+
         const response = await fetch(url);
         if (!response.ok) {
-            return res.status(response.status).json({ error: `Error de CoinGecko: ${response.status}` });
+            const errorBody = await response.json().catch(() => ({ error: `CoinGecko returned ${response.status}` }));
+            if (response.status === 429 && cryptoCache.data) {
+                console.warn('CoinGecko rate limit alcanzado; usando caché local');
+                res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+                return res.status(200).json(cryptoCache.data);
+            }
+            return res.status(response.status).json({ error: errorBody.error || `Error de CoinGecko: ${response.status}` });
         }
-        
+
         const data = await response.json();
+        cryptoCache = {
+            expiresAt: Date.now() + CRYPTO_CACHE_TTL,
+            data,
+            status: 200
+        };
+        res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
         res.json(data);
     } catch (error) {
         console.error('Error en proxy de crypto:', error);
+        if (cryptoCache.data) {
+            console.warn('Usando caché local por fallo en CoinGecko');
+            res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+            return res.status(200).json(cryptoCache.data);
+        }
         res.status(500).json({ error: 'Fallo al conectar con CoinGecko' });
     }
 });

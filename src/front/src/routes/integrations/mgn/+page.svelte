@@ -8,7 +8,7 @@
 	 *
 	 * Visualizaciones principales:
 	 *   1) Densidad de población vs Score FIFA (Highcharts heatmap)
-	 *   2) Ranking FIFA vs precio medio de vino (ApexCharts treemap)
+	 *   2) Evolución anual: Ranking FIFA de España vs precio medio de vino (ApexCharts treemap)
 	 *   3) Meteoritos por País (Google Charts bar chart)
 	 *   4) Evolución anual de pandemias (ECharts theme river)
 	 *   5) Cantidad de importación por item alimenticio (Chart.js bar chart)
@@ -50,6 +50,7 @@
 	const OPEN_METEO_API = 'https://api.open-meteo.com/v1/forecast';
 	// Llamamos a nuestro propio backend, que hará de intermediario
     const CRYPTO_API = '/api/v1/proxy/crypto';
+    const MAX_CRYPTO_ITEMS = 7;
 	const DISEASE_KEYS = [
 		'yaws',
 		'polio',
@@ -1059,7 +1060,7 @@
 	}
 
 	/** -----------------------------
-	 *  Widget 2 (Wine) -> ApexCharts Treemap (CDN)
+	 *  Widget 2 (Wine) -> ApexCharts Treemap (CDN) - Evolución por años
 	 *  Integración: rank/score FIFA vs precio medio vino por país-año
 	 *  ----------------------------- */
 	/* Construye las métricas de vino por país+año y las cruza con el
@@ -1067,75 +1068,49 @@
 	 * renderizar una treemap con tamaño=precio y color=rank.
 	 */
 	function buildWineIntegration(wineData) {
-		// agregamos vino por país-año (precio medio, abv medio)
+		// Agrupamos vinos por año (precio medio)
 		const agg = new Map();
 		for (const w of wineData) {
-			if (!w?.country || w?.year == null) continue;
+			if (w?.year == null) continue;
 			const price = Number(w.price);
-			const abv = Number(w.abv);
 			if (!Number.isFinite(price)) continue;
-			const cNorm = resolveExternalCountryNorm(w.country, w);
-			if (!cNorm) continue;
-			const k = `${cNorm}_${Number(w.year)}`;
-			if (!agg.has(k)) agg.set(k, { sumPrice: 0, n: 0, sumAbv: 0, nAbv: 0, year: Number(w.year) });
-			const a = agg.get(k);
+			const year = Number(w.year);
+			if (!agg.has(year)) agg.set(year, { sumPrice: 0, n: 0 });
+			const a = agg.get(year);
 			a.sumPrice += price;
 			a.n += 1;
-			if (Number.isFinite(abv)) {
-				a.sumAbv += abv;
-				a.nAbv += 1;
-			}
 		}
 
 		const pairs = [];
-		for (const [k, a] of agg.entries()) {
-			const parts = k.split('_');
-			const yearFromKey = Number(parts.at(-1));
-			const cNorm = parts.length > 1 ? parts.slice(0, -1).join('_') : '';
-			if (!cNorm || !Number.isFinite(yearFromKey)) continue;
-			const year = a.year;
-			const mine = getMyRowNearest(cNorm, year);
-			if (!mine || !Number.isFinite(mine.rank) || !Number.isFinite(mine.score)) continue;
+		for (const [year, a] of agg.entries()) {
+			const avgPrice = a.sumPrice / a.n;
+			// Obtenemos ranking FIFA de España para ese año
+			const spainRow = getMyRowNearest('España', year);
+			if (!spainRow || !Number.isFinite(spainRow.rank) || !Number.isFinite(spainRow.score)) continue;
 			pairs.push({
-				rank: mine.rank,
-				score: mine.score,
-				country: mine.country,
-				avgPrice: a.sumPrice / a.n,
-				avgAbv: a.nAbv ? a.sumAbv / a.nAbv : null,
-				wines: a.n,
-				year: a.year
+				year: year,
+				avgPrice: avgPrice,
+				rank: spainRow.rank,
+				score: spainRow.score,
+				wines: a.n
 			});
 		}
 
-		const yearUsed = pickMostCommonYear(pairs);
-		const filtered = yearUsed == null ? pairs : pairs.filter((p) => p.year === yearUsed);
+		// No necesitamos yearUsed ya que mostramos todos los años
+		const yearUsed = null; // o podemos calcular el más común si queremos
 
-		// treemap por país: tamaño = precio medio, color = rank (mejor rank => más verde)
-		const byCountry = new Map();
-		for (const p of filtered) {
-			const c = normalizeCountry(p.country);
-			// Si se repite país en el mismo año por nombres, agregamos media simple
-			if (!byCountry.has(c)) byCountry.set(c, { label: p.country, prices: [], ranks: [], scores: [], wines: 0 });
-			const b = byCountry.get(c);
-			b.label = p.country;
-			b.prices.push(p.avgPrice);
-			b.ranks.push(p.rank);
-			b.scores.push(p.score);
-			b.wines += p.wines;
-		}
-
+		// Treemap por año: tamaño = precio medio, color = rank (mejor rank => más verde)
 		const series = [
 			{
-				data: [...byCountry.values()]
-					.map((b) => ({
-						x: b.label,
-						y: Number(mean(b.prices).toFixed(2)),
-						rank: Number(mean(b.ranks).toFixed(1)),
-						score: Number(mean(b.scores).toFixed(0)),
-						wines: b.wines
+				data: pairs
+					.map((p) => ({
+						x: `${p.year}`,
+						y: Number(p.avgPrice.toFixed(2)),
+						rank: p.rank,
+						score: p.score,
+						wines: p.wines
 					}))
-					.sort((a, b) => b.y - a.y)
-					.slice(0, 25)
+					.sort((a, b) => a.year - b.year) // ordenar por año
 			}
 		];
 
@@ -1233,17 +1208,24 @@
 	 *  Visualización: conteo de meteoritos por país para los primeros 100 registros
 	 *  ----------------------------- */
 	function buildMeteoritesIntegration(meteoritesData) {
-		const first100 = meteoritesData.slice(0, 100);
-		const countByCountry = new Map();
-		for (const m of first100) {
-			const country = m?.country;
-			if (!country || country.toLowerCase() === 'unknown') continue;
-			countByCountry.set(country, (countByCountry.get(country) || 0) + 1);
-		}
-		const sorted = [...countByCountry.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20); // top 20
-		const rows = sorted.map(([country, count]) => [country, count]);
-		return { rows };
-	}
+    const first100 = meteoritesData.slice(0, 100);
+    const countByCountry = new Map();
+    for (const m of first100) {
+        const country = m?.country;
+        if (!country || country.toLowerCase() === 'unknown') continue;
+        countByCountry.set(country, (countByCountry.get(country) || 0) + 1);
+    }
+    
+    const sorted = [...countByCountry.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20);
+
+    // Aquí es donde sucede la magia: acortamos el nombre para el eje
+    const rows = sorted.map(([country, count]) => {
+        const shortName = country.length > 10 ? country.substring(0, 10) + '...' : country;
+        return [shortName, count];
+    });
+
+    return { rows };
+}
 
 	/* Inicializa el bar chart de Google Charts para visualizar el conteo
 	 * de meteoritos por país para los primeros 100 registros.
@@ -1269,10 +1251,16 @@
 
 			const options = {
 				title: 'Conteo de meteoritos por país (primeros 100 registros)',
-				hAxis: { title: 'País' },
+				height: 560,
+				hAxis: { 
+      			  	title: 'País',
+        			slantedText: true,       // Fuerza el texto inclinado
+       				slantedTextAngle: 45,    // Ángulo de inclinación
+       				maxAlternation: 1        // Evita que los ponga en dos filas (lo que suele romper el layout)
+    },
 				vAxis: { title: 'Conteo' },
 				legend: { position: 'none' },
-				chartArea: { left: '10%', top: '12%', width: '80%', height: '70%' }
+				chartArea: { left: '10%', top: '8%', width: '84%', height: '78%' }
 			};
 
 			const chart = new window.google.visualization.ColumnChart(el);
@@ -1286,30 +1274,35 @@
    async function loadCryptoVisualization() {
         try {
             const res = await fetchWithTimeout(CRYPTO_API);
+            if (res.status === 429) {
+                throw new Error('CoinGecko rate limit alcanzado (429). Intenta de nuevo más tarde.');
+            }
             if (!res.ok) throw new Error(`Error fetching crypto: ${res.status}`);
-            
+
             const data = await res.json();
+            const coins = Array.isArray(data) ? data.slice(0, MAX_CRYPTO_ITEMS) : [];
+            if (!coins.length) throw new Error('No se recibieron datos de criptomonedas.');
 
-            // 1. Calculamos la capitalización total sumando el market_cap de las 7 monedas
-            const totalMarketCap = data.reduce((sum, coin) => sum + Number(coin.market_cap), 0);
-
-            // 2. Extraemos los nombres y calculamos el porcentaje (%) de cada una sobre el total
-            const labels = data.map(coin => coin.name);
-            const percentages = data.map(coin => ((Number(coin.market_cap) / totalMarketCap) * 100).toFixed(2));
+            const totalMarketCap = coins.reduce((sum, coin) => sum + Number(coin.market_cap || 0), 0);
+            const labels = coins.map(coin => coin.name || 'Desconocido');
+            const percentages = coins.map(coin => {
+                const marketCap = Number(coin.market_cap || 0);
+                return totalMarketCap ? Number(((marketCap / totalMarketCap) * 100).toFixed(2)) : 0;
+            });
 
             const chartData = {
-                labels: labels,
+                labels,
                 datasets: [{
                     label: 'Dominancia en el Top 7 (%)',
                     data: percentages,
                     backgroundColor: [
-                        'rgba(255, 99, 132, 0.6)',   // Rojo/Rosa
-                        'rgba(54, 162, 235, 0.6)',   // Azul
-                        'rgba(255, 206, 86, 0.6)',   // Amarillo
-                        'rgba(75, 192, 192, 0.6)',   // Verde agua
-                        'rgba(153, 102, 255, 0.6)',  // Morado
-                        'rgba(255, 159, 64, 0.6)',   // Naranja
-                        'rgba(199, 199, 199, 0.6)'   // Gris
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 159, 64, 0.6)',
+                        'rgba(199, 199, 199, 0.6)'
                     ],
                     borderWidth: 1
                 }]
@@ -1319,7 +1312,7 @@
         } catch (e) {
             console.error('Error en Widget 8 (Crypto):', e);
             const el = document.getElementById('mgn-chart-crypto-container');
-            if (el) el.innerHTML = '<div class="status">Error cargando datos de criptomonedas.</div>';
+            if (el) el.innerHTML = `<div class="status">Error cargando datos de criptomonedas: ${e.message}</div>`;
         }
     }
 
@@ -1511,13 +1504,14 @@
 	</section>
 
 	<section class:hidden={loading} class="card">
-		<h2>2) Ranking FIFA vs precio medio de vino (ApexCharts + Treemap)</h2>
+		<h2>2) Evolución anual: Ranking FIFA de España vs precio medio de vino (ApexCharts + Treemap)</h2>
+		<p>Visualización de la evolución anual del ranking FIFA de España y el precio medio de los vinos españoles. Cada cuadro representa un año, con el tamaño proporcional al precio medio del vino y el color indicando el ranking FIFA (verde = mejor ranking).</p>
 		<p class="desc">
 			Agrego la API de vino a <b>precio medio por país+año</b> (y nº de vinos) y lo cruzo con tu
 			<b>rank/score</b> usando el mismo alineado de país/año. La <b>treemap</b> muestra tamaño por precio medio
 			y color por rango de ranking.
 		</p>
-		<p class="meta">Cruces: {stats.wine.commonPairs} · Año usado: {stats.wine.yearUsed}</p>
+		<p class="meta">Años con datos: {stats.wine.commonPairs}</p>
 		<div id="mgn-chart-wine-treemap" class="chart"></div>
 	</section>
 
@@ -1612,6 +1606,10 @@
     width: 100%;
     height: 500px; /* Altura mínima para que sea visible */
 }
+	#mgn-chart-meteorites-bubble {
+		min-height: 580px;
+		height: 580px;
+	}
 	.meta {
 		margin: 0 0 12px;
 		color: #64748b;
