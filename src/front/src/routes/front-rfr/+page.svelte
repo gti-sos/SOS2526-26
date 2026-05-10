@@ -166,8 +166,8 @@ function nextPage() {
     <div class="filter-grid">
     <div class="filter-group">
         <input type="text" placeholder="País" bind:value={search.country} />
-        <input type="number" placeholder="Año desde" bind:value={search.from} />
-        <input type="number" placeholder="Año hasta" bind:value={search.to} />
+        <input type="number" name="filter-from" placeholder="Año desde" bind:value={search.from} />
+        <input type="number" name="filter-to" placeholder="Año hasta" bind:value={search.to} />
     </div>
 
     <div class="filter-group">
@@ -188,7 +188,7 @@ function nextPage() {
        <input type="number" step="0.1" placeholder="Max M€" bind:value={search.avg_value_max} />
     </div>
 
-    <button onclick={() => { offset = 0; handleSearch(); }}>🔍 Aplicar Filtros Avanzados</button>
+    <button name=filter-button onclick={() => { offset = 0; handleSearch(); }}>🔍 Aplicar Filtros Avanzados</button>
 </div>
 </section>
 
