@@ -139,6 +139,34 @@
         search = { from: "", to: "", country: "" };
         getData(); // Recarga la lista completa
     }
+
+    let offset = $state(0);
+    const LIMIT = 10;
+    let datosPaginados = $state([]);
+
+    async function fetchData() {
+        try {
+            // Construimos la URL con los parámetros de paginación
+            const response = await fetch(`${API}?limit=${LIMIT}&offset=${offset}`);
+            if (response.ok) {
+                datosPaginados = await response.json();
+            }
+        } catch (e) {
+            console.error("Error cargando página", e);
+        }
+    }
+
+    function paginaSiguiente() {
+        offset += LIMIT;
+        fetchData();
+    }
+
+    function paginaAnterior() {
+        if (offset >= LIMIT) {
+            offset -= LIMIT;
+            fetchData();
+        }
+    }
 </script>
 
 <h1>Gestión de Valor de Mercado de Selecciones Nacionales</h1>
@@ -210,6 +238,17 @@
 <div style="margin-top: 20px; display: flex; gap: 10px;">
     <button onclick={loadInitialData} style="background-color: #3498db; color: white; border: none; padding: 10px;">Actualizar Lista</button>
     <button onclick={deleteAll} style="background-color: #c0392b; color: white; border: none; padding: 10px;">BORRAR TODO</button>
+    <div class="pagination-controls">
+    <button onclick={paginaAnterior} disabled={offset === 0} style="background-color: #3498db; color: white; border: none; padding: 10px;">
+        Anterior
+    </button>
+    
+    <span>Mostrando registros desde el {offset + 1} al {offset + 11}</span>
+    
+    <button onclick={paginaSiguiente} disabled={datosPaginados.length > 0 && datosPaginados.length < LIMIT} style="background-color: #3498db; color: white; border: none; padding: 10px;">
+        Siguiente
+    </button>
+</div>
 </div>
 
 <style>
@@ -219,4 +258,5 @@
     tr:nth-child(even) { background-color: #f2f2f2; }
     button { cursor: pointer; transition: 0.3s; }
     button:hover { opacity: 0.8; }
+    
 </style>
