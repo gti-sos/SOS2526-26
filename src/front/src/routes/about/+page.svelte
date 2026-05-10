@@ -5,7 +5,7 @@
 			initials: 'MGN',
 			// TODO MGN: pega aqui la URL publica del video (YouTube o similar).
 			// Ejemplo: 'https://www.youtube.com/watch?v=XXXXXXXXXXX'
-			videoUrl: ''
+			videoUrl: 'https://youtu.be/MJnaL7I0_iU'
 		},
 		{
 			name: 'Ricardo Fernandez Rodriguez-Navas',
