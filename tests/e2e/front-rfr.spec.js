@@ -78,8 +78,8 @@ test.describe('Pruebas E2E - Recurso RFR', () => {
         await expect(page).toHaveURL(/\/front-rfr\/.+/);
 
         // Cambiamos el squad_size a 99 (buscando el input por su valor actual o nombre)
-        const inputSquad = page.locator('input[name="squad_size"]');
-        await inputSquad.fill('99'); 
+        const inputSquad = page.locator('main input[name="squad_size"], .edit-form input[name="squad_size"]').first();
+        await inputSquad.fill('99');
         
         await page.click('button:has-text("Guardar")'); // Ajusta al texto real de tu botón
 

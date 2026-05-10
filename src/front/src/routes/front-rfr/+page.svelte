@@ -188,7 +188,7 @@ function nextPage() {
        <input type="number" step="0.1" placeholder="Max M€" bind:value={search.avg_value_max} />
     </div>
 
-    <button name=filter-button onclick={() => { offset = 0; handleSearch(); }}>🔍 Aplicar Filtros Avanzados</button>
+    <button name="filter-button" onclick={() => { offset = 0; handleSearch(); }}>🔍 Aplicar Filtros Avanzados</button>
 </div>
 </section>
 
