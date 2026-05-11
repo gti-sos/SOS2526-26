@@ -56,8 +56,7 @@ export default function(app) {
         res.redirect("https://documenter.getpostman.com/view/52260149/2sBXinGW4o");
     });
 
-    // 1 --- GET a la colección con búsqueda y filtros ---
-app.get(RFR_URL, (req, res) => {
+  app.get(RFR_URL, (req, res) => {
     const { 
         from, to, country, 
         squad_size_min, squad_size_max, 
@@ -68,19 +67,19 @@ app.get(RFR_URL, (req, res) => {
     
     let query = {};
 
-    // 1. Filtro de País
+    // Filtro de País
     if (country) {
         query.country = { $regex: new RegExp("^" + country + "$", "i") };
     }
 
-    // 2. Filtro de Rango de Años (Ya lo tenías)
+    // Filtro de Rango de Años
     if (from || to) {
         query.year = {};
         if (from) query.year.$gte = Number(from);
         if (to) query.year.$lte = Number(to);
     }
 
-    // 3. Filtros de Rangos Numéricos (Implementación Genérica)
+    // Función auxiliar para rangos numéricos
     const applyRange = (field, min, max) => {
         if (min || max) {
             query[field] = {};
@@ -93,13 +92,17 @@ app.get(RFR_URL, (req, res) => {
     applyRange('total_market_value', total_value_min, total_value_max);
     applyRange('average_market_value', avg_value_min, avg_value_max);
 
-    // 4. Paginación
+    // Paginación
     const L = parseInt(limit) || 10;
     const O = parseInt(offset) || 0;
 
-    db.find(query).skip(O).limit(L).exec((err, docs) => {
-        if (err) return res.status(500).json({ error: "Error en la BD" });
-        res.status(200).json(docs);
+    // EL TRUCO: Añadimos { _id: 0 } como segundo parámetro para ocultar el ID
+    db.find(query, { _id: 0 }).skip(O).limit(L).exec((err, docs) => {
+        if (err) {
+            res.status(500).json({ error: "Error en la base de datos" });
+        } else {
+            res.status(200).json(docs);
+        }
     });
 });
 
