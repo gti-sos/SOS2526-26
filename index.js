@@ -167,6 +167,29 @@ app.get('/api/v1/proxy/crypto', async (req, res) => {
     }
 });
 // ---------------------------------------------------------------------------
+//  Configuración del proxy hacia Open-Meteo API
+// ---------------------------------------------------------------------------
+app.get('/api/v1/proxy/weather', async (req, res) => {
+    try {
+        const queryParams = new URLSearchParams(req.query);
+        const url = `https://api.open-meteo.com/v1/forecast?${queryParams.toString()}`;
+        //console.log('Petición redirigida vía Proxy a: Open-Meteo');
+
+        const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (!response.ok) {
+            const errorBody = await response.text();
+            return res.status(response.status).json({ error: errorBody || `Error de Open-Meteo: ${response.status}` });
+        }
+
+        const data = await response.json();
+        res.set('Cache-Control', 'public, max-age=300'); // Cache 5 minutos
+        res.json(data);
+    } catch (error) {
+        console.error('Error en proxy de weather:', error);
+        res.status(500).json({ error: 'Fallo al conectar con Open-Meteo' });
+    }
+});
+// ---------------------------------------------------------------------------
 //  Middlewares globales
 // ---------------------------------------------------------------------------
 app.use(cors());                              // Habilita CORS para cualquier origen.

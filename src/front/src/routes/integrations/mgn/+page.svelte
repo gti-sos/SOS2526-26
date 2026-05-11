@@ -46,8 +46,8 @@
 	const PANDEMICS_API = 'https://sos2526-10.onrender.com/api/v2/pandemics';
 
 	const FOOD_API = 'https://sos2526-18.onrender.com/api/v2/food-supply-utilization-accounts';
-	const REST_COUNTRIES_API = 'https://restcountries.com/v3.1/name';
-	const OPEN_METEO_API = 'https://api.open-meteo.com/v1/forecast';
+	const REST_COUNTRIES_API = 'https://restcountries.com/v3.1/alpha';
+	const OPEN_METEO_API = '/api/v1/proxy/weather';
 	const HOLIDAYS_API = 'https://date.nager.at/api/v3/PublicHolidays/2026/';
 	// Llamamos a nuestro propio backend, que hará de intermediario
     const CRYPTO_API = '/api/v1/proxy/crypto';
@@ -744,48 +744,37 @@
 	 *  Integración: bandera, población, región y ranking FIFA
 	 *  ============================= */
 	async function buildRestCountriesTable(myData) {
-		const tableData = [];
-		
-		// Solo procesar los top 50 países ordenados por rank para que sea más rápido
-		// Filtrar solo el año 2026 para evitar países duplicados y tomar el top 50
-        const topCountries = myData
-            .filter(item => Number(item.year) === 2026)
-            .sort((a, b) => (a.rank || 999) - (b.rank || 999))
-            .slice(0, 50);
+    const tableData = [];
+    const topCountries = myData
+        .filter(item => Number(item.year) === 2026)
+        .sort((a, b) => (a.rank || 999) - (b.rank || 999))
+        .slice(0, 50);
 
-		for (const my of topCountries) {
-			if (!my?.country || !my?.rank) continue;
+    for (const my of topCountries) {
+        const code = getISOCode(my.country); // <--- Usamos el helper
+        
+        if (!code) continue; // Si no hay código, saltamos (evita el error 400)
 
-			try {
-				const endpoint = `${REST_COUNTRIES_API}/${encodeURIComponent(my.country)}`;
-				const res = await fetchWithTimeout(endpoint);
-				if (!res.ok) continue;
-
-				const countryList = await res.json();
-				if (!Array.isArray(countryList) || !countryList.length) continue;
-
-				const countryData = countryList[0];
-				const flag = countryData?.flag || '🏳️';
-				const population = countryData?.population || 'N/A';
-				const region = countryData?.region || 'N/A';
-				const name = countryData?.name?.common || my.country;
-
-				tableData.push({
-					country: my.country,
-					name,
-					flag,
-					rank: my.rank,
-					score: my.score,
-					population,
-					region
-				});
-			} catch (e) {
-				console.warn(`Error fetching data for ${my.country}:`, e);
-			}
-		}
-
-		return tableData;
-	}
+        try {
+            const res = await fetchWithTimeout(`${REST_COUNTRIES_API}/${code}`);
+            if (res.ok) {
+                const countryList = await res.json();
+                const countryData = Array.isArray(countryList) ? countryList[0] : countryList;
+                // ... resto de tu lógica de push ...
+                tableData.push({
+                    country: my.country,
+                    name: countryData?.name?.common || my.country,
+                    flag: countryData?.flag || '🏳️',
+                    rank: my.rank,
+                    score: my.score,
+                    population: countryData?.population || 'N/A',
+                    region: countryData?.region || 'N/A'
+                });
+            }
+        } catch (e) { /* error silencioso */ }
+    }
+    return tableData;
+}
 
 	function initRestCountriesTable(containerId, tableData) {
 		const el = document.getElementById(containerId);
@@ -832,70 +821,97 @@
 		el.innerHTML = html;
 	}
 
+	// Función para obtener el código ISO de forma segura
+function getISOCode(countryName) {
+    if (!countryName) return null;
+    const cleanName = countryName.split('(')[0].trim();
+    
+    // 1. Intentar con la librería
+    let code = countries.getAlpha2Code(cleanName, 'es') || countries.getAlpha2Code(cleanName, 'en');
+    
+    // 2. Mapeo manual para los que siempre fallan
+    if (!code) {
+        const manualMap = { 
+            "EEUU": "US", "Rusia": "RU", "Corea": "KR", 
+            "Argelia": "DZ", "Canadá": "CA", "Ucrania": "UA",
+            "Panamá": "PA", "Polonia": "PL", "Grecia": "GR"
+        };
+        code = manualMap[cleanName];
+    }
+    return code;
+}
+
 	/** =============================
      *  Widget 7 (Weather) -> HTML Table
      *  Integración: Coordenadas de capital (RestCountries) + Temperatura (Open-Meteo) + FIFA Rank
      *  ============================= */
-    async function buildWeatherTable(myData) {
-        const tableData = [];
-        
-        // Tomamos el top 50 para no hacer demasiadas peticiones seguidas
-        // Filtrar solo el año 2026 para evitar países duplicados y tomar el top 50	
-        const topCountries = myData
-            .filter(item => Number(item.year) === 2026)
-            .sort((a, b) => (a.rank || 999) - (b.rank || 999))
-            .slice(0, 50);
+   async function buildWeatherTable(myData) {
+    const tableData = [];
+    
+    // Filtramos el top 50 del año 2026
+    const topCountries = myData
+        .filter(item => Number(item.year) === 2026)
+        .sort((a, b) => (a.rank || 999) - (b.rank || 999))
+        .slice(0, 50);
 
-        for (const my of topCountries) {
-            if (!my?.country || !my?.rank) continue;
+    for (const my of topCountries) {
+        if (!my?.country || !my?.rank) continue;
 
-            try {
-                // 1. Obtener la capital y sus coordenadas desde Rest Countries
-                const countryRes = await fetchWithTimeout(`${REST_COUNTRIES_API}/${encodeURIComponent(my.country)}`);
-                if (!countryRes.ok) continue;
+        try {
+            // 1. Obtener el código ISO usando nuestro nuevo Helper
+            const code = getISOCode(my.country);
+            if (!code) continue; // Si no hay código, saltamos este país y evitamos el error 400
 
+            // 2. Consultar Rest Countries por CÓDIGO
+            let countryData = null;
+            const countryRes = await fetchWithTimeout(`${REST_COUNTRIES_API}/${code}`);
+            
+            if (countryRes.ok) {
                 const countryList = await countryRes.json();
-                if (!Array.isArray(countryList) || !countryList.length) continue;
-
-                const countryData = countryList[0];
-                const capital = countryData?.capital?.[0] || 'N/A';
-                const flag = countryData?.flag || '🏳️';
-                
-                // Usamos las coordenadas de la capital si existen, si no las del país
-                const latlng = countryData?.capitalInfo?.latlng || countryData?.latlng;
-
-                let temp = 'N/A';
-
-                // 2. Si tenemos coordenadas, llamamos a Open-Meteo
-                if (latlng && latlng.length === 2) {
-                    const [lat, lon] = latlng;
-                    const weatherRes = await fetchWithTimeout(`${OPEN_METEO_API}?latitude=${lat}&longitude=${lon}&current_weather=true`);
-                    
-                    if (weatherRes.ok) {
-                        const weatherData = await weatherRes.json();
-                        const t = weatherData.current_weather?.temperature;
-                        let icon = '⛅'; // por defecto templado/nublado
-                        if (t >= 25) icon = '☀️'; // calor
-                        else if (t <= 10) icon = '❄️'; // frío
-                        
-                        temp = `${t}°C ${icon}`;
-                    }
-                }
-
-                tableData.push({
-                    country: my.country,
-                    flag,
-                    rank: my.rank,
-                    capital,
-                    temp: temp 
-                });
-            } catch (e) {
-                console.warn(`Error fetching weather data for ${my.country}:`, e);
+                countryData = Array.isArray(countryList) ? countryList[0] : countryList;
             }
-        }
 
-        return tableData;
+            if (!countryData) continue; // Si la API no devolvió datos, saltar
+
+            const capital = countryData?.capital?.[0] || 'N/A';
+            const flag = countryData?.flag || '🏳️';
+            const latlng = countryData?.capitalInfo?.latlng || countryData?.latlng;
+
+            let temp = 'N/A';
+
+            // 3. Si tenemos coordenadas, llamar a Open-Meteo
+            if (latlng && latlng.length === 2) {
+                const [lat, lon] = latlng;
+                const weatherRes = await fetchWithTimeout(`${OPEN_METEO_API}?latitude=${lat}&longitude=${lon}&current_weather=true`);
+                
+                if (weatherRes.ok) {
+                    const weatherData = await weatherRes.json();
+                    const t = weatherData.current_weather?.temperature;
+                    let icon = '⛅'; 
+                    if (t >= 25) icon = '☀️';
+                    else if (t <= 10) icon = '❄️';
+                    
+                    temp = `${t}°C ${icon}`;
+                }
+            }
+
+            // Añadimos a la tabla
+            tableData.push({
+                country: my.country,
+                flag,
+                rank: my.rank,
+                capital,
+                temp: temp 
+            });
+
+        } catch (e) {
+            console.warn(`Error procesando clima para ${my.country}:`, e);
+            // Si falla un país, el bucle sigue con el siguiente gracias al try/catch
+        }
     }
+
+    return tableData;
+}
 
     function initWeatherTable(containerId, tableData) {
         const el = document.getElementById(containerId);
