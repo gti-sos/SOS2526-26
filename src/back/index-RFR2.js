@@ -80,13 +80,26 @@ export default function(app) {
     }
 
     // Función auxiliar para rangos numéricos
-    const applyRange = (field, min, max) => {
-        if (min || max) {
+    // Función auxiliar corregida
+const applyRange = (field, min, max) => {
+    if (min || max) {
+        // Solo creamos el objeto si no existe ya para ese campo
+        if (!query[field]) {
             query[field] = {};
-            if (min) query[field].$gte = Number(min);
-            if (max) query[field].$lte = Number(max);
         }
-    };
+        
+        // Usamos Number() y verificamos que no sea NaN
+        if (min) {
+            const minNum = Number(min);
+            if (!isNaN(minNum)) query[field].$gte = minNum;
+        }
+        
+        if (max) {
+            const maxNum = Number(max);
+            if (!isNaN(maxNum)) query[field].$lte = maxNum;
+        }
+    }
+};
 
     applyRange('squad_size', squad_size_min, squad_size_max);
     applyRange('total_market_value', total_value_min, total_value_max);
