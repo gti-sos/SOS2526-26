@@ -11,7 +11,7 @@
 - **Repository**: [gti-sos/SOS2526-26](https://github.com/gti-sos/SOS2526-26)
 - **Live URL**: https://sos2526-26.onrender.com/
 
----
+--- 
 
 ## 📊 Fuentes de Datos y APIs
 
