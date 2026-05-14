@@ -121,7 +121,7 @@
 			 * ya se cargaron antes, así que para nosotros es un "éxito" porque
 			 * los datos ya están listos para usarse. */
 			const esExitoValido =
-				res.status === 'fulfilled' && (res.value.ok || res.value.status === 409 || res.value.statucls === 400);
+				res.status === 'fulfilled' && (res.value.ok || res.value.status === 409 || res.value.status === 400);
 
 			if (esExitoValido) {
 				okCount += 1;
