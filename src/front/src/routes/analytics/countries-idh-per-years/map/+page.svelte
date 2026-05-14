@@ -30,11 +30,8 @@
 	// normalizadas (sin tildes y en minúsculas) para poder buscar directamente.
 	const countryCoordinates = {
 		espana: [40.4168, -3.7038],
-		alemania: [52.52, 13.405],
 		'reino-unido': [51.5074, -0.1278],
 		francia: [48.8566, 2.3522],
-		italia: [41.9028, 12.4964],
-		portugal: [38.7223, -9.1393],
 		'estados-unidos': [38.9072, -77.0369],
 		japon: [35.6762, 139.6503],
 		china: [39.9042, 116.4074]
