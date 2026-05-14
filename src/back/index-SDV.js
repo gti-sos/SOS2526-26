@@ -13,7 +13,7 @@ const db = new Datastore({ filename: './data/idh1.db', autoload: true });
 /*
  * NeDB anyade automaticamente un campo interno "_id" a cada documento.
  * Este campo es ruido para el cliente final, asi que se elimina antes
- * de devolver la respuesta para mantener el JSON limpio y estable.
+ * de devolver la respuesta para mantener el JSON limpio y estable. 
  */
 function cleanResource(resource) {
     if (Array.isArray(resource)) {
