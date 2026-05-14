@@ -116,8 +116,8 @@
 		results.forEach((res, i) => {
 			const api = peerApis[i];
 
-			/* NUEVA LÓGICA: Consideramos que ha ido BIEN si la respuesta es OK (200-299)
-			 * o si devuelve un 409 (Conflicto). El 409 solo nos avisa de que los datos
+			/* Consideramos que ha ido BIEN si la respuesta es OK (200-299)
+			 * o si devuelve un 400, 409 (Conflicto). El 409 solo nos avisa de que los datos
 			 * ya se cargaron antes, así que para nosotros es un "éxito" porque
 			 * los datos ya están listos para usarse. */
 			const esExitoValido =

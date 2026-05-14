@@ -179,7 +179,7 @@ export default function (app) {
 
         db.count({}, (err, count) => {
             if (count > 0) {
-                res.status(400).send("Database already has data.");
+                res.status(409).send("Database already has data.");
             } else {
                 db.insert(initialData, (err, newDocs) => {
                     if (err) return res.sendStatus(500);
