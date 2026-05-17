@@ -4907,8 +4907,8 @@ const rawData =[
   {
     "country": "España",
     "year": 2026,
-    "rank": 3,
-    "score": 1850.18,
+    "rank": 1,
+    "score": 1877.18,
     "rank_variation_from_two_thousand_eighteen": 7,
     "best_year": "TRUE"
   },
@@ -5555,8 +5555,8 @@ const rawData =[
   {
     "country": "Francia",
     "year": 2026,
-    "rank": 1,
-    "score": 2000000000000000000000,
+    "rank": 3,
+    "score": 1870,
     "rank_variation_from_two_thousand_eighteen": 4,
     "best_year": "FALSE"
   },
