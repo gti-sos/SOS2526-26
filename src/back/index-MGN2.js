@@ -311,7 +311,7 @@ export default function (app) {
     });
 
 
-
+// AGHSBJPQRCFDEONL
     // --- MÉTODOS NO PERMITIDOS ---
     app.post(MGN_URL + "/:country/:year", (req, res) => res.sendStatus(405));
     app.put(MGN_URL, (req, res) => res.sendStatus(405));
